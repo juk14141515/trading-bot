@@ -8,3 +8,10 @@ __pycache__/
 venv/
 .env
 *.tar.gz
+# Runtime / generated data
+log.txt
+*.csv
+bot_status.json
+
+# Research outputs
+static/research/*.json
