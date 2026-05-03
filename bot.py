@@ -325,7 +325,44 @@ def safe_headline_text(item):
 
 
 
-def build_entry_reason(symbol, final_score, adaptive_reason, base_score=None):
+
+def classify_setup(symbol, trend, analyst, news, score, final_score, adaptive_reason=""):
+    """Classify the research setup for trade memory only.
+
+    This does not decide whether to trade. It only labels why an already-
+    selected candidate looked interesting so later learning can group outcomes.
+    """
+    try:
+        symbol = str(symbol or "").upper()
+        trend = str(trend or "").lower()
+        adaptive = str(adaptive_reason or "").lower()
+        analyst_val = float(analyst or 0)
+        news_val = float(news or 0)
+        score_val = float(score or 0)
+        final_val = float(final_score or 0)
+    except Exception:
+        return "current_bot"
+
+    # One extra category requested: day-trade shadow.
+    # This is only a research label for fast/high-confidence opportunities.
+    if final_val >= 80 and ("momentum" in adaptive or news_val >= 2):
+        return "day_trade_shadow"
+
+    if trend == "bullish" and final_val >= 75 and news_val >= 1:
+        return "breakout"
+
+    if "momentum" in adaptive or (final_val >= 70 and score_val >= 60):
+        return "momentum"
+
+    if trend == "bullish" and analyst_val >= 4 and news_val == 0:
+        return "pullback"
+
+    if trend in {"neutral", "bad_data"} and analyst_val >= 4 and final_val >= 65:
+        return "oversold"
+
+    return "current_bot"
+
+def build_entry_reason(symbol, final_score, adaptive_reason, base_score=None, setup=None):
     parts = [
         "qualified candidate passed risk checks",
         f"symbol={symbol}",
@@ -333,6 +370,8 @@ def build_entry_reason(symbol, final_score, adaptive_reason, base_score=None):
     ]
     if base_score is not None:
         parts.append(f"base_score={base_score}")
+    if setup:
+        parts.append(f"setup={setup}")
     if adaptive_reason:
         parts.append(f"adaptive={adaptive_reason}")
     return " | ".join(str(p) for p in parts)
@@ -717,14 +756,20 @@ def run_bot():
         log(f"{symbol} | trend={trend} | analyst={analyst} | news={news} | total={total}")
 
         if trend == "bullish" and analyst >= 3 and news >= 0:
-            candidates.append((symbol, total))
+            candidates.append({
+                "symbol": symbol,
+                "score": total,
+                "trend": trend,
+                "analyst": analyst,
+                "news": news,
+            })
 
-    candidates.sort(key=lambda x: x[1], reverse=True)
+    candidates.sort(key=lambda x: x.get("score", 0), reverse=True)
 
     if len(candidates) == 0 and enhanced:
         log(f"LEARNING MODE | no scored candidates | using enhanced fallback={enhanced[:2]}")
         for fallback_symbol in enhanced[:2]:
-            candidates.append((fallback_symbol, 65))
+            candidates.append({"symbol": fallback_symbol, "score": 65, "trend": "enhanced_fallback", "analyst": 0, "news": 0})
 
     if len(candidates) == 0:
         set_why_not_trading(
@@ -734,7 +779,12 @@ def run_bot():
         )
         return
 
-    for symbol, score in candidates[:slots_available]:
+    for candidate in candidates[:slots_available]:
+        symbol = candidate.get("symbol")
+        score = candidate.get("score", 0)
+        trend = candidate.get("trend", "unknown")
+        analyst = candidate.get("analyst", 0)
+        news = candidate.get("news", 0)
         final_score, adaptive_reason = apply_adaptive_score(symbol, score)
         log(f"ADAPTIVE | {symbol} | {adaptive_reason}")
         log(f"CONFIDENCE | {symbol} | base_score={score} | final_score={final_score}")
@@ -775,11 +825,12 @@ def run_bot():
             )
             continue
 
-        entry_reason = build_entry_reason(symbol, final_score, adaptive_reason, base_score=score)
-        log_learning_event("LEARNING_SHADOW_BUY_DECISION", symbol=symbol, score=final_score, reason=entry_reason)
+        setup = classify_setup(symbol, trend, analyst, news, score, final_score, adaptive_reason)
+        entry_reason = build_entry_reason(symbol, final_score, adaptive_reason, base_score=score, setup=setup)
+        log_learning_event("LEARNING_SHADOW_BUY_DECISION", symbol=symbol, score=final_score, reason=entry_reason, setup=setup)
         # LEARNING_SHADOW_BUY_DECISION
-        log(f"BUY DECISION | {symbol} | score={final_score} | reason={entry_reason}")
-        buy(symbol, final_score, entry_reason=entry_reason, setup="current_bot")
+        log(f"BUY DECISION | {symbol} | score={final_score} | setup={setup} | reason={entry_reason}")
+        buy(symbol, final_score, entry_reason=entry_reason, setup=setup)
         status = load_bot_status()
         status.update({
              "last_action": f"BUY {symbol}",
