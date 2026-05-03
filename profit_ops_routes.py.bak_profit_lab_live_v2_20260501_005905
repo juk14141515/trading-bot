@@ -1,0 +1,163 @@
+
+from flask import Blueprint, jsonify, render_template_string
+from profit_ops_analytics import snapshot
+from dashboard_safety_ui import rate_limit
+
+bp=Blueprint("profit_ops",__name__)
+
+@bp.route("/api/profit-ops")
+@rate_limit(max_requests=180, window_seconds=60)
+def api_profit_ops():
+    return jsonify(snapshot())
+
+@bp.route("/profit")
+@bp.route("/profit/history")
+def profit():
+    return render_template_string("""
+<!doctype html>
+<html>
+<head>
+<title>Ponder Invest AI | Profit Ops</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{--bg:#070b18;--card:#111827;--card2:#151d32;--border:#26334f;--text:#f8fafc;--muted:#a8b3c7;--green:#7cff9b;--red:#ff6f91;--blue:#8ab4ff;--yellow:#ffe86b}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at top left,#123322 0,#0b1024 35%,#050816 100%);color:var(--text);font-family:Arial,sans-serif}
+.wrap{max-width:1480px;margin:auto;padding:28px}
+.top{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start}
+h1{font-size:40px;margin:0 0 8px}.ai{color:var(--green)}
+a{color:var(--blue);text-decoration:none}.muted{color:var(--muted)}
+.pill{display:inline-block;border:1px solid var(--border);background:rgba(255,255,255,.08);border-radius:999px;padding:9px 14px;margin:7px 6px 0 0;font-weight:800}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:16px;margin:22px 0}
+.card{background:linear-gradient(180deg,rgba(21,29,50,.96),rgba(11,17,34,.96));border:1px solid var(--border);border-radius:22px;padding:20px;box-shadow:0 15px 35px rgba(0,0,0,.25)}
+.label{color:var(--muted);font-size:14px;font-weight:700}.value{font-size:30px;font-weight:900;margin-top:10px}
+.good{color:var(--green)}.bad{color:var(--red)}.blue{color:var(--blue)}.yellow{color:var(--yellow)}
+.layout{display:grid;grid-template-columns:2fr 1fr;gap:16px}.layout2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.chartBox{height:390px}.miniChart{height:270px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}th{color:var(--blue)}
+.scroll{overflow:auto}pre{white-space:pre-wrap;word-break:break-word;max-height:460px;overflow:auto;font-size:12px;line-height:1.4;color:#d7def0}
+.sectionTitle{margin:0 0 14px;font-size:21px}
+.barWrap{height:14px;background:#0b1225;border-radius:999px;overflow:hidden;border:1px solid var(--border)}.bar{height:100%;background:linear-gradient(90deg,var(--red),var(--yellow),var(--green));width:0%}
+@media(max-width:900px){.layout,.layout2{grid-template-columns:1fr}.wrap{padding:16px}h1{font-size:30px}}
+
+#skipLink:focus{left:12px}
+a:focus,button:focus{outline:3px solid var(--yellow);outline-offset:3px}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+</style>
+</head>
+<body><a id="skipLink" href="#mainContent" style="position:absolute;left:-999px;top:0;background:#8ab4ff;color:#020617;padding:10px;z-index:99999">Skip to main content</a>
+<main id="mainContent" class="wrap">
+<div class="top">
+ <div>
+  <h1>Ponder Invest <span class="ai">AI</span> Profit Ops</h1>
+  <div class="muted">Performance, AI decision feed, trade breakdown, exit reasons, and health score.</div>
+  <div><span class="pill">LIVE</span><span class="pill" id="healthPill">Health: --</span><span class="pill" id="updated">Updated: --</span></div>
+ </div>
+ <div><a href="/">Main Dashboard</a> · <a href="/profit">Profit Ops</a> · <a href="/history">History</a> · <a href="/logout">Logout</a></div>
+</div>
+
+<div class="grid">
+ <div class="card"><div class="label">AI Mood</div><div class="value blue" id="aiMood">--</div><div class="muted" id="aiMoodNote">Waiting for data</div></div>
+ <div class="card"><div class="label">Daily Goal</div><div class="value" id="dailyGoal">$0</div><div class="muted" id="goalProgress">0% progress</div><div class="barWrap" style="margin-top:10px"><div class="bar" id="goalBar"></div></div></div>
+ <div class="card"><div class="label">Accessibility</div><div class="value yellow">Ready</div><div class="muted">Keyboard friendly · high contrast · mobile responsive</div></div>
+ <div class="card"><div class="label">Security</div><div class="value good">Headers</div><div class="muted">Rate limit + browser security headers active</div></div>
+ <div class="card"><div class="label">Portfolio Value</div><div class="value" id="portfolio">$0</div><div class="muted" id="equityChange">$0 / 0%</div></div>
+ <div class="card"><div class="label">Buying Power</div><div class="value" id="buyingPower">$0</div><div class="muted">Available capital</div></div>
+ <div class="card"><div class="label">Open P/L</div><div class="value" id="openPl">$0</div><div class="muted">Unrealized</div></div>
+ <div class="card"><div class="label">Max Drawdown</div><div class="value" id="drawdown">0%</div><div class="muted">From equity history</div></div>
+ <div class="card"><div class="label">Closed Win Rate</div><div class="value" id="winRate">0%</div><div class="muted" id="winsLosses">0 wins · 0 losses</div></div>
+ <div class="card"><div class="label">Closed Net P/L</div><div class="value" id="netPnl">$0</div><div class="muted" id="closedTrades">0 closed trades</div></div>
+ <div class="card"><div class="label">Profit Factor</div><div class="value" id="profitFactor">0.00</div><div class="muted">Gross wins / losses</div></div>
+ <div class="card"><div class="label">Best / Worst</div><div class="value blue" id="bestWorst">- / -</div><div class="muted" id="bestWorstPnl">$0 / $0</div></div>
+</div>
+
+<div class="layout">
+ <div class="card"><h2 class="sectionTitle">Equity Curve</h2><div class="chartBox"><canvas id="equityChart"></canvas></div></div>
+ <div class="card"><h2 class="sectionTitle">AI Health Score</h2><div class="value" id="healthScore">--</div><div class="barWrap"><div class="bar" id="healthBar"></div></div><p class="muted" id="healthNote"></p><h2 class="sectionTitle">Event Counts</h2><table id="eventTable"></table></div>
+</div>
+
+<div class="layout2" style="margin-top:16px">
+ <div class="card"><h2 class="sectionTitle">Trade Breakdown by Symbol</h2><div class="miniChart"><canvas id="symbolChart"></canvas></div><div class="scroll"><table><thead><tr><th>Symbol</th><th>P/L</th><th>Trades</th><th>Wins</th><th>Losses</th><th>Win Rate</th></tr></thead><tbody id="symbolRows"></tbody></table></div></div>
+ <div class="card"><h2 class="sectionTitle">Exit Reason Tracking</h2><div class="miniChart"><canvas id="reasonChart"></canvas></div><table id="reasonRows"></table></div>
+</div>
+
+<div class="card" style="margin-top:16px"><h2 class="sectionTitle">Recent Trade Journal</h2><div class="scroll"><table><thead><tr><th>Time</th><th>Action</th><th>Symbol</th><th>Qty</th><th>Price</th><th>P/L</th><th>P/L %</th><th>Score</th><th>Reason</th></tr></thead><tbody id="tradeRows"></tbody></table></div></div>
+
+<div class="layout2" style="margin-top:16px">
+ <div class="card"><h2 class="sectionTitle">Live Decision Feed</h2><pre id="decisionFeed"></pre></div>
+ <div class="card"><h2 class="sectionTitle">Warnings / Errors</h2><pre id="warnings"></pre></div>
+</div>
+
+<div class="card" style="margin-top:16px"><h2 class="sectionTitle">Recent Bot Logs</h2><pre id="recentLogs"></pre></div>
+</main>
+
+<script>
+let equityChart=null,symbolChart=null,reasonChart=null;
+function money(x){let n=Number(x||0);return "$"+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
+function pct(x){return Number(x||0).toFixed(2)+"%"}
+function cls(x){return Number(x||0)>=0?"good":"bad"}
+function setClass(id,base,x){let e=document.getElementById(id);e.className=base+" "+cls(x)}
+function chart(obj,id,type,labels,datasets,options={}){
+ if(!obj){return new Chart(document.getElementById(id),{type:type,data:{labels:labels,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},...options}})}
+ obj.data.labels=labels;obj.data.datasets=datasets;obj.update();return obj;
+}
+async function load(){
+ let r=await fetch("/api/profit-ops",{cache:"no-store"}); if(!r.ok)return;
+ let d=await r.json(),l=d.latest||{},m=d.metrics||{},h=d.health||{},logs=d.logs||{},ui=d.ui||{};
+ document.getElementById("updated").textContent="Updated: "+(d.generated_at||"--");
+ let mood=(ui.mood||["--",""]);
+ let goals=ui.goals||{};
+ if(document.getElementById("aiMood")){
+   document.getElementById("aiMood").textContent=mood[0]||"--";
+   document.getElementById("aiMoodNote").textContent=mood[1]||"";
+   document.getElementById("dailyGoal").textContent=money(goals.current_total_pl||0)+" / "+money(goals.daily_goal||200);
+   document.getElementById("goalProgress").textContent=(goals.goal_progress_pct||0)+"% progress toward display goal";
+   document.getElementById("goalBar").style.width=(goals.goal_progress_pct||0)+"%";
+ }
+ document.getElementById("portfolio").textContent=money(l.portfolio_value);
+ document.getElementById("buyingPower").textContent=money(l.buying_power);
+ document.getElementById("openPl").textContent=money(l.open_pl);setClass("openPl","value",l.open_pl);
+ document.getElementById("drawdown").textContent=pct(d.drawdown);
+ document.getElementById("winRate").textContent=pct(m.win_rate);
+ document.getElementById("winsLosses").textContent=`${m.wins||0} wins · ${m.losses||0} losses`;
+ document.getElementById("netPnl").textContent=money(m.net_closed_pnl);setClass("netPnl","value",m.net_closed_pnl);
+ document.getElementById("closedTrades").textContent=`${m.closed_trades||0} closed trades · ${m.buys||0} buys`;
+ document.getElementById("profitFactor").textContent=Number(m.profit_factor||0).toFixed(2);
+ document.getElementById("bestWorst").textContent=`${m.best_symbol||"-"} / ${m.worst_symbol||"-"}`;
+ document.getElementById("bestWorstPnl").textContent=`${money(m.best_symbol_pnl)} / ${money(m.worst_symbol_pnl)}`;
+ document.getElementById("equityChange").textContent=`${money((d.equity_change||{}).dollar)} / ${pct((d.equity_change||{}).pct)}`;
+ document.getElementById("healthScore").textContent=(h.score??"--")+"/100";
+ document.getElementById("healthPill").textContent="AI Health: "+(h.score??"--")+"/100";
+ document.getElementById("healthNote").textContent=h.note||"";
+ document.getElementById("healthBar").style.width=(h.score||0)+"%";
+
+ let counts=logs.counts||{};
+ document.getElementById("eventTable").innerHTML="<tbody>"+Object.keys(counts).map(k=>`<tr><th>${k}</th><td>${counts[k]}</td></tr>`).join("")+"</tbody>";
+
+ let eq=d.equity||[];
+ equityChart=chart(equityChart,"equityChart","line",eq.map(x=>x.timestamp),[
+  {label:"Portfolio Value",data:eq.map(x=>x.portfolio_value),tension:.35,pointRadius:2},
+  {label:"Buying Power",data:eq.map(x=>x.buying_power),tension:.35,pointRadius:2},
+  {label:"Open P/L",data:eq.map(x=>x.open_pl),tension:.35,pointRadius:2,yAxisID:"y1"}
+ ],{scales:{x:{ticks:{maxTicksLimit:8}},y:{position:"left"},y1:{position:"right",grid:{drawOnChartArea:false}}}});
+
+ let syms=m.symbol_rows||[];
+ symbolChart=chart(symbolChart,"symbolChart","bar",syms.map(x=>x.symbol),[{label:"Closed P/L",data:syms.map(x=>x.pnl)}]);
+ document.getElementById("symbolRows").innerHTML=syms.map(x=>`<tr><td>${x.symbol}</td><td class="${cls(x.pnl)}">${money(x.pnl)}</td><td>${x.trades}</td><td>${x.wins}</td><td>${x.losses}</td><td>${pct(x.win_rate)}</td></tr>`).join("") || "<tr><td colspan='6'>No closed trades yet.</td></tr>";
+
+ let reasons=m.exit_reasons||[];
+ reasonChart=chart(reasonChart,"reasonChart","bar",reasons.map(x=>x.reason),[{label:"Exit Count",data:reasons.map(x=>x.count)}],{indexAxis:"y"});
+ document.getElementById("reasonRows").innerHTML="<tbody>"+(reasons.map(x=>`<tr><th>${x.reason}</th><td>${x.count}</td></tr>`).join("") || "<tr><td>No exits yet.</td></tr>")+"</tbody>";
+
+ document.getElementById("tradeRows").innerHTML=(d.recent_trades||[]).map(t=>`<tr><td>${t.timestamp||""}</td><td>${t.action||""}</td><td>${t.symbol||""}</td><td>${t.qty||""}</td><td>${t.price||""}</td><td class="${cls(t.pnl||t._pnl)}">${t.pnl||t._pnl||""}</td><td class="${cls(t.pnl_pct||t._pnl_pct)}">${t.pnl_pct||t._pnl_pct||""}</td><td>${t.score||""}</td><td>${t.reason||""}</td></tr>`).join("") || "<tr><td colspan='9'>No trade journal rows yet.</td></tr>";
+
+ document.getElementById("decisionFeed").textContent=(logs.decision_feed||[]).join("\\n") || "No recent confidence/scanner/buy-skip logs yet.";
+ document.getElementById("warnings").textContent=(logs.warnings||[]).join("\\n") || "No recent warnings.";
+ document.getElementById("recentLogs").textContent=(d.recent_logs||[]).join("\\n");
+}
+load();setInterval(load,10000);
+</script>
+</body>
+</html>
+""")

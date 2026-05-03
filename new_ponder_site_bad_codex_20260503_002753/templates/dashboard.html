@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>Dashboard</h1>
+    <p class="muted" id="lastUpdated">Loading live system state...</p>
+  </div>
+  <div class="status-pill" id="tradingState">Loading</div>
+</header>
+
+<section class="grid overview-grid" id="overviewCards"></section>
+
+<section class="split">
+  <article class="panel why-panel">
+    <div class="panel-head">
+      <h2>Why Not Trading</h2>
+      <span class="badge" id="marketTrend">Unknown</span>
+    </div>
+    <p class="reason" id="whyNotTrading">Loading...</p>
+    <p class="muted" id="lastSkipReason"></p>
+  </article>
+
+  <article class="panel">
+    <div class="panel-head">
+      <h2>Capital</h2>
+      <span class="badge" id="capitalMode">Unknown</span>
+    </div>
+    <div class="chart-wrap">
+      <svg id="capitalChart" viewBox="0 0 640 180" preserveAspectRatio="none"></svg>
+    </div>
+    <div class="metric-row">
+      <span>Portfolio <strong id="portfolioValue">--</strong></span>
+      <span>Open P/L <strong id="openPl">--</strong></span>
+      <span>Used <strong id="capitalUsed">--</strong></span>
+    </div>
+  </article>
+</section>
+
+<section class="grid detail-grid">
+  <article class="panel">
+    <div class="panel-head">
+      <h2>Scanner</h2>
+      <span class="badge" id="scannerCount">0</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Symbol</th><th>Score</th><th>Entry</th><th>Label</th></tr></thead>
+        <tbody id="scannerRows"></tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="panel">
+    <div class="panel-head">
+      <h2>Rotation</h2>
+      <span class="badge" id="rotationStatus">Research</span>
+    </div>
+    <div id="rotationCard" class="compact-stack"></div>
+  </article>
+
+  <article class="panel">
+    <div class="panel-head">
+      <h2>Sell Pressure</h2>
+      <span class="badge" id="sellPressure">--</span>
+    </div>
+    <div id="sellCard" class="compact-stack"></div>
+  </article>
+
+  <article class="panel">
+    <div class="panel-head">
+      <h2>Shadow Capital</h2>
+      <span class="badge" id="shadowConfidence">--</span>
+    </div>
+    <div id="shadowCard" class="compact-stack"></div>
+  </article>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>What Should I Do</h2>
+    <button type="button" onclick="copyDebug()">Copy Debug</button>
+  </div>
+  <ul id="actionItems" class="action-list"></ul>
+</section>
+{% endblock %}

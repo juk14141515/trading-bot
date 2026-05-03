@@ -1,0 +1,84 @@
+
+import csv, os
+from collections import defaultdict
+from datetime import datetime
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+TRADE_FILE = os.path.join(BASE_DIR, "trade_history.csv")
+EQUITY_FILE = os.path.join(BASE_DIR, "equity_history.csv")
+LOG_FILE = os.path.join(BASE_DIR, "log.txt")
+
+def f(x):
+    try: return float(x)
+    except: return 0.0
+
+def read_equity():
+    rows=[]
+    if not os.path.exists(EQUITY_FILE): return rows
+    with open(EQUITY_FILE) as fobj:
+        for r in csv.DictReader(fobj):
+            rows.append({
+                "timestamp": r.get("timestamp",""),
+                "portfolio_value": f(r.get("portfolio_value")),
+                "buying_power": f(r.get("buying_power")),
+                "open_pl": f(r.get("open_pl")),
+            })
+    return rows[-500:]
+
+def drawdown(eq):
+    vals=[x["portfolio_value"] for x in eq if x.get("portfolio_value")]
+    if not vals: return 0
+    peak=vals[0]; maxdd=0
+    for v in vals:
+        if v>peak: peak=v
+        dd=(peak-v)/peak if peak else 0
+        if dd>maxdd: maxdd=dd
+    return round(maxdd*100,2)
+
+def read_trades():
+    rows=[]
+    if not os.path.exists(TRADE_FILE): return rows
+    with open(TRADE_FILE) as fobj:
+        for r in csv.DictReader(fobj):
+            r["_pnl"]=f(r.get("pnl"))
+            r["_pnl_pct"]=f(r.get("pnl_pct"))
+            rows.append(r)
+    return rows[-500:]
+
+def metrics():
+    trades=read_trades()
+    sells=[t for t in trades if str(t.get("action")).upper()=="SELL"]
+
+    wins=[t for t in sells if t["_pnl"]>0]
+    losses=[t for t in sells if t["_pnl"]<=0]
+
+    total=sum(t["_pnl"] for t in sells)
+    winrate=(len(wins)/len(sells)*100) if sells else 0
+
+    bysym=defaultdict(float)
+    for t in sells:
+        bysym[t.get("symbol","UNK")]+=t["_pnl"]
+
+    best=max(bysym,key=bysym.get) if bysym else "-"
+    worst=min(bysym,key=bysym.get) if bysym else "-"
+
+    return {
+        "win_rate": round(winrate,2),
+        "net_pnl": round(total,2),
+        "wins": len(wins),
+        "losses": len(losses),
+        "best": best,
+        "worst": worst
+    }
+
+def snapshot():
+    eq=read_equity()
+    tr=read_trades()
+    m=metrics()
+    return {
+        "latest": eq[-1] if eq else {},
+        "equity": eq,
+        "metrics": m,
+        "drawdown": drawdown(eq),
+        "trades": tr[-50:]
+    }

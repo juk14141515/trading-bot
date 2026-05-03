@@ -1,0 +1,1256 @@
+
+import os
+from datetime import date
+from learning_shadow import summarize_learning, summarize_learning_performance
+from flask import Blueprint, jsonify, render_template_string
+import alpaca_trade_api as tradeapi
+from profit_ops_analytics import snapshot
+
+profit_lab_bp = Blueprint("profit_lab", __name__)
+
+def get_positions_safe():
+    try:
+        key = os.getenv("APCA_API_KEY_ID")
+        secret = os.getenv("APCA_API_SECRET_KEY")
+        base_url = os.getenv("BASE_URL") or os.getenv("APCA_API_BASE_URL") or "https://paper-api.alpaca.markets"
+        if not key or not secret:
+            return []
+        api = tradeapi.REST(key, secret, base_url, api_version="v2")
+        rows = []
+        for p in api.list_positions():
+            rows.append({
+                "symbol": p.symbol,
+                "qty": float(p.qty),
+                "entry_price": float(p.avg_entry_price),
+                "current_price": float(p.current_price),
+                "market_value": float(p.market_value),
+                "unrealized_pl": float(p.unrealized_pl),
+                "unrealized_plpc": round(float(p.unrealized_plpc) * 100, 2),
+            })
+        return rows
+    except Exception as e:
+        return [{"symbol":"ERROR","qty":0,"entry_price":0,"current_price":0,"market_value":0,"unrealized_pl":0,"unrealized_plpc":0,"error":str(e)}]
+
+def build_replay(logs):
+    rows = []
+    for line in logs[-150:]:
+        label = None
+        tone = "neutral"
+        if "BUY DECISION" in line:
+            label, tone = "BUY", "good"
+        elif "SKIP BUY" in line:
+            label, tone = "SKIP", "warn"
+        elif "CONFIDENCE" in line:
+            label, tone = "CONFIDENCE", "info"
+        elif "SCANNER" in line:
+            label, tone = "SCANNER", "info"
+        elif "ROTATION" in line:
+            label, tone = "ROTATION", "warn"
+        elif "SELL" in line:
+            label, tone = "SELL", "bad"
+        elif "TRADE GUARD" in line or "FORCE EXIT" in line:
+            label, tone = "GUARD", "bad"
+        if label:
+            rows.append({"label":label,"tone":tone,"line":line})
+    return rows[-80:]
+
+def build_candidates(logs):
+    rows = []
+    for line in logs[-200:]:
+        u = line.upper()
+        if not any(k in u for k in ["CONFIDENCE","BUY DECISION","SKIP BUY","SCANNER","CANDIDATE"]):
+            continue
+        reason = "observed"
+        if "market closed" in line.lower():
+            reason = "market closed"
+        elif "max positions" in line.lower():
+            reason = "slots full"
+        elif "threshold" in line.lower():
+            reason = "below threshold"
+        elif "rotation" in line.lower():
+            reason = "rotation check"
+        symbol = "-"
+        score = "-"
+        for part in line.replace("|"," ").replace(","," ").split():
+            clean = part.strip().upper()
+            if clean.isalpha() and 1 <= len(clean) <= 5 and clean not in ["BUY","SELL","SKIP","NEW","CYCLE","MARKET","CLOSED","SCANNER","CONFIDENCE","DECISION"]:
+                symbol = clean
+                break
+            if "score=" in part.lower() or "confidence=" in part.lower():
+                score = part.split("=")[-1]
+        rows.append({"symbol":symbol,"score":score,"reason":reason,"line":line})
+    return rows[-40:]
+
+
+
+
+
+ROTATION_STATE_FILE = "/home/ubuntu/trading-bot/rotation_engine_state.json"
+
+def build_rotation_engine_v1(s, positions):
+    import json, time, os
+
+    metrics = s.get("metrics") or {}
+    latest = s.get("latest") or {}
+    closed = int(metrics.get("closed_trades") or 0)
+    win_rate = float(metrics.get("win_rate") or 0)
+    open_pl = float(latest.get("open_pl") or 0)
+    positions = positions or []
+
+    def pl(p):
+        return float(p.get("unrealized_pl") or p.get("open_pl") or p.get("pnl") or 0)
+
+    def plpc(p):
+        return float(p.get("unrealized_plpc") or p.get("pl_pct") or p.get("pnl_pct") or 0)
+
+    try:
+        with open(ROTATION_STATE_FILE, "r") as f:
+            state_cache = json.load(f)
+    except Exception:
+        state_cache = {}
+
+    now = time.time()
+
+    if not positions:
+        return {
+            "score": 0,
+            "score_trend": "flat",
+            "confidence": 0,
+            "state": "IDLE",
+            "pressure": "LOW",
+            "readiness": "NOT READY",
+            "readiness_score": min(100, int((closed / 20) * 100)),
+            "decision": "WAIT",
+            "weakest": "-",
+            "weakest_pnl": 0,
+            "weakest_pnl_pct": 0,
+            "best_offset": "-",
+            "best_offset_pnl": 0,
+            "best_offset_pnl_pct": 0,
+            "decay": "none",
+            "suggested_move": "No open positions to evaluate.",
+            "reason": "Rotation engine is observing only."
+        }
+
+    weakest = sorted(positions, key=lambda p: plpc(p))[0]
+    strongest = sorted(positions, key=lambda p: plpc(p))[-1]
+
+    weakest_symbol = weakest.get("symbol", "-")
+    weakest_pl = pl(weakest)
+    weakest_pct = plpc(weakest)
+
+    losers = [p for p in positions if pl(p) < 0]
+    winners = [p for p in positions if pl(p) > 0]
+
+    rec = state_cache.get(weakest_symbol, {})
+    prev_score = float(rec.get("last_score", 0))
+    prev_pl = float(rec.get("last_pl", weakest_pl))
+    losing_since = rec.get("losing_since")
+
+    if weakest_pl < 0:
+        if not losing_since:
+            losing_since = now
+    else:
+        losing_since = None
+
+    losing_seconds = now - losing_since if losing_since else 0
+
+    severity = min(40, abs(min(weakest_pct, 0)) * 8)
+    dollar_drag = min(25, abs(min(weakest_pl, 0)) / 35)
+    portfolio_drag = min(15, abs(min(open_pl, 0)) / 40)
+    mix_drag = 10 if len(losers) > len(winners) else 0
+    decay_drag = min(10, losing_seconds / 3600 * 4)
+
+    score = int(min(100, severity + dollar_drag + portfolio_drag + mix_drag + decay_drag))
+
+    if score > prev_score + 3:
+        score_trend = "rising"
+    elif score < prev_score - 3:
+        score_trend = "cooling"
+    else:
+        score_trend = "flat"
+
+    if weakest_pl < prev_pl - 10:
+        decay = "worsening"
+    elif weakest_pl > prev_pl + 10:
+        decay = "improving"
+    elif weakest_pl < 0:
+        decay = "stale loss"
+    else:
+        decay = "healthy"
+
+    readiness_score = min(100, int((closed / 20) * 80 + (win_rate / 100) * 20))
+    readiness = "READY TO REVIEW" if closed >= 15 else "NOT READY"
+
+    confidence = int(min(95, score * 0.65 + readiness_score * 0.25 + (10 if score_trend == "rising" else 0)))
+
+    if score >= 75:
+        engine_state = "ROTATION PRESSURE"
+        pressure = "HIGH"
+    elif score >= 50:
+        engine_state = "WATCH"
+        pressure = "MEDIUM"
+    else:
+        engine_state = "HOLD"
+        pressure = "LOW"
+
+    if readiness != "READY TO REVIEW":
+        decision = "DO NOT ROTATE"
+        suggested = "Suggestion-only. Need 15–20 closed trades before automation."
+    elif score >= 75 and confidence >= 70:
+        decision = "REVIEW ROTATION"
+        suggested = "Rotation pressure is high. Review manually before execution."
+    elif score >= 50:
+        decision = "WATCH"
+        suggested = "Monitor weakest position. Pressure is building."
+    else:
+        decision = "HOLD"
+        suggested = "Rotation pressure is low."
+
+    state_cache[weakest_symbol] = {
+        "last_score": score,
+        "last_pl": weakest_pl,
+        "last_seen": now,
+        "losing_since": losing_since
+    }
+
+    try:
+        with open(ROTATION_STATE_FILE, "w") as f:
+            json.dump(state_cache, f)
+    except Exception:
+        pass
+
+    def fmt_time(sec):
+        sec = int(max(0, sec))
+        h = sec // 3600
+        m = (sec % 3600) // 60
+        return f"{h}h {m}m" if h else f"{m}m"
+
+    return {
+        "score": score,
+        "score_trend": score_trend,
+        "confidence": confidence,
+        "state": engine_state,
+        "pressure": pressure,
+        "readiness": readiness,
+        "readiness_score": readiness_score,
+        "decision": decision,
+        "weakest": weakest_symbol,
+        "weakest_pnl": round(weakest_pl, 2),
+        "weakest_pnl_pct": round(weakest_pct, 2),
+        "best_offset": strongest.get("symbol", "-"),
+        "best_offset_pnl": round(pl(strongest), 2),
+        "best_offset_pnl_pct": round(plpc(strongest), 2),
+        "decay": decay,
+        "losing_for": fmt_time(losing_seconds),
+        "suggested_move": suggested,
+        "reason": f"{weakest_symbol} is weakest at {weakest_pct:.2f}% / ${weakest_pl:.2f}. {len(winners)} winners / {len(losers)} losers. Pressure trend is {score_trend}; decay is {decay}."
+    }
+
+
+def lab_snapshot():
+    s = snapshot()
+    logs = s.get("recent_logs", [])
+    today = date.today().isoformat()
+    trades = s.get("recent_trades", [])
+
+    todays = [t for t in trades if str(t.get("timestamp","")).startswith(today)]
+    sells = [t for t in todays if str(t.get("action","")).upper() == "SELL"]
+    buys = [t for t in todays if str(t.get("action","")).upper() == "BUY"]
+
+    net = 0
+    wins = 0
+    losses = 0
+    for t in sells:
+        pnl = float(t.get("pnl") or t.get("_pnl") or 0)
+        net += pnl
+        if pnl > 0:
+            wins += 1
+        else:
+            losses += 1
+
+    s["lab"] = {
+        "today": today,
+        "buys_today": len(buys),
+        "sells_today": len(sells),
+        "net_today": round(net, 2),
+        "wins_today": wins,
+        "losses_today": losses,
+        "win_rate_today": round((wins / len(sells) * 100), 2) if sells else 0,
+        "positions": get_positions_safe(),
+        "learning_shadow": summarize_learning(),
+        "learning_performance": summarize_learning_performance(),
+        "rotation_engine": build_rotation_engine_v1(s, get_positions_safe()),
+        "decision_replay": build_replay(logs),
+        "candidate_feed": build_candidates(logs),
+    }
+    return s
+
+@profit_lab_bp.route("/api/profit-lab")
+def api_profit_lab():
+    return jsonify(lab_snapshot())
+
+@profit_lab_bp.route("/profit-lab")
+def profit_lab():
+    return render_template_string("""
+<!doctype html>
+<html>
+<head>
+<title>Ponder Profit Lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{--bg:#070b18;--card:#111827;--border:#26334f;--muted:#a8b3c7;--green:#7cff9b;--red:#ff6f91;--blue:#8ab4ff;--yellow:#ffe86b}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at top left,#123322 0,#0b1024 35%,#050816 100%);color:white;font-family:Arial,sans-serif}
+.wrap{max-width:1450px;margin:auto;padding:28px}
+.top{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+h1{font-size:36px;margin:0 0 6px}.ai{color:var(--green)}a{color:var(--blue);text-decoration:none}.muted{color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin:18px 0}
+.card{background:linear-gradient(180deg,rgba(21,29,50,.96),rgba(11,17,34,.96));border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 15px 35px rgba(0,0,0,.22)}
+.label{color:var(--muted);font-size:13px;font-weight:700}.value{font-size:28px;font-weight:900;margin-top:8px}
+.good{color:var(--green)}.bad{color:var(--red)}.warn{color:var(--yellow)}.info{color:var(--blue)}
+.chartBox{height:340px}
+.layout{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px;border-bottom:1px solid var(--border);text-align:left}th{color:var(--blue)}
+pre,.replay{white-space:pre-wrap;word-break:break-word;max-height:310px;overflow:auto;font-size:12px;line-height:1.35}
+.chip{display:inline-block;border-radius:999px;padding:3px 8px;margin-right:8px;font-weight:900;font-size:11px}
+.chip.good{background:rgba(124,255,155,.12);color:var(--green)}.chip.bad{background:rgba(255,111,145,.12);color:var(--red)}.chip.warn{background:rgba(255,232,107,.12);color:var(--yellow)}.chip.info{background:rgba(138,180,255,.12);color:var(--blue)}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.wrap{padding:16px}h1{font-size:28px}.chartBox{height:280px}}
+
+/* PONDER_UI_FIX_ROUTES_V1 */
+body{
+  overflow-x:hidden!important;
+}
+.sidebar::after{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:230px;
+  background:rgba(5,10,24,.96);
+  z-index:-1;
+}
+.sidebar{
+  isolation:isolate;
+}
+
+
+/* =========================
+   PONDER PRO V1 UI SYSTEM
+   UI-only. No trading logic.
+========================= */
+:root{
+  --pp-bg:#050914;
+  --pp-panel:#111a30;
+  --pp-panel2:#0d1528;
+  --pp-border:#263a63;
+  --pp-text:#f4f7ff;
+  --pp-muted:#aab6d3;
+  --pp-accent:#8ab4ff;
+  --pp-good:#7dff9b;
+  --pp-warn:#ffe66d;
+  --pp-bad:#ff6b8a;
+  --pp-radius:22px;
+  --pp-speed:220ms;
+}
+
+html{scroll-behavior:smooth}
+body{
+  background:
+    radial-gradient(circle at top left, rgba(51,255,153,.12), transparent 32%),
+    radial-gradient(circle at top right, rgba(138,180,255,.10), transparent 30%),
+    var(--pp-bg)!important;
+  color:var(--pp-text)!important;
+  transition:background var(--pp-speed), color var(--pp-speed);
+}
+
+.card, .panel, .metric, .box, .tile{
+  border-radius:var(--pp-radius)!important;
+  border:1px solid var(--pp-border)!important;
+  background:linear-gradient(180deg, rgba(17,26,48,.96), rgba(10,16,31,.96))!important;
+  box-shadow:0 18px 45px rgba(0,0,0,.28)!important;
+  transition:transform var(--pp-speed), border-color var(--pp-speed), box-shadow var(--pp-speed);
+}
+
+.card:hover, .panel:hover, .metric:hover, .box:hover, .tile:hover{
+  transform:translateY(-2px);
+  border-color:rgba(138,180,255,.65)!important;
+  box-shadow:0 22px 55px rgba(0,0,0,.36)!important;
+}
+
+.value{
+  letter-spacing:.02em;
+  transition:color var(--pp-speed), transform var(--pp-speed);
+}
+
+.good{color:var(--pp-good)!important}
+.bad{color:var(--pp-bad)!important}
+.warn{color:var(--pp-warn)!important}
+.muted,.label{color:var(--pp-muted)!important}
+
+a, button{
+  transition:transform var(--pp-speed), opacity var(--pp-speed), background var(--pp-speed), border-color var(--pp-speed);
+}
+button:hover, a:hover{transform:translateY(-1px)}
+
+.pp-live-pill{
+  position:fixed;
+  top:14px;
+  right:18px;
+  z-index:9999;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 14px;
+  border-radius:999px;
+  background:rgba(12,20,38,.88);
+  border:1px solid var(--pp-border);
+  backdrop-filter:blur(14px);
+  font-weight:900;
+  color:var(--pp-text);
+  box-shadow:0 16px 40px rgba(0,0,0,.35);
+}
+
+.pp-dot{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:var(--pp-good);
+  box-shadow:0 0 0 0 rgba(125,255,155,.65);
+  animation:ppPulse 1.8s infinite;
+}
+
+@keyframes ppPulse{
+  0%{box-shadow:0 0 0 0 rgba(125,255,155,.55)}
+  70%{box-shadow:0 0 0 12px rgba(125,255,155,0)}
+  100%{box-shadow:0 0 0 0 rgba(125,255,155,0)}
+}
+
+.pp-settings{
+  position:fixed;
+  right:18px;
+  bottom:92px;
+  z-index:9999;
+  width:320px;
+  max-width:calc(100vw - 30px);
+  border-radius:22px;
+  border:1px solid var(--pp-border);
+  background:rgba(8,14,28,.95);
+  backdrop-filter:blur(18px);
+  box-shadow:0 24px 65px rgba(0,0,0,.42);
+  padding:16px;
+  display:none;
+}
+
+.pp-settings.open{display:block; animation:ppFadeIn .22s ease}
+@keyframes ppFadeIn{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)}}
+
+.pp-settings h3{
+  margin:0 0 10px 0;
+  font-size:18px;
+}
+
+.pp-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:9px 0;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+
+.pp-row label{font-weight:800;color:var(--pp-text)}
+.pp-row small{display:block;color:var(--pp-muted);font-size:11px;margin-top:2px}
+
+.pp-toggle{
+  cursor:pointer;
+  border:1px solid var(--pp-border);
+  border-radius:999px;
+  padding:7px 10px;
+  background:#101a31;
+  color:var(--pp-text);
+  font-weight:900;
+  min-width:72px;
+}
+
+.pp-gear{
+  position:fixed;
+  right:18px;
+  bottom:34px;
+  z-index:9999;
+  border:1px solid var(--pp-border);
+  background:linear-gradient(180deg,#172542,#10182d);
+  color:white;
+  border-radius:999px;
+  width:48px;
+  height:48px;
+  font-size:22px;
+  box-shadow:0 18px 45px rgba(0,0,0,.38);
+  cursor:pointer;
+}
+
+.pp-focus .muted,
+.pp-focus table,
+.pp-focus .decisionReplay,
+.pp-focus #decisionReplay{
+  font-size:.92em;
+}
+
+.pp-focus .card:not(:has(#rotScore)):not(:has(#ponderQuestion)):not(:has(#perfStatus)):not(:has(#positions)){
+  opacity:.82;
+}
+
+.pp-colorblind .good::before{content:"▲ "; color:currentColor}
+.pp-colorblind .bad::before{content:"▼ "; color:currentColor}
+.pp-colorblind .warn::before{content:"⚠ "; color:currentColor}
+
+.pp-highcontrast{
+  --pp-bg:#000;
+  --pp-panel:#07111f;
+  --pp-panel2:#020817;
+  --pp-border:#7aa2ff;
+  --pp-text:#ffffff;
+  --pp-muted:#d7e1ff;
+  --pp-accent:#ffffff;
+  --pp-good:#b7ffce;
+  --pp-warn:#fff176;
+  --pp-bad:#ff9cb0;
+}
+
+.pp-theme-ponder{
+  --pp-bg:#070711;
+  --pp-panel:#151226;
+  --pp-panel2:#100e1d;
+  --pp-border:#5d4a7e;
+  --pp-accent:#d9b8ff;
+  --pp-good:#9cffb5;
+  --pp-warn:#ffe082;
+  --pp-bad:#ff7fa3;
+}
+
+.pp-theme-terminal{
+  --pp-bg:#020703;
+  --pp-panel:#07140b;
+  --pp-panel2:#051007;
+  --pp-border:#1d7b3a;
+  --pp-accent:#72ff9d;
+  --pp-good:#72ff9d;
+  --pp-warn:#fff176;
+  --pp-bad:#ff6b6b;
+}
+
+.pp-reduced-motion *,
+.pp-reduced-motion *::before,
+.pp-reduced-motion *::after{
+  animation:none!important;
+  transition:none!important;
+  scroll-behavior:auto!important;
+}
+
+@media(max-width:800px){
+  .pp-live-pill{top:auto;bottom:88px;right:14px;font-size:12px}
+  .pp-settings{right:12px;bottom:86px}
+}
+
+
+/* =========================
+   PONDER PRO V2 ALL PAGES
+   UI-only. No trading logic.
+========================= */
+
+/* Move live badge below nav so it does not cover page links */
+.pp-live-pill{
+  top:86px!important;
+  right:22px!important;
+}
+
+/* Better spacing for top right nav/links */
+nav, .nav, .topnav, .links{
+  padding-right:180px!important;
+}
+
+/* App polish */
+body{
+  overflow-x:hidden!important;
+}
+
+.card, .panel, .metric, .box, .tile{
+  position:relative;
+  overflow:hidden;
+}
+
+.card::after, .panel::after, .metric::after, .box::after, .tile::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  border-radius:inherit;
+  background:linear-gradient(135deg,rgba(255,255,255,.045),transparent 35%);
+  opacity:.55;
+}
+
+/* Fix giant overflow text in learning/event panels */
+#learnTop,
+#learnStatus,
+#perfStatus,
+#perfBest,
+#perfWorst{
+  font-size:clamp(18px,2vw,28px)!important;
+  line-height:1.15!important;
+  word-break:break-word!important;
+  overflow-wrap:anywhere!important;
+  max-width:100%!important;
+}
+
+/* Tables become app-like */
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+tr{
+  transition:background .18s ease, transform .18s ease;
+}
+
+tbody tr:hover{
+  background:rgba(138,180,255,.08)!important;
+}
+
+/* Better scrollbar */
+::-webkit-scrollbar{
+  width:10px;
+  height:10px;
+}
+::-webkit-scrollbar-track{
+  background:#050914;
+}
+::-webkit-scrollbar-thumb{
+  background:#2a3f69;
+  border-radius:999px;
+}
+::-webkit-scrollbar-thumb:hover{
+  background:#45629e;
+}
+
+/* Floating app tool dock */
+.pp-tool-dock{
+  position:fixed;
+  right:22px;
+  top:136px;
+  z-index:9998;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.pp-mini-btn{
+  border:1px solid var(--pp-border,#263a63);
+  background:rgba(12,20,38,.9);
+  color:white;
+  border-radius:14px;
+  width:42px;
+  height:42px;
+  cursor:pointer;
+  box-shadow:0 14px 35px rgba(0,0,0,.32);
+  backdrop-filter:blur(12px);
+}
+
+.pp-mini-btn:hover{
+  transform:translateY(-2px) scale(1.03);
+}
+
+/* Cleaner mobile */
+@media(max-width:900px){
+  .pp-live-pill{
+    top:auto!important;
+    bottom:88px!important;
+    right:14px!important;
+  }
+
+  .pp-tool-dock{
+    top:auto!important;
+    right:14px!important;
+    bottom:150px!important;
+  }
+
+  nav, .nav, .topnav, .links{
+    padding-right:0!important;
+  }
+
+  .card, .panel, .metric, .box, .tile{
+    border-radius:18px!important;
+  }
+}
+
+/* Focus mode: hide secondary clutter more safely */
+.pp-focus .muted{
+  opacity:.82;
+}
+
+.pp-focus table tbody tr:nth-child(n+8){
+  display:none;
+}
+
+/* Colorblind mode stronger labels */
+.pp-colorblind .good,
+.pp-colorblind .bad,
+.pp-colorblind .warn{
+  font-weight:900!important;
+}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Ponder Invest <span class="ai">AI</span> Profit Lab</h1>
+      <div class="muted">Clean experimental analytics page. Safe from the stable Profit Ops dashboard.</div>
+    </div>
+    <div><a href="/">Main</a> · <a href="/profit">Profit Ops</a> · <a href="/profit-lab">Profit Lab</a></div>
+  </div>
+
+  <div class="grid">
+    <div class="card"><div class="label">Today P/L</div><div id="todayPnl" class="value">$0</div><div id="todayStats" class="muted">0 buys · 0 sells</div></div>
+    <div class="card"><div class="label">Today Win Rate</div><div id="todayWin" class="value">0%</div><div id="todayWL" class="muted">0 wins · 0 losses</div></div>
+    <div class="card"><div class="label">AI Health</div><div id="health" class="value info">--</div><div id="healthNote" class="muted">Waiting</div></div>
+    <div class="card"><div class="label">Open P/L</div><div id="openPl" class="value">$0</div><div class="muted">Unrealized</div></div>
+  </div>
+
+  <div class="card">
+    <h2>Equity Lab Chart</h2>
+    <div class="chartBox"><canvas id="chart"></canvas></div>
+  </div>
+
+  
+  <div class="card" style="margin-top:16px">
+    <h2>🧠 Rotation Engine v1</h2>
+    <div class="grid">
+      <div><div class="label">Score</div><div id="rotScore" class="value">--</div></div>
+      <div><div class="label">State</div><div id="rotState" class="value">--</div></div>
+      <div><div class="label">Pressure</div><div id="rotPressure" class="value">--</div></div>
+      <div><div class="label">Readiness</div><div id="rotReadiness" class="value">--</div></div>
+      <div><div class="label">Confidence</div><div id="rotConfidence" class="value">--</div></div>
+      <div><div class="label">Trend</div><div id="rotTrend" class="value">--</div></div>
+      <div><div class="label">Decay</div><div id="rotDecay" class="value">--</div></div>
+    </div>
+    <div style="margin-top:14px" class="muted" id="rotDetails">Waiting for rotation engine...</div>
+    <div class="label" style="margin-top:12px">Decision</div><div id="rotDecision" class="value">--</div><div style="margin-top:8px;font-weight:900" id="rotMove">No action.</div>
+  </div>
+
+  
+  <div class="card" style="margin-top:16px">
+    <h2>🐾 Ponder Brain</h2>
+    <div id="ponderSummary" class="muted">Ponder is reading the graph...</div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button onclick="askPonder('graph')">What does the graph mean?</button>
+      <button onclick="askPonder('risk')">How risky is this?</button>
+      <button onclick="askPonder('positions')">Which position is weakest?</button>
+      <button onclick="askPonder('suggest')">Any suggestions?</button>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <input id="ponderQuestion" placeholder="Ask Ponder about the graph, risk, positions, or strategy..." style="flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:#0b1225;color:white">
+      <button onclick="askPonder()">Ask</button>
+    </div>
+    <pre id="ponderAnswer" style="margin-top:12px;white-space:pre-wrap;max-height:220px;overflow:auto">Ask me something like: “Why is the graph down?” or “What should I watch tomorrow?”</pre>
+  </div>
+
+  
+  <div class="card" style="margin-top:16px">
+    <h2>📊 Learning v2 Performance</h2>
+    <div class="muted">Performance tracking from shadow memory. Read-only.</div>
+    <div class="grid" style="margin-top:12px">
+      <div><div class="label">Status</div><div id="perfStatus" class="value warn">Collecting</div></div>
+      <div><div class="label">Closed Trades</div><div id="perfClosed" class="value">0</div></div>
+      <div><div class="label">Win Rate</div><div id="perfWinRate" class="value">0%</div></div>
+      <div><div class="label">Shadow P/L</div><div id="perfPnl" class="value">$0.00</div></div>
+    </div>
+    <div class="grid" style="margin-top:12px">
+      <div><div class="label">Buy Decisions</div><div id="perfBuys" class="value">0</div></div>
+      <div><div class="label">Skips</div><div id="perfSkips" class="value">0</div></div>
+      <div><div class="label">Best Symbol</div><div id="perfBest" class="value">-</div></div>
+      <div><div class="label">Worst Symbol</div><div id="perfWorst" class="value">-</div></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>🧪 Learning Shadow Mode</h2>
+    <div class="muted">Logs decisions and outcomes only. Does not control trades.</div>
+    <div class="grid" style="margin-top:12px">
+      <div><div class="label">Mode</div><div class="value good">Shadow</div></div>
+      <div><div class="label">Events Logged</div><div id="learnTotal" class="value">--</div></div>
+      <div><div class="label">Top Event</div><div id="learnTop" class="value">--</div></div>
+      <div><div class="label">Learning Status</div><div id="learnStatus" class="value warn">Collecting</div></div>
+    </div>
+    <table style="margin-top:12px">
+      <thead><tr><th>Time</th><th>Event</th><th>Symbol</th><th>Score</th><th>Reason</th></tr></thead>
+      <tbody id="learningRows"></tbody>
+    </table>
+  </div>
+
+  <div class="layout">
+    <div class="card">
+      <h2>Decision Replay</h2>
+      <div id="decisionReplay" class="replay">Loading...</div>
+    </div>
+
+    <div class="card">
+      <h2>Candidate Feed</h2>
+      <table>
+        <thead><tr><th>Symbol</th><th>Score</th><th>Reason</th></tr></thead>
+        <tbody id="candidateFeed"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Live Positions</h2>
+      <table>
+        <thead><tr><th>Symbol</th><th>Qty</th><th>Open P/L</th><th>P/L %</th></tr></thead>
+        <tbody id="positions"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let chart=null;
+let lastProfitLabData=null;
+function money(x){let n=Number(x||0);return "$"+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
+function pct(x){return Number(x||0).toFixed(2)+"%"}
+function cls(x){return Number(x||0)>=0?"good":"bad"}
+
+async function load(){
+  const r=await fetch("/api/profit-lab",{cache:"no-store"});
+  if(!r.ok)return;
+  const d=await r.json();
+  lastProfitLabData=d;
+  const l=d.latest||{}, lab=d.lab||{}, h=d.health||{}, logs=d.logs||{}, eq=d.equity||[];
+
+  document.getElementById("todayPnl").textContent=money(lab.net_today);
+  document.getElementById("todayPnl").className="value "+cls(lab.net_today);
+  document.getElementById("todayStats").textContent=`${lab.buys_today||0} buys · ${lab.sells_today||0} sells`;
+  document.getElementById("todayWin").textContent=pct(lab.win_rate_today);
+  document.getElementById("todayWL").textContent=`${lab.wins_today||0} wins · ${lab.losses_today||0} losses`;
+  document.getElementById("health").textContent=(h.score??"--")+"/100";
+  document.getElementById("healthNote").textContent=h.note||"";
+  document.getElementById("openPl").textContent=money(l.open_pl);
+  document.getElementById("openPl").className="value "+cls(l.open_pl);
+
+  const labels=eq.map(x=>x.timestamp);
+  const datasets=[
+    {label:"Portfolio Value",data:eq.map(x=>x.portfolio_value),tension:.35,pointRadius:2},
+    {label:"Open P/L",data:eq.map(x=>x.open_pl),tension:.35,pointRadius:2,yAxisID:"y1"}
+  ];
+  const options={responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},scales:{x:{ticks:{maxTicksLimit:8}},y:{position:"left"},y1:{position:"right",grid:{drawOnChartArea:false}}}};
+  if(!chart){chart=new Chart(document.getElementById("chart"),{type:"line",data:{labels,datasets},options});}
+  else{chart.data.labels=labels;chart.data.datasets=datasets;chart.update();}
+
+  const engine=lab.rotation_engine||{};
+  const rotScore=document.getElementById("rotScore");
+  if(rotScore){
+    rotScore.textContent=(engine.score ?? "--") + "/100";
+    rotScore.className="value " + ((engine.score||0)>=70 ? "bad" : (engine.score||0)>=45 ? "warn" : "good");
+    document.getElementById("rotState").textContent=engine.state||"--";
+    document.getElementById("rotPressure").textContent=engine.pressure||"--";
+    document.getElementById("rotReadiness").textContent=(engine.readiness||"--") + " (" + (engine.readiness_score ?? 0) + "/100)";
+    if(document.getElementById("rotConfidence")) document.getElementById("rotConfidence").textContent=(engine.confidence ?? 0) + "%";
+    if(document.getElementById("rotTrend")) document.getElementById("rotTrend").textContent=engine.score_trend||"--";
+    if(document.getElementById("rotDecay")) document.getElementById("rotDecay").textContent=(engine.decay||"--") + " · " + (engine.losing_for||"0m");
+    document.getElementById("rotDetails").textContent=`Weakest: ${engine.weakest||"-"} (${money(engine.weakest_pnl||0)} / ${pct(engine.weakest_pnl_pct||0)}) · Best Offset: ${engine.best_offset||"-"} (${money(engine.best_offset_pnl||0)} / ${pct(engine.best_offset_pnl_pct||0)})`;
+    document.getElementById("rotDecision").textContent=engine.decision||"--";
+    document.getElementById("rotDecision").className="value " + ((engine.decision||"").includes("DO NOT") ? "warn" : (engine.decision||"").includes("REVIEW") ? "bad" : "good");
+    document.getElementById("rotMove").textContent=(engine.suggested_move||"Keep monitoring.") + " " + (engine.reason||"");
+  }
+
+  document.getElementById("decisionReplay").innerHTML=(lab.decision_replay||[]).map(x=>`
+    <div style="padding:7px 0;border-bottom:1px solid rgba(255,255,255,.08)">
+      <span class="chip ${x.tone||'info'}">${x.label||'LOG'}</span>${x.line||''}
+    </div>
+  `).join("") || "No decision replay yet.";
+
+  document.getElementById("candidateFeed").innerHTML=(lab.candidate_feed||[]).map(x=>`
+    <tr><td>${x.symbol||"-"}</td><td>${x.score||"-"}</td><td>${x.reason||"-"}</td></tr>
+  `).join("") || "<tr><td colspan='3'>No candidates yet.</td></tr>";
+
+  const perf=lab.learning_performance||{};
+  if(document.getElementById("perfStatus")){
+    document.getElementById("perfStatus").textContent=perf.status||"Collecting";
+    document.getElementById("perfClosed").textContent=perf.closed_trades ?? 0;
+    document.getElementById("perfWinRate").textContent=(perf.win_rate ?? 0)+"%";
+    document.getElementById("perfPnl").textContent=money(perf.total_pnl||0);
+    document.getElementById("perfPnl").className="value "+cls(perf.total_pnl||0);
+    document.getElementById("perfBuys").textContent=perf.buy_decisions ?? 0;
+    document.getElementById("perfSkips").textContent=perf.skips ?? 0;
+    document.getElementById("perfBest").textContent=perf.best_symbol||"-";
+    document.getElementById("perfWorst").textContent=perf.worst_symbol||"-";
+  }
+
+  const learn=lab.learning_shadow||{};
+  if(document.getElementById("learnTotal")){
+    const counts=learn.counts||{};
+    const top=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+    document.getElementById("learnTotal").textContent=learn.total ?? 0;
+    document.getElementById("learnTop").textContent=top ? `${top[0]} (${top[1]})` : "--";
+    document.getElementById("learnStatus").textContent=(learn.total||0) >= 20 ? "Enough samples soon" : "Collecting";
+    document.getElementById("learningRows").innerHTML=(learn.rows||[]).slice(-12).reverse().map(r=>`
+      <tr>
+        <td>${r.timestamp||""}</td>
+        <td>${r.event||""}</td>
+        <td>${r.symbol||""}</td>
+        <td>${r.score||""}</td>
+        <td>${r.reason||""}</td>
+      </tr>
+    `).join("") || "<tr><td colspan='5'>No learning events yet.</td></tr>";
+  }
+
+  document.getElementById("positions").innerHTML=(lab.positions||[]).map(p=>`
+    <tr>
+      <td>${p.symbol||""}</td>
+      <td>${Number(p.qty||0).toFixed(2)}</td>
+      <td class="${cls(p.unrealized_pl)}">${money(p.unrealized_pl)}</td>
+      <td class="${cls(p.unrealized_plpc)}">${pct(p.unrealized_plpc)}</td>
+    </tr>
+  `).join("") || "<tr><td colspan='4'>No open positions.</td></tr>";
+}
+
+function ponderInsight(d){
+  if(!d) return "No data loaded yet.";
+  const l=d.latest||{}, h=d.health||{}, lab=d.lab||{}, eq=d.equity||[];
+  const positions=lab.positions||[];
+  const open=Number(l.open_pl||0);
+  const health=Number(h.score||0);
+  let trend="flat";
+  if(eq.length>3){
+    const first=Number(eq[0].portfolio_value||0);
+    const last=Number(eq[eq.length-1].portfolio_value||0);
+    if(last>first) trend="up";
+    if(last<first) trend="down";
+  }
+  let weakest="None";
+  if(positions.length){
+    weakest=positions.slice().sort((a,b)=>Number(a.unrealized_pl||0)-Number(b.unrealized_pl||0))[0].symbol;
+  }
+  return `Ponder Summary 🐾
+Health: ${health}/100
+Equity trend: ${trend}
+Open P/L: $${open.toFixed(2)}
+Open positions: ${positions.length}
+Weakest position: ${weakest}
+
+Current read:
+${health>=75 ? "System health is decent." : "System should stay defensive."}
+${open<0 ? "Open P/L is negative, so risk control matters right now." : "Open P/L is positive or neutral."}
+${positions.length ? "Watch the weakest holding and whether rotation/guard logic reacts." : "No open positions to judge yet."}`;
+}
+
+function askPonder(kind){
+  const d=lastProfitLabData;
+  const q=(kind || document.getElementById("ponderQuestion")?.value || "").toLowerCase();
+  const ans=document.getElementById("ponderAnswer");
+  if(!ans) return;
+
+  if(!d){
+    ans.textContent="Ponder is still loading data. Try again in a few seconds.";
+    return;
+  }
+
+  const l=d.latest||{}, h=d.health||{}, lab=d.lab||{}, eq=d.equity||[];
+  const positions=lab.positions||[];
+  const open=Number(l.open_pl||0);
+  const health=Number(h.score||0);
+
+  let first=eq.length?Number(eq[0].portfolio_value||0):0;
+  let last=eq.length?Number(eq[eq.length-1].portfolio_value||0):0;
+  let change=last-first;
+
+  if(q.includes("graph") || q.includes("equity") || q.includes("down") || q.includes("up")){
+    ans.textContent=`The graph is your portfolio value over time.
+
+Start: $${first.toFixed(2)}
+Latest: $${last.toFixed(2)}
+Change: $${change.toFixed(2)}
+
+Ponder’s read:
+${change>=0 ? "The account is slightly up over this window." : "The account is down over this window."}
+The sharp moves are mostly unrealized position value changes, not necessarily closed profit yet. Since closed trades are still low, this is still learning/data collection mode.`;
+  } else if(q.includes("risk") || q.includes("health")){
+    ans.textContent=`Risk read:
+
+AI Health: ${health}/100
+Open P/L: $${open.toFixed(2)}
+Open positions: ${positions.length}
+
+Ponder’s read:
+${health>=80 ? "Health is strong, but do not overtrust it until more closed trades exist." : health>=60 ? "Health is acceptable, but defensive behavior is still smart." : "Health is weak; reduce risk and review exits."}
+${open<0 ? "Because open P/L is negative, watch the kill switch and weakest position." : "Open P/L is not pressuring the system right now."}`;
+  } else if(q.includes("position") || q.includes("weak") || q.includes("nvda") || q.includes("aapl") || q.includes("amzn")){
+    if(!positions.length){
+      ans.textContent="No open positions right now, so Ponder has nothing to rank.";
+    } else {
+      const sorted=positions.slice().sort((a,b)=>Number(a.unrealized_pl||0)-Number(b.unrealized_pl||0));
+      const weak=sorted[0];
+      const best=sorted[sorted.length-1];
+      ans.textContent=`Position read:
+
+Weakest: ${weak.symbol} | P/L $${Number(weak.unrealized_pl||0).toFixed(2)} | ${Number(weak.unrealized_plpc||0).toFixed(2)}%
+Best: ${best.symbol} | P/L $${Number(best.unrealized_pl||0).toFixed(2)} | ${Number(best.unrealized_plpc||0).toFixed(2)}%
+
+Ponder’s read:
+The weakest position is the one to watch for trade guard, rotation, or stale-position logic.`;
+    }
+  } else if(q.includes("suggest") || q.includes("should") || q.includes("next")){
+    ans.textContent=`Suggestions:
+
+1. Keep collecting data until you have at least 20 closed trades.
+2. Watch whether the bad-trade guard cuts weak losers.
+3. Watch whether rotation frees capital when slots are full.
+4. Do not over-optimize yet — closed-trade data is still too small.
+5. Next useful upgrade: log score breakdown per trade so Ponder can explain WHY trades won or lost.`;
+  } else {
+    ans.textContent=ponderInsight(d);
+  }
+}
+
+setInterval(()=> {
+  const el=document.getElementById("ponderSummary");
+  if(el && lastProfitLabData){ el.textContent=ponderInsight(lastProfitLabData); }
+}, 3000);
+
+load();
+setInterval(load,10000);
+</script>
+
+<script id="ponderProV1">
+(function(){
+  if(window.__ponderProV1Loaded) return;
+  window.__ponderProV1Loaded = true;
+
+  const root = document.documentElement;
+  const body = document.body;
+
+  function get(k,d){return localStorage.getItem("ponderPro_"+k) ?? d}
+  function set(k,v){localStorage.setItem("ponderPro_"+k,v)}
+
+  function apply(){
+    body.classList.toggle("pp-focus", get("focus","off")==="on");
+    body.classList.toggle("pp-colorblind", get("colorblind","on")==="on");
+    body.classList.toggle("pp-highcontrast", get("contrast","off")==="on");
+    body.classList.toggle("pp-reduced-motion", get("motion","on")==="off");
+
+    body.classList.remove("pp-theme-ponder","pp-theme-terminal");
+    const theme=get("theme","default");
+    if(theme==="ponder") body.classList.add("pp-theme-ponder");
+    if(theme==="terminal") body.classList.add("pp-theme-terminal");
+
+    const accent=get("accent","");
+    if(accent) root.style.setProperty("--pp-accent", accent);
+  }
+
+  function makeUI(){
+    if(document.getElementById("ppLivePill")) return;
+
+    const live=document.createElement("div");
+    live.id="ppLivePill";
+    live.className="pp-live-pill";
+    live.innerHTML='<span class="pp-dot"></span><span id="ppLiveText">LIVE · Ponder Pro</span>';
+    document.body.appendChild(live);
+
+    const gear=document.createElement("button");
+    gear.className="pp-gear";
+    gear.innerHTML="⚙️";
+    gear.title="Ponder Pro settings";
+    gear.onclick=()=>document.getElementById("ppSettings").classList.toggle("open");
+    document.body.appendChild(gear);
+
+    const panel=document.createElement("div");
+    panel.id="ppSettings";
+    panel.className="pp-settings";
+    panel.innerHTML=`
+      <h3>🐾 Ponder Pro Settings</h3>
+
+      <div class="pp-row">
+        <div><label>Focus Mode</label><small>Reduce noise and emphasize key panels.</small></div>
+        <button class="pp-toggle" data-key="focus">OFF</button>
+      </div>
+
+      <div class="pp-row">
+        <div><label>Colorblind Mode</label><small>Uses labels/icons, not color alone.</small></div>
+        <button class="pp-toggle" data-key="colorblind">ON</button>
+      </div>
+
+      <div class="pp-row">
+        <div><label>High Contrast</label><small>Sharper borders and readable text.</small></div>
+        <button class="pp-toggle" data-key="contrast">OFF</button>
+      </div>
+
+      <div class="pp-row">
+        <div><label>Animations</label><small>Smooth app feel or reduced motion.</small></div>
+        <button class="pp-toggle" data-key="motion">ON</button>
+      </div>
+
+      <div class="pp-row">
+        <div><label>Theme</label><small>Default / Ponder / Terminal.</small></div>
+        <button class="pp-toggle" data-key="theme">DEFAULT</button>
+      </div>
+
+      <div class="pp-row">
+        <div><label>Refresh</label><small>Refresh page data manually.</small></div>
+        <button class="pp-toggle" id="ppRefreshNow">NOW</button>
+      </div>
+    `;
+    document.body.appendChild(panel);
+
+    panel.querySelectorAll("[data-key]").forEach(btn=>{
+      const key=btn.dataset.key;
+      function label(){
+        let v=get(key, key==="colorblind"||key==="motion" ? "on" : key==="theme" ? "default" : "off");
+        btn.textContent=String(v).toUpperCase();
+      }
+      label();
+
+      btn.onclick=()=>{
+        let v=get(key, key==="colorblind"||key==="motion" ? "on" : key==="theme" ? "default" : "off");
+
+        if(key==="theme"){
+          v = v==="default" ? "ponder" : v==="ponder" ? "terminal" : "default";
+        }else{
+          v = v==="on" ? "off" : "on";
+        }
+
+        set(key,v);
+        label();
+        apply();
+      };
+    });
+
+    document.getElementById("ppRefreshNow").onclick=()=>{
+      const text=document.getElementById("ppLiveText");
+      text.textContent="Refreshing...";
+      if(typeof load==="function"){ load(); }
+      setTimeout(()=>text.textContent="LIVE · Ponder Pro",900);
+    };
+  }
+
+  function enhance(){
+    const title = document.querySelector("h1");
+    if(title && !title.dataset.pp){
+      title.dataset.pp="1";
+      title.innerHTML = title.innerHTML.replace("Ponder", "🐾 Ponder");
+    }
+
+    document.querySelectorAll(".value").forEach(el=>{
+      if(!el.dataset.ppWatch){
+        el.dataset.ppWatch=el.textContent;
+      }else if(el.dataset.ppWatch !== el.textContent){
+        el.animate([{transform:"scale(1.02)",filter:"brightness(1.4)"},{transform:"scale(1)",filter:"brightness(1)"}],{duration:260});
+        el.dataset.ppWatch=el.textContent;
+      }
+    });
+  }
+
+  apply();
+  makeUI();
+  enhance();
+  setInterval(enhance,1500);
+})();
+</script>
+
+
+<script id="ponderProV2">
+(function(){
+  if(window.__ponderProV2Loaded) return;
+  window.__ponderProV2Loaded = true;
+
+  function qs(s){return document.querySelector(s)}
+  function qsa(s){return Array.from(document.querySelectorAll(s))}
+
+  function toast(msg){
+    let t=document.getElementById("ppToast");
+    if(!t){
+      t=document.createElement("div");
+      t.id="ppToast";
+      t.style.cssText="position:fixed;left:50%;bottom:34px;transform:translateX(-50%);z-index:10000;background:rgba(10,16,31,.95);border:1px solid var(--pp-border,#263a63);color:white;padding:12px 16px;border-radius:999px;font-weight:900;box-shadow:0 18px 45px rgba(0,0,0,.35);display:none";
+      document.body.appendChild(t);
+    }
+    t.textContent=msg;
+    t.style.display="block";
+    clearTimeout(window.__ppToastTimer);
+    window.__ppToastTimer=setTimeout(()=>t.style.display="none",1600);
+  }
+
+  function makeDock(){
+    if(document.getElementById("ppToolDock")) return;
+    const dock=document.createElement("div");
+    dock.id="ppToolDock";
+    dock.className="pp-tool-dock";
+    dock.innerHTML=`
+      <button class="pp-mini-btn" title="Top" id="ppGoTop">⬆️</button>
+      <button class="pp-mini-btn" title="Refresh" id="ppDockRefresh">🔄</button>
+      <button class="pp-mini-btn" title="Copy status" id="ppCopyStatus">📋</button>
+    `;
+    document.body.appendChild(dock);
+
+    document.getElementById("ppGoTop").onclick=()=>window.scrollTo({top:0,behavior:"smooth"});
+
+    document.getElementById("ppDockRefresh").onclick=()=>{
+      if(typeof load==="function"){ load(); toast("Ponder refreshed"); }
+      else { location.reload(); }
+    };
+
+    document.getElementById("ppCopyStatus").onclick=async()=>{
+      const health=(document.body.innerText.match(/AI Health[:\s]+[0-9.]+\/100/i)||["AI Health unknown"])[0];
+      const pl=(document.body.innerText.match(/Open P\/L[:\s$+\-.0-9,]+/i)||["Open P/L unknown"])[0];
+      const text=`Ponder Invest AI Status\n${health}\n${pl}\nPage: ${location.pathname}`;
+      try{
+        await navigator.clipboard.writeText(text);
+        toast("Status copied");
+      }catch(e){
+        toast("Copy unavailable");
+      }
+    };
+  }
+
+  function fixLiveBadge(){
+    const pill=document.getElementById("ppLivePill") || document.querySelector(".pp-live-pill");
+    if(pill){
+      pill.style.top="86px";
+      pill.style.right="22px";
+    }
+  }
+
+  function cleanLearningLabels(){
+    const top=document.getElementById("learnTop");
+    if(top && top.textContent.length > 22){
+      top.title=top.textContent;
+      top.textContent=top.textContent.replace("LEARNING_SHADOW_","").replace("_DECISION","");
+    }
+  }
+
+  function enhanceLinks(){
+    qsa("a").forEach(a=>{
+      if(!a.dataset.ppSmooth){
+        a.dataset.ppSmooth="1";
+        a.addEventListener("click",()=>document.body.style.opacity=".94");
+      }
+    });
+  }
+
+  makeDock();
+  fixLiveBadge();
+  cleanLearningLabels();
+  enhanceLinks();
+
+  setInterval(()=>{
+    fixLiveBadge();
+    cleanLearningLabels();
+    enhanceLinks();
+  },1500);
+})();
+</script>
+
+<script src="/static/ponder_ui.js?v=ponderui1"></script>
+</body>
+</html>
+""")

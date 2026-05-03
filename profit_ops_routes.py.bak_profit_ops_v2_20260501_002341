@@ -1,0 +1,22 @@
+
+from flask import Blueprint, jsonify, render_template_string
+from profit_ops_analytics import snapshot
+
+bp = Blueprint("profit_ops", __name__)
+
+@bp.route("/profit")
+def profit():
+    data = snapshot()
+    html = f"""
+    <html><body style='background:#0f172a;color:white;font-family:sans-serif'>
+    <h1>Ponder Profit Ops 🐾</h1>
+    <p>Portfolio: {data["latest"].get("portfolio_value","-")}</p>
+    <p>Open PnL: {data["latest"].get("open_pl","-")}</p>
+    <p>Win Rate: {data["metrics"]["win_rate"]}%</p>
+    <p>Net PnL: {data["metrics"]["net_pnl"]}</p>
+    <p>Drawdown: {data["drawdown"]}%</p>
+    <h2>Recent Trades</h2>
+    <pre>{data["trades"]}</pre>
+    </body></html>
+    """
+    return render_template_string(html)

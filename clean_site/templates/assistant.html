@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Ask Ponder</h1>
+<p class="muted">Ponder is your research-only assistant and overseer.</p>
+
+<section class="grid" id="assistantCards"></section>
+
+<section class="card">
+  <button onclick="askPonder('why_no_trade')">Why didn’t you trade?</button>
+  <button onclick="askPonder('what_to_do')">What should I do now?</button>
+  <button onclick="askPonder('biggest_risk')">Biggest risk?</button>
+  <button onclick="askPonder('plain_english')">Explain simply</button>
+</section>
+
+<section class="card" id="ponderAnswer">Click a question.</section>
+{% endblock %}
+{% block scripts %}
+<script>loadAssistant();</script>
+{% endblock %}

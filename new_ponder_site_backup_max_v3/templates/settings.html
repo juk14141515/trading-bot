@@ -1,0 +1,34 @@
+
+{% extends "base.html" %}
+{% block content %}
+<h1>Settings</h1>
+<p class="muted">Simple controls now. Full config editing can come later.</p>
+
+<section class="card">
+  <h2>Theme</h2>
+  <button onclick="setTheme('blue')">Blue</button>
+  <button onclick="setTheme('slate')">Slate</button>
+  <button onclick="setTheme('purple')">Purple</button>
+</section>
+
+<section class="card">
+  <h2>Tools</h2>
+  <button onclick="copyDebug()">Copy Debug Snapshot</button>
+  <button onclick="localStorage.clear(); alert('Local settings cleared')">Reset Local Settings</button>
+</section>
+
+<script>
+function setTheme(name){
+  localStorage.setItem('ponderTheme', name);
+  document.body.className = 'theme-' + name;
+}
+function copyDebug(){
+  navigator.clipboard.writeText(JSON.stringify({
+    time:new Date().toISOString(),
+    page:location.href,
+    note:"new_ponder_site debug snapshot"
+  }, null, 2));
+  alert("Debug snapshot copied");
+}
+</script>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Settings</h1>
+<p class="muted">Simple, non-distracting customization.</p>
+
+<section class="card">
+  <button onclick="setTheme('blue')">Blue</button>
+  <button onclick="setTheme('slate')">Slate</button>
+  <button onclick="setTheme('purple')">Purple</button>
+  <button onclick="toggleCompact()">Compact Mode</button>
+  <button onclick="copyDebug()">Copy Debug Snapshot</button>
+</section>
+{% endblock %}

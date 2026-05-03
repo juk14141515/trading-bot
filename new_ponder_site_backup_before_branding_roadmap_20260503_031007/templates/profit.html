@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+{% set latest = profit.get("latest", {}) %}
+{% set metrics = profit.get("metrics", {}) %}
+{% set health = profit.get("health", {}) %}
+{% set capital = dashboard_data.get("capital", {}) %}
+{% set logs = profit.get("logs", {}) %}
+{% set top_exit = dashboard_data.get("top_exit", {}) %}
+{% set top_rotation = dashboard_data.get("top_rotation", {}) %}
+
+<header class="page-head">
+  <div>
+    <h1>Profit Ops</h1>
+    <p class="muted">Performance, capital, live P/L, decision flow, and risk health in the new modular layout.</p>
+  </div>
+  <div class="status-pill">Research-only</div>
+</header>
+
+<section class="grid">
+  <div class="card metric"><h3>Portfolio Value</h3><div class="big money">$<span data-live-field="portfolio_value">{{ latest.get("portfolio_value", capital.get("portfolio_value", "0")) }}</span></div><p>{{ profit.get("equity_change", {}).get("pct", 0) }}% from visible history</p></div>
+  <div class="card metric"><h3>Open P/L</h3><div class="big good">${{ latest.get("open_pl", capital.get("open_pl", 0)) }}</div><p>Unrealized</p></div>
+  <div class="card metric"><h3>Buying Power</h3><div class="big money">${{ latest.get("buying_power", capital.get("buying_power", 0)) }}</div><p>{{ capital.get("capital_mode", "unknown") }}</p></div>
+  <div class="card metric"><h3>Today / Week / All</h3><div class="big small-big">${{ capital.get("today_pl", 0) }} / ${{ capital.get("week_pl", 0) }} / ${{ capital.get("all_time_pl", 0) }}</div><p>Closed P/L will improve after real sells are logged.</p></div>
+  <div class="card metric"><h3>AI Health</h3><div class="big">{{ health.get("score", 0) }}/100</div><p>{{ health.get("note", "Waiting for data.") }}</p></div>
+  <div class="card metric"><h3>Win Rate</h3><div class="big">{{ metrics.get("win_rate", 0) }}%</div><p>{{ metrics.get("wins", 0) }} wins / {{ metrics.get("losses", 0) }} losses</p></div>
+  <div class="card metric"><h3>Profit Factor</h3><div class="big">{{ metrics.get("profit_factor", 0) }}</div><p>Gross wins / gross losses</p></div>
+  <div class="card metric"><h3>Max Drawdown</h3><div class="big">{{ profit.get("drawdown", 0) }}%</div><p>From equity history</p></div>
+</section>
+
+<section class="split wide-left">
+  <div class="card chart-card">
+    <div class="card-head">
+      <h2>Equity Curve</h2>
+      <span class="muted">Portfolio value, buying power, and open P/L</span>
+    </div>
+    <canvas class="ponder-chart" data-chart="equity" data-points='{{ profit.get("equity", []) | tojson }}'></canvas>
+  </div>
+  <div class="card">
+    <h2>Capital Efficiency</h2>
+    <div class="capital-line">
+      <span>Used</span>
+      <div class="capital-track"><div class="capital-fill" style="width: {{ capital.get("capital_used_pct", 0) }}%"></div></div>
+      <strong>{{ capital.get("capital_used_pct", "unknown") }}%</strong>
+    </div>
+    <p><strong>{{ capital.get("next_money_action", "No capital recommendation yet.") }}</strong></p>
+    <p class="muted">Reserve cash: ${{ capital.get("reserve_cash", 0) }}. Deployable cash: ${{ capital.get("deployable_cash", 0) }}.</p>
+  </div>
+</section>
+
+<section class="grid">
+  <div class="card"><h2>Top Exit Watch</h2><div class="big">{{ top_exit.get("symbol", "none") }}</div><p>{{ top_exit.get("verdict", "No sell candidate.") }} / pressure {{ top_exit.get("sell_pressure", "unknown") }}</p></div>
+  <div class="card"><h2>Top Rotation</h2><div class="big small-big">{{ top_rotation.get("sell_symbol", "-") }} to {{ top_rotation.get("buy_symbol", "-") }}</div><p>{{ top_rotation.get("action", "No action") }} / score {{ top_rotation.get("rotation_score", "unknown") }}</p></div>
+  <div class="card"><h2>Risk Alerts</h2><ul>{% for w in logs.get("warnings", [])[:5] %}<li>{{ w }}</li>{% else %}<li>No current critical log warnings.</li>{% endfor %}</ul></div>
+</section>
+
+<section class="card">
+  <h2>Decision Feed</h2>
+  <div class="log-feed">
+    {% for line in logs.get("decision_feed", [])[-35:] %}
+      <div>{{ line }}</div>
+    {% else %}
+      <div>No decision logs found yet.</div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

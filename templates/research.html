@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Research Center</h1>
+<div class="tabs">
+  <button data-tab="ai">AI Summary</button>
+  <button data-tab="alerts">Alerts</button>
+  <button data-tab="market">Market</button>
+  <button data-tab="overnight">Overnight</button>
+  <button data-tab="sell">Sell</button>
+  <button data-tab="rotation">Rotation</button>
+  <button data-tab="performance">Performance</button>
+  <button data-tab="debug">Debug</button>
+</div>
+<div id="researchContent" class="card"></div>
+<script src="/static/site/js/research.js?v=clean1"></script>
+{% endblock %}

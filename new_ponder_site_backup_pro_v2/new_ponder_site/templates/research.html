@@ -1,0 +1,31 @@
+
+{% extends "base.html" %}
+{% block content %}
+<h1>Research Center</h1>
+<p class="muted">All current non-live research modules in one clean place.</p>
+
+<div class="tabs">
+  <button onclick="showTab('ai')">AI Summary</button>
+  <button onclick="showTab('alerts')">Alerts</button>
+  <button onclick="showTab('market')">Market</button>
+  <button onclick="showTab('overnight')">Overnight</button>
+  <button onclick="showTab('sell')">Sell</button>
+  <button onclick="showTab('rotation')">Rotation</button>
+  <button onclick="showTab('performance')">Performance</button>
+</div>
+
+{% for name, value in data.items() %}
+<section id="tab-{{ name }}" class="tab card" style="display:none">
+  <h2>{{ name|title }}</h2>
+  <pre>{{ value | tojson(indent=2) }}</pre>
+</section>
+{% endfor %}
+
+<script>
+function showTab(name){
+  document.querySelectorAll('.tab').forEach(x => x.style.display='none');
+  document.getElementById('tab-'+name).style.display='block';
+}
+showTab('ai');
+</script>
+{% endblock %}

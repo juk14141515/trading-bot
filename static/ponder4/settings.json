@@ -1,0 +1,9 @@
+{
+  "version": "ponder4_v1",
+  "theme": "midnight",
+  "accent": "blue",
+  "colorblind": true,
+  "reduced_motion": true,
+  "compact": false,
+  "refresh_seconds": 45
+}

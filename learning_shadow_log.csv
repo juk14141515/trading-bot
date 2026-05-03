@@ -1,0 +1,4 @@
+timestamp,event,symbol,score,price,qty,reason,open_pl,rotation_score,rotation_decision,notes
+2026-05-01T04:55:19.541770,TEST_EVENT,TEST,50,,,manual test,,,,
+2026-05-01T13:30:30.755583,LEARNING_SHADOW_SELL,NVDA,,,70.004285918,fast_cut_loss_-4.30%,-625.8383161069198,,,
+2026-05-01T17:34:20.873702,LEARNING_SHADOW_BUY_DECISION,AMD,72.5,,,candidate selected,,,,

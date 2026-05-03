@@ -1,0 +1,41 @@
+
+{% extends "base.html" %}
+{% block content %}
+<h1>Learning Center</h1>
+<p class="muted">Game layer for discipline, progress, and safer improvement.</p>
+
+{% set pending = performance.get("summary", {}).get("pending_evaluations", 0) %}
+{% set evaluated = performance.get("summary", {}).get("evaluated", 0) %}
+{% set unlocked = achievements.get("total_unlocked", achievements.get("achievements", [])|length) %}
+
+<section class="grid">
+  <div class="card"><h3>XP</h3><div class="big">{{ unlocked * 25 + evaluated * 5 }}</div><p>Research learning points</p></div>
+  <div class="card"><h3>Achievements</h3><div class="big">{{ unlocked }}</div><p>Unlocked</p></div>
+  <div class="card"><h3>Pending Evaluations</h3><div class="big">{{ pending }}</div><p>Let the tracker collect outcomes.</p></div>
+  <div class="card"><h3>Automation Readiness</h3><div class="big">Not Yet</div><p>Need stable edge first.</p></div>
+</section>
+
+<section class="card highlight">
+  <h2>Daily Missions</h2>
+  <ul>
+    <li>Review AI Summary.</li>
+    <li>Check Alerts before trusting any signal.</li>
+    <li>Let rotation tracker collect more outcomes.</li>
+    <li>Keep new modules research-only.</li>
+    <li>Copy Debug Snapshot before asking for help.</li>
+  </ul>
+</section>
+
+<section class="card">
+  <h2>Future Unlocks</h2>
+  <div class="roadmap-grid">
+    <div><strong>Adaptive Capital Allocator v1</strong><p>Recommend sizing from confidence and utilization.</p></div>
+    <div><strong>Unused Capital Optimizer</strong><p>Explain when high cash is patience versus missed opportunity.</p></div>
+    <div><strong>Sell Intelligence v2</strong><p>Compare hold, trim, stop, and simulated trailing exits.</p></div>
+    <div><strong>Shadow Execution Tracker</strong><p>Score would-have-sold and would-have-bought moves.</p></div>
+    <div><strong>IPO / Day Trade / Crypto Labs</strong><p>Separate research-only labs before any integration.</p></div>
+    <div><strong>Event Impact Layer</strong><p>Saved for later because it can overpower weak base logic.</p></div>
+  </div>
+  <a class="inline-link" href="/build-plan">Open full build plan</a>
+</section>
+{% endblock %}

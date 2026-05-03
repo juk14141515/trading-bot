@@ -1,0 +1,69 @@
+
+from flask import Blueprint, jsonify, render_template_string
+from profit_ops_analytics import snapshot
+
+bp = Blueprint("profit_ops", __name__)
+
+@bp.route("/api/profit-ops")
+def api():
+    return jsonify(snapshot())
+
+@bp.route("/profit")
+def profit():
+    return render_template_string("""
+<html>
+<head>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body{background:#0f172a;color:white;font-family:sans-serif;padding:20px}
+.card{background:#111827;padding:15px;border-radius:12px;margin:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+</style>
+</head>
+<body>
+<h1>Ponder Profit Ops 🚀</h1>
+
+<div class="grid">
+<div class="card">Portfolio: <span id="p"></span></div>
+<div class="card">Open PnL: <span id="pl"></span></div>
+<div class="card">Win Rate: <span id="wr"></span></div>
+<div class="card">Net PnL: <span id="np"></span></div>
+<div class="card">Drawdown: <span id="dd"></span></div>
+</div>
+
+<canvas id="chart" height="120"></canvas>
+
+<script>
+let c;
+
+async function load(){
+ let r=await fetch("/api/profit-ops");
+ let d=await r.json();
+
+ document.getElementById("p").innerText=d.latest.portfolio_value;
+ document.getElementById("pl").innerText=d.latest.open_pl;
+ document.getElementById("wr").innerText=d.metrics.win_rate+"%";
+ document.getElementById("np").innerText=d.metrics.net_pnl;
+ document.getElementById("dd").innerText=d.drawdown+"%";
+
+ let labels=d.equity.map(x=>x.timestamp);
+ let vals=d.equity.map(x=>x.portfolio_value);
+
+ if(!c){
+  c=new Chart(document.getElementById("chart"),{
+   type:"line",
+   data:{labels:labels,datasets:[{label:"Equity",data:vals}]}
+  });
+ }else{
+  c.data.labels=labels;
+  c.data.datasets[0].data=vals;
+  c.update();
+ }
+}
+
+load();
+setInterval(load,5000);
+</script>
+</body>
+</html>
+""")

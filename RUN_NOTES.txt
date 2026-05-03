@@ -1,0 +1,11 @@
+OLD_SITE_START:
+source venv/bin/activate && python3 app.py
+
+NEW_SITE_START:
+source venv/bin/activate && python3 new_ponder_site/app.py
+
+EVALUATOR_START:
+# put exact evaluator command if you have one
+
+SERVICE_NAME_IF_ANY:
+# put service name if you use systemctl

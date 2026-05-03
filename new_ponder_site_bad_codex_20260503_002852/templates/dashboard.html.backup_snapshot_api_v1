@@ -1,0 +1,603 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% set ai = data.get("ai", {}) %}
+{% set alerts = data.get("alerts", {}) %}
+{% set rotation = data.get("rotation", {}) %}
+{% set regime = data.get("regime", {}) %}
+{% set decisions = data.get("decisions", {}) %}
+{% set capital = data.get("capital", {}) %}
+{% set read = ai.get("key_readout", {}) %}
+{% set alerts_sum = alerts.get("summary", {}) %}
+{% set decision_summary = decisions.get("summary", {}) %}
+{% set sorted_decisions = decisions.get("decisions", []) | sort(attribute="score", reverse=True) %}
+{% set best = sorted_decisions[0] if sorted_decisions else {} %}
+
+{% set regime_text = read.get("regime", regime.get("regime", decisions.get("regime", "Unknown"))) %}
+{% set news_score = read.get("news_impact", decisions.get("news_impact", 0)) %}
+{% set buy_count = decision_summary.get("buy_count", 0) %}
+{% set watch_count = decision_summary.get("watch_count", 0) %}
+{% set ignore_count = decision_summary.get("ignore_count", 0) %}
+{% set mode = "DEFENSIVE" if news_score|int >= 70 or regime_text == "Risk-Off" else "SELECTIVE" if buy_count == 0 else "OPPORTUNITY" %}
+{% set action_bias = "WAIT" if buy_count == 0 else "LOOK FOR ENTRY" %}
+{% set pressure = "LOW" if buy_count == 0 and watch_count < 5 else "MEDIUM" if watch_count >= 4 else "HIGH" %}
+{% set readiness_gap = 85 - (best.get("score", 0)|float) %}
+{% set deploy_threshold = 80 %}
+{% set best_score = best.get("score", 0)|float %}
+{% set deploy_decision = "DO NOT DEPLOY" if best_score < deploy_threshold or buy_count == 0 else "READY TO DEPLOY" %}
+{% set ai_health = 90 if decisions.get("decisions") and capital.get("equity", 0)|float > 0 else 65 %}
+
+<section class="hero">
+  <div>
+    <div class="eyebrow">Personal Command Center · Research Mode · No Live Orders</div>
+    <h1>Ponder Invest AI</h1>
+    <p class="muted">Fast mobile-ready view: what matters, what to watch, and why Ponder is waiting.</p>
+  </div>
+
+  <div class="hero-dog">
+    <div class="dog-icon">🐕</div>
+    <div>
+      <strong>Ponder is watching.</strong>
+      <p class="muted">Mode: <span id="live-mode">{{ mode }}</span></p>
+    </div>
+  </div>
+</section>
+
+
+<section class="card money-center">
+  <div class="money-head">
+    <div>
+      <div class="eyebrow">Live Money Center</div>
+      <h2>💵 Portfolio + Profit</h2>
+      <p class="muted">Read-only Alpaca data. Updates when capital intelligence runs.</p>
+    </div>
+    <div class="mode-badge mode-selective" id="capital-mode-badge">{{ capital.get("capital_mode", "UNKNOWN") }}</div>
+  </div>
+
+  <div class="money-grid">
+    <div><strong>Today P/L</strong><span id="m-today">${{ "{:,.2f}".format(capital.get("today_pl", 0)|float) }}</span></div>
+    <div><strong>Portfolio</strong><span id="m-equity">${{ "{:,.2f}".format(capital.get("equity", 0)|float) }}</span></div>
+    <div><strong>7-Day P/L</strong><span id="m-week">${{ "{:,.2f}".format(capital.get("week_pl", 0)|float) }}</span></div>
+    <div><strong>All-Time P/L</strong><span id="m-all">${{ "{:,.2f}".format(capital.get("all_time_pl", 0)|float) }}</span></div>
+    <div><strong>Buying Power</strong><span id="m-bp">${{ "{:,.2f}".format(capital.get("buying_power", 0)|float) }}</span></div>
+    <div><strong>Deployable</strong><span id="m-deploy">${{ "{:,.2f}".format(capital.get("deployable_cash", 0)|float) }}</span></div>
+    <div><strong>Efficiency</strong><span id="m-eff">{{ capital.get("capital_efficiency", "—") }}</span></div>
+  </div>
+
+  <div class="money-charts">
+    <div>
+      <h3>Equity Curve</h3>
+      <canvas id="moneyEquityChart" height="160"></canvas>
+    </div>
+    <div>
+      <h3>P/L Snapshot</h3>
+      <canvas id="moneyPlChart" height="160"></canvas>
+    </div>
+  </div>
+
+  <p class="muted money-next-live" id="money-next">{{ capital.get("next_money_action", "Run capital intelligence to load account data.") }}</p>
+</section>
+
+
+
+<section class="card next-move-panel">
+  <div class="next-left">
+    <div class="eyebrow">Next Move</div>
+    <h2>🧠 {{ deploy_decision }}</h2>
+    <p class="muted">
+      {% if deploy_decision == "DO NOT DEPLOY" %}
+        Capital is available, but Ponder does not see enough edge yet.
+      {% else %}
+        Decision quality is strong enough to study possible deployment.
+      {% endif %}
+    </p>
+  </div>
+
+  <div class="next-grid">
+    <div>
+      <strong>Top Setup</strong>
+      <span>{{ best.get("symbol", "—") }}</span>
+      <small>{{ best.get("action", "—") }}</small>
+    </div>
+    <div>
+      <strong>Score / Threshold</strong>
+      <span>{{ best.get("score", "—") }} / {{ deploy_threshold }}</span>
+      <small>{% if best_score < deploy_threshold %}Needs +{{ "%.1f"|format(deploy_threshold - best_score) }}{% else %}Passed{% endif %}</small>
+    </div>
+    <div>
+      <strong>Deployable Capital</strong>
+      <span>${{ "{:,.0f}".format(capital.get("deployable_cash", 0)|float) }}</span>
+      <small>{{ capital.get("capital_mode", "UNKNOWN") }}</small>
+    </div>
+    <div>
+      <strong>Rule</strong>
+      <span>{% if deploy_decision == "DO NOT DEPLOY" %}WAIT{% else %}STUDY ENTRY{% endif %}</span>
+      <small>Research-only</small>
+    </div>
+  </div>
+</section>
+
+<section class="card ai-overview">
+  <div class="money-head">
+    <div>
+      <div class="eyebrow">AI System Health</div>
+      <h2>🤖 Ponder System Overview</h2>
+      <p class="muted">Checks whether capital, decisions, market context, and learning are working together.</p>
+    </div>
+    <div class="ai-score" id="ai-health-score">{{ ai_health }}/100</div>
+  </div>
+
+  <div class="system-grid">
+    <div><strong>Capital Engine</strong><span class="sys-good" id="capital-status">↑ Online</span><small id="capital-detail">{{ capital.get("capital_mode", "UNKNOWN") }}</small></div>
+    <div><strong>Decision Engine</strong><span class="sys-good" id="decision-status">↑ Active</span><small id="decision-detail">{{ decisions.get("summary", {}).get("watch_count", 0) }} watch</small></div>
+    <div><strong>Market Context</strong><span class="sys-warn" id="market-status">→ Cautious</span><small id="market-detail">News {{ news_score }}/100</small></div>
+    <div><strong>Learning</strong><span class="sys-warn" id="learning-status">→ Collecting</span><small id="learning-detail">Research-only</small></div>
+  </div>
+</section>
+
+
+<section class="card snapshot-panel">
+  <div class="money-head">
+    <div>
+      <div class="eyebrow">Plain-English Snapshot</div>
+      <h2>🧠 What Ponder Understands</h2>
+      <p class="muted">Live summary from system_snapshot_latest.json.</p>
+    </div>
+    <button class="copy-btn" onclick="copySystemSnapshot()">Copy Snapshot</button>
+  </div>
+
+  <div class="snapshot-grid">
+    <div><strong>Top Symbol</strong><span id="top-symbol">—</span></div>
+    <div><strong>Top Score</strong><span id="top-score">—</span></div>
+    <div><strong>Top Action</strong><span id="top-action">—</span></div>
+  </div>
+
+  <div id="ai-plain-feed" class="plain-feed">
+    <div>Loading system snapshot...</div>
+  </div>
+</section>
+
+<section class="card brainline">
+  <div>
+    <div class="eyebrow">Instant Read</div>
+    <h2 id="brainline">
+      {% if mode == "DEFENSIVE" %}
+        Ponder: Defensive conditions. No forced trades.
+      {% elif mode == "SELECTIVE" %}
+        Ponder: Watchlist active, but no strong buy signal yet.
+      {% else %}
+        Ponder: Opportunity detected. Validate before acting.
+      {% endif %}
+    </h2>
+    <p class="muted">Last data update: <span id="updated-at">{{ decisions.get("updated_at", "—") }}</span></p>
+    <div class="quick-bias">
+      <span>Action Bias: <strong>{{ action_bias }}</strong></span>
+      <span>Opportunity Pressure: <strong>{{ pressure }}</strong></span>
+      <span>Trade Readiness: <strong>{{ best.get("score", "—") }}/85</strong></span>
+    </div>
+  </div>
+  <span class="mode-badge mode-{{ mode|lower }}">{{ mode }}</span>
+</section>
+
+<section class="grid">
+  <div class="card metric">
+    <h3>Market Regime</h3>
+    <div class="big" id="regime">{{ regime_text }}</div>
+    <p>Score: {{ read.get("regime_score", regime.get("score", "—")) }}</p>
+  </div>
+
+  <div class="card metric">
+    <h3>News Risk</h3>
+    <div class="big" id="news-risk">{{ news_score }}</div>
+    <p>70+ usually means defensive.</p>
+  </div>
+
+  <div class="card metric">
+    <h3>Buy Signals</h3>
+    <div class="big" id="buy-count">{{ buy_count }}</div>
+    <p>{{ watch_count }} watch · {{ ignore_count }} ignore</p>
+  </div>
+
+  <div class="card metric">
+    <h3>Alerts</h3>
+    <div class="big">{{ alerts_sum.get("total", 0) }}</div>
+    <p>{{ alerts_sum.get("critical", 0) }} critical · {{ alerts_sum.get("warning", 0) }} warnings</p>
+  </div>
+</section>
+
+<section class="card top-opportunity">
+  <div>
+    <div class="eyebrow">Top Opportunity</div>
+    <h2>🏆 {{ best.get("symbol", "No setup yet") }}</h2>
+    <p class="muted">{{ best.get("reason", "Run research pipeline to generate decisions.") }}</p>
+    <div class="strength-wrap">
+      <span>Strength</span>
+      <div class="strength-track">
+        <div class="strength-fill" style="width: {{ best.get("score", 0) }}%"></div>
+      </div>
+      <strong>{{ best.get("score", "—") }}</strong>
+      <small class="muted">{% if readiness_gap > 0 %}Needs +{{ "%.1f"|format(readiness_gap) }}{% else %}Ready{% endif %}</small>
+    </div>
+  </div>
+
+  <div class="opportunity-stats">
+    {% set best_action = best.get("action", "none")|lower|replace(" ", "-")|replace("/", "") %}
+    <div><strong>Action</strong><span class="pill action-{{ best_action }}">{{ best.get("action", "—") }}</span></div>
+    <div><strong>Confidence</strong><span>{{ best.get("confidence", "—") }}</span></div>
+    <div><strong>Score</strong><span>{{ best.get("score", "—") }}</span></div>
+    <div><strong>Sell Pressure</strong><span>{{ best.get("sell_pressure", "—") }}</span></div>
+  </div>
+</section>
+
+
+<section class="card capital-command">
+  <div>
+    <div class="eyebrow">Capital Command</div>
+    <h2>💰 Cash + Buying Power</h2>
+    <p class="muted">{{ capital.get("next_money_action", "Run capital intelligence to load account data.") }}</p>
+  </div>
+
+  <div class="capital-grid">
+    <div><strong>Cash</strong><span>${{ "{:,.2f}".format(capital.get("cash", 0)|float) }}</span></div>
+    <div><strong>Buying Power</strong><span>${{ "{:,.2f}".format(capital.get("buying_power", 0)|float) }}</span></div>
+    <div><strong>Reserve</strong><span>${{ "{:,.2f}".format(capital.get("reserve_cash", 0)|float) }}</span></div>
+    <div><strong>Deployable</strong><span>${{ "{:,.2f}".format(capital.get("deployable_cash", 0)|float) }}</span></div>
+  </div>
+
+  <div class="strength-wrap">
+    <span>Capital Used</span>
+    <div class="strength-track">
+      <div class="strength-fill" style="width: {{ capital.get("capital_used_pct", 0) }}%"></div>
+    </div>
+    <strong>{{ capital.get("capital_used_pct", "—") }}%</strong>
+  </div>
+
+  <div class="capital-note">
+    Mode: <strong>{{ capital.get("capital_mode", "UNKNOWN") }}</strong> · Reserve target: {{ capital.get("reserve_pct", 20) }}%
+  </div>
+</section>
+
+
+<section class="split">
+  <div class="card highlight">
+    <h2>🎯 Decision Feed</h2>
+    <p class="muted">Ranked research-only decisions. Nothing here places trades.</p>
+
+    <div class="decision-list compact">
+      {% for d in sorted_decisions[:8] %}
+        {% set action_class = d.get("action", "none")|lower|replace(" ", "-")|replace("/", "") %}
+        <div class="decision-card decision-{{ action_class }}">
+          <div class="decision-head">
+            <strong>{{ d.get("symbol", "—") }}</strong>
+            <span class="pill action-{{ action_class }}">{{ d.get("action", "—") }}</span>
+          </div>
+          <div class="decision-meta">
+            <span>Conf: {{ d.get("confidence", "—") }}</span>
+            <span>Score: {{ d.get("score", "—") }}</span>
+            <span>Sell: {{ d.get("sell_pressure", "—") }}</span>
+          </div>
+          <p class="muted">{{ d.get("reason", "—") }}</p>
+        </div>
+      {% else %}
+        <p>No decision data yet. Run research pipeline.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🚫 Why No Trade?</h2>
+    <ul>
+      {% if news_score|int >= 70 %}<li>News risk is high at {{ news_score }}/100.</li>{% endif %}
+      {% if buy_count == 0 %}<li>No BUY/STRONG_BUY signal passed the current filter.</li>{% endif %}
+      {% if regime_text == "Risk-Off" %}<li>Market regime is defensive.</li>{% endif %}
+      <li>Ponder is still research-only and protecting learning quality.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="grid">
+  <div class="card chart-card">
+    <h2>📊 Decision Mix</h2>
+    <canvas id="decisionChart" height="150"></canvas>
+  </div>
+
+  <div class="card chart-card">
+    <h2>📈 Equity Snapshot</h2>
+    <canvas id="equityChart" height="150"></canvas>
+    <p class="muted">Uses equity_history.csv when available.</p>
+  </div>
+
+  <div class="card">
+    <h2>⚙️ System Status</h2>
+    <div class="readiness">
+      <div><span class="dot warn"></span> Research-only mode</div>
+      <div><span class="dot good"></span> Live dashboard refresh active</div>
+      <div><span class="dot good"></span> Decision engine connected</div>
+      <div><span class="dot risk"></span> Live execution disabled</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📋 On-the-Go Rule</h2>
+    <p><strong>Only care about three things:</strong></p>
+    <p>Mode, Buy Signals, and Top Opportunity.</p>
+    <p class="muted">Everything else is supporting evidence.</p>
+  </div>
+</section>
+
+<script>
+const initialData = {{ data | tojson }};
+
+function drawBarChart(canvasId, values, labels) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width = canvas.offsetWidth;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  const max = Math.max(...values, 1);
+  const gap = 14;
+  const barW = (w - gap * (values.length + 1)) / values.length;
+
+  values.forEach((v, i) => {
+    const x = gap + i * (barW + gap);
+    const bh = (v / max) * (h - 42);
+    ctx.fillStyle = "rgba(167,139,250,.75)";
+    ctx.fillRect(x, h - bh - 24, barW, bh);
+    ctx.fillStyle = "#a7afc3";
+    ctx.font = "12px system-ui";
+    ctx.fillText(labels[i] + ": " + v, x, h - 6);
+  });
+}
+
+function drawLineChart(canvasId, rows) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width = canvas.offsetWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+
+  const nums = (rows || []).map(r => Number(r.equity || r.account_equity || r.value || 0)).filter(Boolean);
+  if (nums.length < 2) {
+    ctx.fillStyle = "#a7afc3";
+    ctx.font = "14px system-ui";
+    ctx.fillText("Not enough equity history yet.", 12, 40);
+    return;
+  }
+
+  const min = Math.min(...nums), max = Math.max(...nums);
+  const range = Math.max(max - min, 1);
+  ctx.strokeStyle = "rgba(167,139,250,.9)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+
+  nums.forEach((v, i) => {
+    const x = (i / (nums.length - 1)) * (w - 20) + 10;
+    const y = h - 20 - ((v - min) / range) * (h - 40);
+    if (i === 0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+}
+
+function renderCharts(data) {
+  const s = data.decisions?.summary || {};
+  drawBarChart("decisionChart", [s.buy_count || 0, s.watch_count || 0, s.ignore_count || 0], ["Buy", "Watch", "Ignore"]);
+  drawLineChart("equityChart", data.equity || []);
+}
+
+async function refreshLive() {
+  try {
+    const res = await fetch("/api/dashboard", { cache: "no-store" });
+    if (!res.ok) return;
+    const data = await res.json();
+
+    document.getElementById("updated-at").textContent = data.decisions?.updated_at || "—";
+    document.getElementById("regime").textContent = data.ai?.key_readout?.regime || data.regime?.regime || "—";
+    document.getElementById("news-risk").textContent = data.ai?.key_readout?.news_impact || data.decisions?.news_impact || "—";
+    document.getElementById("buy-count").textContent = data.decisions?.summary?.buy_count ?? "—";
+
+    renderCharts(data);
+  } catch (e) {
+    console.log("Live refresh failed", e);
+  }
+}
+
+renderCharts(initialData);
+setInterval(refreshLive, 5000);
+</script>
+
+
+<script>
+function fmtMoney(n) {
+  n = Number(n || 0);
+  return "$" + n.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function drawMoneyLine(canvasId, rows, key) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width = canvas.offsetWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+
+  const nums = (rows || []).map(r => Number(r[key] || 0)).filter(n => !isNaN(n));
+  if (nums.length < 2) {
+    ctx.fillStyle = "#a7afc3";
+    ctx.font = "14px system-ui";
+    ctx.fillText("Collecting history...", 12, 40);
+    return;
+  }
+
+  const min = Math.min(...nums), max = Math.max(...nums);
+  const range = Math.max(max - min, 1);
+
+  ctx.strokeStyle = nums[nums.length-1] >= nums[0]
+    ? "rgba(142,233,154,.9)"
+    : "rgba(255,107,122,.9)";
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  nums.forEach((v,i) => {
+    const x = 10 + (i/(nums.length-1))*(w-20);
+    const y = h-20-((v-min)/range)*(h-42);
+    if (i === 0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  ctx.fillStyle = "#a7afc3";
+  ctx.font = "12px system-ui";
+  ctx.fillText(fmtMoney(nums[nums.length-1]), 12, 18);
+}
+
+function drawMoneyBars(canvasId, values, labels) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width = canvas.offsetWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+
+  const max = Math.max(...values.map(v => Math.abs(v)), 1);
+  const zeroY = h / 2;
+  const gap = 16;
+  const barW = (w - gap*(values.length+1))/values.length;
+
+  ctx.strokeStyle = "rgba(255,255,255,.12)";
+  ctx.beginPath();
+  ctx.moveTo(0, zeroY);
+  ctx.lineTo(w, zeroY);
+  ctx.stroke();
+
+  values.forEach((v,i) => {
+    const x = gap + i*(barW+gap);
+    const bh = (Math.abs(v)/max)*(h/2-28);
+    const y = v >= 0 ? zeroY - bh : zeroY;
+    ctx.fillStyle = v >= 0 ? "rgba(142,233,154,.75)" : "rgba(255,107,122,.75)";
+    ctx.fillRect(x,y,barW,bh);
+    ctx.fillStyle = "#a7afc3";
+    ctx.font = "12px system-ui";
+    ctx.fillText(labels[i], x, h-6);
+  });
+}
+
+function renderMoney(data) {
+  const c = data.capital || {};
+  document.getElementById("m-equity").textContent = fmtMoney(c.portfolio_value || c.equity);
+  const todayEl = document.getElementById("m-today");
+  todayEl.textContent = (c.today_pl > 0 ? "↑ " : c.today_pl < 0 ? "↓ " : "→ ") + fmtMoney(c.today_pl);
+  todayEl.style.color = c.today_pl > 0 ? "#8ee99a" : c.today_pl < 0 ? "#ff6b7a" : "#eef2ff";
+  const weekEl = document.getElementById("m-week");
+  weekEl.textContent = (c.week_pl > 0 ? "↑ " : c.week_pl < 0 ? "↓ " : "→ ") + fmtMoney(c.week_pl);
+  weekEl.style.color = c.week_pl > 0 ? "#8ee99a" : c.week_pl < 0 ? "#ff6b7a" : "#eef2ff";
+  const allEl = document.getElementById("m-all");
+  allEl.textContent = (c.all_time_pl > 0 ? "↑ " : c.all_time_pl < 0 ? "↓ " : "→ ") + fmtMoney(c.all_time_pl);
+  allEl.style.color = c.all_time_pl > 0 ? "#8ee99a" : c.all_time_pl < 0 ? "#ff6b7a" : "#eef2ff";
+  document.getElementById("m-bp").textContent = fmtMoney(c.buying_power);
+  document.getElementById("m-deploy").textContent = fmtMoney(c.deployable_cash);
+  const eff = document.getElementById("m-eff");
+  if (eff) eff.textContent = c.capital_efficiency || "—";
+  document.getElementById("money-next").textContent = c.next_money_action || "";
+  const modeBadge = document.getElementById("capital-mode-badge");
+  if (modeBadge) modeBadge.textContent = c.capital_mode || "UNKNOWN";
+
+  const pulse = document.getElementById("m-equity");
+  if (pulse) {
+    pulse.style.transition = "all 0.25s ease";
+    pulse.style.transform = "scale(1.04)";
+    setTimeout(() => pulse.style.transform = "scale(1)", 180);
+  }
+
+  drawMoneyLine("moneyEquityChart", c.history || [], "equity");
+  drawMoneyBars("moneyPlChart", [c.today_pl || 0, c.week_pl || 0, c.all_time_pl || 0], ["Day", "Week", "All"]);
+}
+
+renderMoney({{ data | tojson }});
+setInterval(async () => {
+  try {
+    const r = await fetch("/api/dashboard", {cache:"no-store"});
+    if (!r.ok) return;
+    renderMoney(await r.json());
+  } catch(e) {}
+}, 5000);
+</script>
+
+
+<script>
+function prettyStatus(status) {
+  if (status === "online" || status === "active") return "↑ Online";
+  if (status === "missing") return "↓ Missing";
+  return "→ Unknown";
+}
+
+function statusClass(status) {
+  if (status === "online" || status === "active") return "sys-good";
+  if (status === "missing") return "sys-bad";
+  return "sys-warn";
+}
+
+async function loadSystemSnapshot() {
+  try {
+    const res = await fetch("/static/research/system_snapshot_latest.json?t=" + Date.now());
+    if (!res.ok) return;
+    const data = await res.json();
+
+    const score = document.getElementById("ai-health-score");
+    if (score) score.textContent = (data.health_score ?? "—") + "/100";
+
+    const modules = data.modules || {};
+    const pairs = [
+      ["capital-status", modules.capital_engine, "capital-detail", data.capital?.capital_mode],
+      ["decision-status", modules.decision_engine, "decision-detail", (data.decision?.watch_count ?? 0) + " watch"],
+      ["market-status", modules.market_intelligence, "market-detail", "Alerts " + (data.risk?.alerts_total ?? 0)],
+      ["learning-status", modules.performance_tracker, "learning-detail", "Research-only"]
+    ];
+
+    pairs.forEach(([id, st, detailId, detail]) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.textContent = prettyStatus(st);
+        el.className = statusClass(st);
+      }
+      const detailEl = document.getElementById(detailId);
+      if (detailEl) detailEl.textContent = detail || "—";
+    });
+
+    const topSymbol = document.getElementById("top-symbol");
+    const topScore = document.getElementById("top-score");
+    const topAction = document.getElementById("top-action");
+    if (topSymbol) topSymbol.textContent = data.decision?.top_symbol || "—";
+    if (topScore) topScore.textContent = data.decision?.top_score || "—";
+    if (topAction) topAction.textContent = data.decision?.top_action || "—";
+
+    const feed = document.getElementById("ai-plain-feed");
+    if (feed) {
+      feed.innerHTML = "";
+      (data.plain_english || ["No snapshot explanation yet."]).forEach(line => {
+        const div = document.createElement("div");
+        div.textContent = "• " + line;
+        feed.appendChild(div);
+      });
+    }
+  } catch (err) {
+    console.log("Snapshot load error", err);
+  }
+}
+
+async function copySystemSnapshot() {
+  try {
+    const res = await fetch("/static/research/system_snapshot_latest.json?t=" + Date.now());
+    const text = await res.text();
+    await navigator.clipboard.writeText(text);
+    alert("Snapshot copied — paste it into ChatGPT.");
+  } catch (err) {
+    alert("Could not copy snapshot.");
+  }
+}
+
+loadSystemSnapshot();
+setInterval(loadSystemSnapshot, 5000);
+</script>
+
+{% endblock %}

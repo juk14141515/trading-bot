@@ -1,0 +1,115 @@
+
+window.addEventListener("load", function () {
+  console.log("Ponder clean UI v2 loaded");
+
+  const style = document.createElement("style");
+  style.innerHTML = `
+    .pp-card-hover {
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease !important;
+      will-change: transform;
+    }
+    .pp-card-hover:hover {
+      transform: translateY(-5px) scale(1.01) !important;
+      box-shadow: 0 22px 60px rgba(0,0,0,.45), 0 0 28px rgba(124,255,178,.22) !important;
+      border-color: rgba(124,255,178,.38) !important;
+    }
+    .pp-card-enter {
+      animation: ppCardEnter .35s ease both;
+    }
+    @keyframes ppCardEnter {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  `;
+  document.head.appendChild(style);
+
+  const labels = [
+    "Account Status", "Portfolio Value", "Buying Power", "Open P/L",
+    "Open Win Rate", "Capital Deployed", "Bot Actions", "Rotations",
+    "Scanner Events", "Adaptive Events", "Closed Win Rate", "Closed Net P/L",
+    "Equity Curve", "Recent Equity Snapshots"
+  ];
+
+  function tagCards() {
+    const divs = Array.from(document.querySelectorAll("div"));
+
+    divs.forEach(el => {
+      if (el.closest(".globalSidebar")) return;
+      if (el.id === "ppToolDock" || el.id === "ppSettingsPanel") return;
+
+      const txt = (el.innerText || "").trim();
+      if (!labels.some(label => txt.includes(label))) return;
+
+      const r = el.getBoundingClientRect();
+      if (r.width < 180 || r.height < 80) return;
+      if (r.width > window.innerWidth * 0.75) return;
+
+      el.classList.add("pp-card-hover");
+
+      if (!el.dataset.ppEntered) {
+        el.dataset.ppEntered = "1";
+        el.classList.add("pp-card-enter");
+      }
+    });
+  }
+
+  tagCards();
+  setInterval(tagCards, 2000);
+
+  if (!document.getElementById("ppToolDock")) {
+    const dock = document.createElement("div");
+    dock.id = "ppToolDock";
+    dock.style.cssText = "position:fixed;right:22px;top:260px;z-index:99999;display:flex;flex-direction:column;gap:12px;";
+    dock.innerHTML = "<button>⬆️</button><button>🔄</button><button>📋</button>";
+    const buttons = dock.querySelectorAll("button");
+    buttons[0].onclick = () => window.scrollTo({top:0, behavior:"smooth"});
+    buttons[1].onclick = () => location.reload();
+    buttons[2].onclick = () => navigator.clipboard.writeText(location.href);
+    buttons.forEach(btn => {
+      btn.style.cssText = "width:44px;height:44px;border-radius:14px;border:1px solid rgba(140,160,255,.35);background:rgba(18,24,45,.9);color:white;cursor:pointer;font-size:18px;";
+    });
+    document.body.appendChild(dock);
+  }
+
+  if (!document.getElementById("ppSettingsButton")) {
+    const gear = document.createElement("button");
+    gear.id = "ppSettingsButton";
+    gear.innerHTML = "⚙️";
+    gear.style.cssText = "position:fixed;right:22px;bottom:24px;z-index:100000;width:52px;height:52px;border-radius:50%;border:1px solid rgba(140,160,255,.4);background:rgba(18,24,45,.95);color:white;cursor:pointer;font-size:22px;";
+
+    const panel = document.createElement("div");
+    panel.id = "ppSettingsPanel";
+    panel.style.cssText = "display:none;position:fixed;right:22px;bottom:88px;z-index:100000;width:290px;padding:18px;border-radius:18px;border:1px solid rgba(140,160,255,.35);background:rgba(18,24,45,.96);color:white;box-shadow:0 18px 45px rgba(0,0,0,.35);font-family:Arial,sans-serif;";
+    panel.innerHTML = "<h3>🐾 Ponder Pro Settings</h3><p>Focus Mode: Ready</p><p>Colorblind Mode: Icons + labels</p><p>Theme: Default</p>";
+
+    gear.onclick = () => panel.style.display = panel.style.display === "none" ? "block" : "none";
+    document.body.appendChild(panel);
+    document.body.appendChild(gear);
+  }
+});
+
+
+// === LIVE P/L PULSE ===
+(function(){
+  function pulsePL(){
+    document.querySelectorAll("div").forEach(el=>{
+      if((el.innerText||"").includes("Open P/L")){
+        const val = el.querySelector("*");
+        if(!val) return;
+
+        val.style.transition="all .4s ease";
+        val.style.textShadow="0 0 10px rgba(120,255,180,.4)";
+
+        setTimeout(()=>{
+          val.style.textShadow="0 0 20px rgba(120,255,180,.7)";
+        },200);
+
+        setTimeout(()=>{
+          val.style.textShadow="";
+        },800);
+      }
+    });
+  }
+
+  setInterval(pulsePL, 2500);
+})();

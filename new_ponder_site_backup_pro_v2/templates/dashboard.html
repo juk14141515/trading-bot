@@ -1,0 +1,64 @@
+
+{% extends "base.html" %}
+{% block content %}
+<h1>Ponder Invest AI</h1>
+<p class="muted">Research-only capital intelligence system. No live orders.</p>
+
+{% set read = ai.get("key_readout", {}) %}
+{% set alerts_sum = alerts.get("summary", {}) %}
+
+<section class="hero">
+  <div>
+    <h2>Today’s Command</h2>
+    <p>Stay disciplined. Let the system learn before automation.</p>
+  </div>
+  <div class="pill">Research Mode</div>
+</section>
+
+<section class="grid">
+  <div class="card"><h3>Market Regime</h3><div class="big">{{ read.get("regime", "—") }}</div><p>Score: {{ read.get("regime_score", "—") }}</p></div>
+  <div class="card"><h3>News Impact</h3><div class="big">{{ read.get("news_impact", "—") }}</div><p>Higher = more defensive</p></div>
+  <div class="card"><h3>Top Rotation</h3><div class="big">{{ read.get("top_rotation", {}).get("move", "—") }}</div><p>{{ read.get("top_rotation", {}).get("action", "") }}</p></div>
+  <div class="card"><h3>System Alerts</h3><div class="big">{{ alerts_sum.get("total", 0) }}</div><p>{{ alerts_sum.get("critical", 0) }} critical · {{ alerts_sum.get("warning", 0) }} warnings</p></div>
+</section>
+
+<section class="grid">
+  <div class="card">
+    <h3>Adaptive Capital AI</h3>
+    <div class="big">Next</div>
+    <p>Build allocation recommendations based on confidence, unused capital, and rotation results.</p>
+  </div>
+  <div class="card">
+    <h3>Shadow Execution</h3>
+    <div class="big">Safe</div>
+    <p>Simulate sell/buy actions before connecting anything live.</p>
+  </div>
+  <div class="card">
+    <h3>Daily Discipline</h3>
+    <div class="big">Guarded</div>
+    <p>No live automation until the tracker proves edge.</p>
+  </div>
+</section>
+
+<section class="card highlight">
+  <h2>What Should I Do?</h2>
+  <ul>
+    {% for item in ai.get("action_items", []) %}
+      <li>{{ item }}</li>
+    {% else %}
+      <li>Review AI Summary, Alerts, and Rotation before changing anything.</li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section class="card">
+  <h2>Plain-English Summary</h2>
+  <ul>
+    {% for item in ai.get("plain_english_summary", []) %}
+      <li>{{ item }}</li>
+    {% else %}
+      <li>No summary yet.</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

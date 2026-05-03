@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Learning Center</h1>
+<p class="muted">Achievements, daily missions, and beginner-friendly lessons.</p>
+
+<section class="grid" id="learningCards"></section>
+
+<section class="card">
+  <h2>Daily Missions</h2>
+  <ul>
+    <li>Review AI Summary.</li>
+    <li>Check Alerts before trusting signals.</li>
+    <li>Let trackers collect outcomes.</li>
+    <li>Do not connect experimental systems to live trading.</li>
+    <li>Copy a Debug Snapshot before asking for help.</li>
+  </ul>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>loadLearning();</script>
+{% endblock %}

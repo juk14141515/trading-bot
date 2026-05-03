@@ -1,0 +1,144 @@
+
+{% extends "base.html" %}
+{% block content %}
+<section class="hero pro-hero">
+  <div>
+    <div class="eyebrow">Research Mode · No Live Orders</div>
+    <h1>Ponder Invest AI</h1>
+    <p class="muted">A clean command center for market intelligence, capital discipline, learning, and future automation.</p>
+  </div>
+  <div class="hero-dog">
+    <div class="dog-icon">🐕</div>
+    <div>
+      <strong>Ponder is watching.</strong>
+      <p class="muted">Risk first. Patience over forced trades.</p>
+    </div>
+  </div>
+</section>
+
+{% set read = ai.get("key_readout", {}) %}
+{% set alerts_sum = alerts.get("summary", {}) %}
+{% set bot = dashboard_data.get("bot", {}) %}
+{% set capital = dashboard_data.get("capital", {}) %}
+{% set scanner_top = dashboard_data.get("scanner_top", []) %}
+{% set top_scanner = scanner_top[0] if scanner_top else {} %}
+{% set top_rotation = dashboard_data.get("top_rotation", {}) %}
+{% set top_exit = dashboard_data.get("top_exit", {}) %}
+{% set top_shadow = dashboard_data.get("top_shadow", {}) %}
+
+<section class="grid">
+  <div class="card metric"><h3>Bot State</h3><div class="big">{{ bot.get("trading_state", "unknown") }}</div><p>{{ bot.get("why_not_trading", "Waiting for bot status.") }}</p></div>
+  <div class="card metric"><h3>Portfolio</h3><div class="big">${{ capital.get("portfolio_value", capital.get("equity", "unknown")) }}</div><p>{{ capital.get("capital_used_pct", "unknown") }}% deployed</p></div>
+  <div class="card metric"><h3>Top Scanner</h3><div class="big">{{ top_scanner.get("symbol", "none") }}</div><p>Score: {{ top_scanner.get("final_score", "unknown") }}</p></div>
+  <div class="card metric"><h3>Market Regime</h3><div class="big">{{ read.get("regime", "—") }}</div><p>Score: {{ read.get("regime_score", "—") }}</p></div>
+  <div class="card metric"><h3>News Impact</h3><div class="big">{{ read.get("news_impact", "—") }}</div><p>Higher = more defensive</p></div>
+  <div class="card metric"><h3>Top Rotation</h3><div class="big small-big">{{ read.get("top_rotation", {}).get("move", "—") }}</div><p>{{ read.get("top_rotation", {}).get("action", "") }}</p></div>
+  <div class="card metric"><h3>Alerts</h3><div class="big">{{ alerts_sum.get("total", 0) }}</div><p>{{ alerts_sum.get("critical", 0) }} critical · {{ alerts_sum.get("warning", 0) }} warnings</p></div>
+</section>
+
+<section class="split live-intel">
+  <div class="card highlight">
+    <h2>Why Not Trading?</h2>
+    <div class="big small-big">{{ bot.get("why_not_trading", "Waiting for bot status.") }}</div>
+    <p class="muted">{{ bot.get("last_skip_reason", "") }}</p>
+    <p class="muted">Updated: {{ bot.get("status_updated_at", "unknown") }}</p>
+  </div>
+
+  <div class="card">
+    <h2>Capital Snapshot</h2>
+    <div class="capital-line">
+      <span>Used</span>
+      <div class="capital-track"><div class="capital-fill" style="width: {{ capital.get("capital_used_pct", 0) }}%"></div></div>
+      <strong>{{ capital.get("capital_used_pct", "unknown") }}%</strong>
+    </div>
+    <p>Mode: <strong>{{ capital.get("capital_mode", capital.get("capital_efficiency", "unknown")) }}</strong></p>
+    <p class="muted">{{ capital.get("next_money_action", "No capital action yet.") }}</p>
+  </div>
+</section>
+
+<section class="grid">
+  <div class="card module-link">
+    <h3>Sell Pressure</h3>
+    <div class="big">{{ top_exit.get("symbol", "none") }}</div>
+    <p>{{ top_exit.get("verdict", "No sell pressure candidate.") }} - Pressure {{ top_exit.get("sell_pressure", "unknown") }}</p>
+  </div>
+  <div class="card module-link">
+    <h3>Shadow Capital</h3>
+    <div class="big small-big">{% if top_shadow.get("buy_symbol") %}{{ top_shadow.get("sell_symbol") }} to {{ top_shadow.get("buy_symbol") }}{% else %}none{% endif %}</div>
+    <p>{{ top_shadow.get("recommendation", "No shadow allocation yet.") }} - {{ top_shadow.get("confidence", "unknown") }}</p>
+  </div>
+  <div class="card module-link">
+    <h3>Profit Ops</h3>
+    <p>Live P/L, trade history, decision feed, and equity analytics.</p>
+    <a href="/profit" class="inline-link">Open Profit Ops</a>
+  </div>
+  <div class="card module-link">
+    <h3>Profit Lab</h3>
+    <p>Experimental analytics, replay, position review, and learning checks.</p>
+    <a href="/profit-lab" class="inline-link">Open Profit Lab</a>
+  </div>
+</section>
+
+<section class="split">
+  <div class="card highlight">
+    <h2>🧭 What Should I Do?</h2>
+    <ul>
+      {% for item in ai.get("action_items", []) %}
+        <li>{{ item }}</li>
+      {% else %}
+        <li>Review AI Summary, Alerts, and Rotation before changing anything.</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>🚦 Automation Readiness</h2>
+    <div class="readiness">
+      <div><span class="dot warn"></span> Research-only mode</div>
+      <div><span class="dot warn"></span> Waiting for more evaluated outcomes</div>
+      <div><span class="dot good"></span> Data collection active</div>
+      <div><span class="dot risk"></span> Live automation disabled</div>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Plain-English Summary</h2>
+  <ul class="summary-list">
+    {% for item in ai.get("plain_english_summary", []) %}
+      <li>{{ item }}</li>
+    {% else %}
+      <li>No summary yet.</li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section class="grid">
+  <a class="card module-link" href="/research">
+    <h3>🧠 Research Center</h3>
+    <p>AI summary, alerts, scanner, overnight, sell, rotation, and performance.</p>
+  </a>
+  <a class="card module-link" href="/assistant">
+    <h3>🐕 Ask Ponder</h3>
+    <p>Ask why no trade, where risk is, and what to focus on next.</p>
+  </a>
+  <a class="card module-link" href="/learning">
+    <h3>🎮 Learning Center</h3>
+    <p>Achievements, daily missions, XP, and progress toward safe automation.</p>
+  </a>
+  <a class="card module-link" href="/settings">
+    <h3>⚙️ Settings</h3>
+    <p>Theme and debug tools. More customization coming next.</p>
+  </a>
+</section>
+
+<section class="card roadmap">
+  <h2>Next Build Targets</h2>
+  <div class="roadmap-grid">
+    <div><strong>1. Adaptive Capital Allocator</strong><p>Recommend position sizing from confidence, utilization, and rotation history.</p></div>
+    <div><strong>2. Unused Capital Optimizer</strong><p>Detect cash sitting idle when high-quality setups exist.</p></div>
+    <div><strong>3. Shadow Execution</strong><p>Simulate sell/buy decisions before real automation.</p></div>
+    <div><strong>4. Sell Intelligence v2</strong><p>Compare hold vs sell expected value with trailing stop simulation.</p></div>
+  </div>
+</section>
+{% endblock %}

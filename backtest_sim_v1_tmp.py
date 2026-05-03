@@ -1,0 +1,169 @@
+import yfinance as yf
+import pandas as pd
+from datetime import datetime, timedelta
+
+SYMBOLS = ["AAPL", "MSFT", "NVDA", "AMD", "TSLA", "META", "GOOGL", "AMZN"]
+DAYS_BACK = 10
+INTERVAL = "5m"
+BUY_THRESHOLD = 85
+TAKE_PROFIT = 0.025
+STOP_LOSS = -0.015
+MAX_HOLD_BARS = 12  # 12 x 5m = 1 hour
+
+
+def momentum_score(df, i):
+    if i < 6:
+        return 50
+
+    current = df["Close"].iloc[i]
+    past = df["Close"].iloc[i - 6]
+    change = (current - past) / past
+
+    if change > 0.02:
+        return 90
+    if change > 0.01:
+        return 75
+    if change > 0:
+        return 60
+    if change > -0.01:
+        return 45
+    return 25
+
+
+def trend_score(df, i):
+    if i < 20:
+        return 50
+
+    close = df["Close"].iloc[i]
+    sma_short = df["Close"].iloc[i - 5:i].mean()
+    sma_long = df["Close"].iloc[i - 20:i].mean()
+
+    if close > sma_short > sma_long:
+        return 85
+    if close > sma_long:
+        return 65
+    if close < sma_short < sma_long:
+        return 25
+    return 50
+
+
+def final_score(df, i):
+    m = momentum_score(df, i)
+    t = trend_score(df, i)
+
+    # Simple v1 scoring: trend + momentum only
+    return round((m * 0.55) + (t * 0.45), 2), m, t
+
+
+def simulate_symbol(symbol):
+    end = datetime.now()
+    start = end - timedelta(days=DAYS_BACK)
+
+    df = yf.download(
+        symbol,
+        start=start.strftime("%Y-%m-%d"),
+        end=end.strftime("%Y-%m-%d"),
+        interval=INTERVAL,
+        progress=False,
+        auto_adjust=True,
+    )
+
+    if df.empty:
+        return []
+
+    # yfinance can return MultiIndex columns. Flatten safely.
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = [c[0] if isinstance(c, tuple) else c for c in df.columns]
+
+    df = df.dropna()
+    results = []
+
+    for i in range(25, len(df) - MAX_HOLD_BARS):
+        score, mom, trend = final_score(df, i)
+
+        if score < BUY_THRESHOLD:
+            continue
+
+        entry_price = float(df["Close"].iloc[i])
+        entry_time = df.index[i]
+
+        exit_price = None
+        exit_time = None
+        exit_reason = "max_hold"
+
+        for j in range(i + 1, min(i + MAX_HOLD_BARS + 1, len(df))):
+            price = float(df["Close"].iloc[j])
+            pnl_pct = (price - entry_price) / entry_price
+
+            if pnl_pct >= TAKE_PROFIT:
+                exit_price = price
+                exit_time = df.index[j]
+                exit_reason = "take_profit"
+                break
+
+            if pnl_pct <= STOP_LOSS:
+                exit_price = price
+                exit_time = df.index[j]
+                exit_reason = "stop_loss"
+                break
+
+        if exit_price is None:
+            exit_price = float(df["Close"].iloc[i + MAX_HOLD_BARS])
+            exit_time = df.index[i + MAX_HOLD_BARS]
+
+        pnl_pct = (exit_price - entry_price) / entry_price
+
+        results.append({
+            "symbol": symbol,
+            "entry_time": entry_time,
+            "exit_time": exit_time,
+            "entry_price": round(entry_price, 2),
+            "exit_price": round(exit_price, 2),
+            "score": score,
+            "momentum_score": mom,
+            "trend_score": trend,
+            "pnl_pct": round(pnl_pct * 100, 2),
+            "result": "WIN" if pnl_pct > 0 else "LOSS",
+            "exit_reason": exit_reason,
+        })
+
+    return results
+
+
+def main():
+    all_results = []
+
+    for symbol in SYMBOLS:
+        print(f"Backtesting {symbol}...")
+        all_results.extend(simulate_symbol(symbol))
+
+    if not all_results:
+        print("No simulated trades found.")
+        return
+
+    df = pd.DataFrame(all_results)
+    df.to_csv("backtest_results_v1.csv", index=False)
+
+    wins = (df["result"] == "WIN").sum()
+    losses = (df["result"] == "LOSS").sum()
+    total = len(df)
+    win_rate = wins / total * 100
+    avg_pnl = df["pnl_pct"].mean()
+    total_pnl = df["pnl_pct"].sum()
+
+    print("\n==============================")
+    print("PONDER BACKTEST SIM V1")
+    print("==============================")
+    print(f"Trades: {total}")
+    print(f"Wins: {wins}")
+    print(f"Losses: {losses}")
+    print(f"Win rate: {win_rate:.2f}%")
+    print(f"Avg P/L: {avg_pnl:.2f}%")
+    print(f"Total simulated P/L: {total_pnl:.2f}%")
+    print("\nBy symbol:")
+    print(df.groupby("symbol")["pnl_pct"].agg(["count", "mean", "sum"]).sort_values("sum", ascending=False))
+    print("\nSaved: backtest_results_v1.csv")
+
+
+if __name__ == "__main__":
+    main()

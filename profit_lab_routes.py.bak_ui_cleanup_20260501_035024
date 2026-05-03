@@ -1,0 +1,491 @@
+
+import os
+from datetime import date
+from flask import Blueprint, jsonify, render_template_string
+import alpaca_trade_api as tradeapi
+from profit_ops_analytics import snapshot
+
+profit_lab_bp = Blueprint("profit_lab", __name__)
+
+def get_positions_safe():
+    try:
+        key = os.getenv("APCA_API_KEY_ID")
+        secret = os.getenv("APCA_API_SECRET_KEY")
+        base_url = os.getenv("BASE_URL") or os.getenv("APCA_API_BASE_URL") or "https://paper-api.alpaca.markets"
+        if not key or not secret:
+            return []
+        api = tradeapi.REST(key, secret, base_url, api_version="v2")
+        rows = []
+        for p in api.list_positions():
+            rows.append({
+                "symbol": p.symbol,
+                "qty": float(p.qty),
+                "entry_price": float(p.avg_entry_price),
+                "current_price": float(p.current_price),
+                "market_value": float(p.market_value),
+                "unrealized_pl": float(p.unrealized_pl),
+                "unrealized_plpc": round(float(p.unrealized_plpc) * 100, 2),
+            })
+        return rows
+    except Exception as e:
+        return [{"symbol":"ERROR","qty":0,"entry_price":0,"current_price":0,"market_value":0,"unrealized_pl":0,"unrealized_plpc":0,"error":str(e)}]
+
+def build_replay(logs):
+    rows = []
+    for line in logs[-150:]:
+        label = None
+        tone = "neutral"
+        if "BUY DECISION" in line:
+            label, tone = "BUY", "good"
+        elif "SKIP BUY" in line:
+            label, tone = "SKIP", "warn"
+        elif "CONFIDENCE" in line:
+            label, tone = "CONFIDENCE", "info"
+        elif "SCANNER" in line:
+            label, tone = "SCANNER", "info"
+        elif "ROTATION" in line:
+            label, tone = "ROTATION", "warn"
+        elif "SELL" in line:
+            label, tone = "SELL", "bad"
+        elif "TRADE GUARD" in line or "FORCE EXIT" in line:
+            label, tone = "GUARD", "bad"
+        if label:
+            rows.append({"label":label,"tone":tone,"line":line})
+    return rows[-80:]
+
+def build_candidates(logs):
+    rows = []
+    for line in logs[-200:]:
+        u = line.upper()
+        if not any(k in u for k in ["CONFIDENCE","BUY DECISION","SKIP BUY","SCANNER","CANDIDATE"]):
+            continue
+        reason = "observed"
+        if "market closed" in line.lower():
+            reason = "market closed"
+        elif "max positions" in line.lower():
+            reason = "slots full"
+        elif "threshold" in line.lower():
+            reason = "below threshold"
+        elif "rotation" in line.lower():
+            reason = "rotation check"
+        symbol = "-"
+        score = "-"
+        for part in line.replace("|"," ").replace(","," ").split():
+            clean = part.strip().upper()
+            if clean.isalpha() and 1 <= len(clean) <= 5 and clean not in ["BUY","SELL","SKIP","NEW","CYCLE","MARKET","CLOSED","SCANNER","CONFIDENCE","DECISION"]:
+                symbol = clean
+                break
+            if "score=" in part.lower() or "confidence=" in part.lower():
+                score = part.split("=")[-1]
+        rows.append({"symbol":symbol,"score":score,"reason":reason,"line":line})
+    return rows[-40:]
+
+def lab_snapshot():
+    s = snapshot()
+    logs = s.get("recent_logs", [])
+    today = date.today().isoformat()
+    trades = s.get("recent_trades", [])
+
+    todays = [t for t in trades if str(t.get("timestamp","")).startswith(today)]
+    sells = [t for t in todays if str(t.get("action","")).upper() == "SELL"]
+    buys = [t for t in todays if str(t.get("action","")).upper() == "BUY"]
+
+    net = 0
+    wins = 0
+    losses = 0
+    for t in sells:
+        pnl = float(t.get("pnl") or t.get("_pnl") or 0)
+        net += pnl
+        if pnl > 0:
+            wins += 1
+        else:
+            losses += 1
+
+    s["lab"] = {
+        "today": today,
+        "buys_today": len(buys),
+        "sells_today": len(sells),
+        "net_today": round(net, 2),
+        "wins_today": wins,
+        "losses_today": losses,
+        "win_rate_today": round((wins / len(sells) * 100), 2) if sells else 0,
+        "positions": get_positions_safe(),
+        "decision_replay": build_replay(logs),
+        "candidate_feed": build_candidates(logs),
+    }
+    return s
+
+@profit_lab_bp.route("/api/profit-lab")
+def api_profit_lab():
+    return jsonify(lab_snapshot())
+
+@profit_lab_bp.route("/profit-lab")
+def profit_lab():
+    return render_template_string("""
+<!doctype html>
+<html>
+<head>
+<title>Ponder Profit Lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{--bg:#070b18;--card:#111827;--border:#26334f;--muted:#a8b3c7;--green:#7cff9b;--red:#ff6f91;--blue:#8ab4ff;--yellow:#ffe86b}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at top left,#123322 0,#0b1024 35%,#050816 100%);color:white;font-family:Arial,sans-serif}
+.wrap{max-width:1450px;margin:auto;padding:28px}
+.top{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+h1{font-size:36px;margin:0 0 6px}.ai{color:var(--green)}a{color:var(--blue);text-decoration:none}.muted{color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin:18px 0}
+.card{background:linear-gradient(180deg,rgba(21,29,50,.96),rgba(11,17,34,.96));border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 15px 35px rgba(0,0,0,.22)}
+.label{color:var(--muted);font-size:13px;font-weight:700}.value{font-size:28px;font-weight:900;margin-top:8px}
+.good{color:var(--green)}.bad{color:var(--red)}.warn{color:var(--yellow)}.info{color:var(--blue)}
+.chartBox{height:340px}
+.layout{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px;border-bottom:1px solid var(--border);text-align:left}th{color:var(--blue)}
+pre,.replay{white-space:pre-wrap;word-break:break-word;max-height:310px;overflow:auto;font-size:12px;line-height:1.35}
+.chip{display:inline-block;border-radius:999px;padding:3px 8px;margin-right:8px;font-weight:900;font-size:11px}
+.chip.good{background:rgba(124,255,155,.12);color:var(--green)}.chip.bad{background:rgba(255,111,145,.12);color:var(--red)}.chip.warn{background:rgba(255,232,107,.12);color:var(--yellow)}.chip.info{background:rgba(138,180,255,.12);color:var(--blue)}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.wrap{padding:16px}h1{font-size:28px}.chartBox{height:280px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Ponder Invest <span class="ai">AI</span> Profit Lab</h1>
+      <div class="muted">Clean experimental analytics page. Safe from the stable Profit Ops dashboard.</div>
+    </div>
+    <div><a href="/">Main</a> · <a href="/profit">Profit Ops</a> · <a href="/profit-lab">Profit Lab</a></div>
+  </div>
+
+  <div class="grid">
+    <div class="card"><div class="label">Today P/L</div><div id="todayPnl" class="value">$0</div><div id="todayStats" class="muted">0 buys · 0 sells</div></div>
+    <div class="card"><div class="label">Today Win Rate</div><div id="todayWin" class="value">0%</div><div id="todayWL" class="muted">0 wins · 0 losses</div></div>
+    <div class="card"><div class="label">AI Health</div><div id="health" class="value info">--</div><div id="healthNote" class="muted">Waiting</div></div>
+    <div class="card"><div class="label">Open P/L</div><div id="openPl" class="value">$0</div><div class="muted">Unrealized</div></div>
+  </div>
+
+  <div class="card">
+    <h2>Equity Lab Chart</h2>
+    <div class="chartBox"><canvas id="chart"></canvas></div>
+  </div>
+
+  
+  
+<div class="card" style="margin-top:16px">
+  <h2>💰 Capital Efficiency</h2>
+  <div class="grid">
+    <div><div class="label">Capital Used</div><div id="capUsed" class="value">--</div></div>
+    <div><div class="label">Losing Exposure</div><div id="capLosing" class="value">--</div></div>
+    <div><div class="label">Risk Level</div><div id="capRisk" class="value">--</div></div>
+  </div>
+</div>
+
+<div id="capUsed" class="value">--</div></div>
+    <div><div class="label">Losing Exposure</div><div id="capLosing" class="value">--</div></div>
+    <div><div class="label">Risk Level</div><div id="capRisk" class="value">--</div></div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:16px">
+    <h2>📊 Performance Insight</h2>
+    <div class="grid">
+      <div><div class="label">Closed Trades</div><div id="insightClosed" class="value">0</div></div>
+      <div><div class="label">Win Rate</div><div id="insightWinRate" class="value">0%</div></div>
+      <div><div class="label">Avg Win / Loss</div><div id="insightAvg" class="value">$0 / $0</div></div>
+      <div><div class="label">Ponder Read</div><div id="insightRead" class="muted">Waiting for data...</div></div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="card">
+      <h2>Decision Replay</h2>
+      <div id="decisionReplay" class="replay">Loading...</div>
+    </div>
+
+    <div class="card">
+      <h2>Candidate Feed</h2>
+      <table>
+        <thead><tr><th>Symbol</th><th>Score</th><th>Reason</th></tr></thead>
+        <tbody id="candidateFeed"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Live Positions</h2>
+      <table>
+        <thead><tr><th>Symbol</th><th>Qty</th><th>Open P/L</th><th>P/L %</th></tr></thead>
+        <tbody id="positions"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let chart=null;
+let lastProfitLabData=null;
+function money(x){let n=Number(x||0);return "$"+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
+function pct(x){return Number(x||0).toFixed(2)+"%"}
+function cls(x){return Number(x||0)>=0?"good":"bad"}
+
+async function load(){
+  const r=await fetch("/api/profit-lab",{cache:"no-store"});
+  if(!r.ok)return;
+  const d=await r.json();
+  lastProfitLabData=d;
+  ponderPerformanceInsight(lastProfitLabData);
+  updateCapitalStats(lastProfitLabData);
+  const l=d.latest||{}, lab=d.lab||{}, h=d.health||{}, logs=d.logs||{}, eq=d.equity||[];
+
+  document.getElementById("todayPnl").textContent=money(lab.net_today);
+  document.getElementById("todayPnl").className="value "+cls(lab.net_today);
+  document.getElementById("todayStats").textContent=`${lab.buys_today||0} buys · ${lab.sells_today||0} sells`;
+  document.getElementById("todayWin").textContent=pct(lab.win_rate_today);
+  document.getElementById("todayWL").textContent=`${lab.wins_today||0} wins · ${lab.losses_today||0} losses`;
+  document.getElementById("health").textContent=(h.score??"--")+"/100";
+  document.getElementById("healthNote").textContent=h.note||"";
+  document.getElementById("openPl").textContent=money(l.open_pl);
+  document.getElementById("openPl").className="value "+cls(l.open_pl);
+
+  const labels=eq.map(x=>x.timestamp);
+  const datasets=[
+    {label:"Portfolio Value",data:eq.map(x=>x.portfolio_value),tension:.35,pointRadius:2},
+    {label:"Open P/L",data:eq.map(x=>x.open_pl),tension:.35,pointRadius:2,yAxisID:"y1"}
+  ];
+  const options={responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},scales:{x:{ticks:{maxTicksLimit:8}},y:{position:"left"},y1:{position:"right",grid:{drawOnChartArea:false}}}};
+  if(!chart){chart=new Chart(document.getElementById("chart"),{type:"line",data:{labels,datasets},options});}
+  else{chart.data.labels=labels;chart.data.datasets=datasets;chart.update();}
+
+  document.getElementById("decisionReplay").innerHTML=(lab.decision_replay||[]).map(x=>`
+    <div style="padding:7px 0;border-bottom:1px solid rgba(255,255,255,.08)">
+      <span class="chip ${x.tone||'info'}">${x.label||'LOG'}</span>${x.line||''}
+    </div>
+  `).join("") || "No decision replay yet.";
+
+  document.getElementById("candidateFeed").innerHTML=(lab.candidate_feed||[]).map(x=>`
+    <tr><td>${x.symbol||"-"}</td><td>${x.score||"-"}</td><td>${x.reason||"-"}</td></tr>
+  `).join("") || "<tr><td colspan='3'>No candidates yet.</td></tr>";
+
+  document.getElementById("positions").innerHTML=(lab.positions||[]).map(p=>`
+    <tr>
+      <td>${p.symbol||""}</td>
+      <td>${Number(p.qty||0).toFixed(2)}</td>
+      <td class="${cls(p.unrealized_pl)}">${money(p.unrealized_pl)}</td>
+      <td class="${cls(p.unrealized_plpc)}">${pct(p.unrealized_plpc)}</td>
+    </tr>
+  `).join("") || "<tr><td colspan='4'>No open positions.</td></tr>";
+}
+
+
+
+function updateCapitalStats(d){
+  const lab=d.lab||{};
+  const positions=lab.positions||[];
+
+  const total=positions.reduce((s,p)=>s+Number(p.market_value||0),0);
+  const losing=positions.filter(p=>Number(p.unrealized_pl||0)<0)
+                        .reduce((s,p)=>s+Number(p.market_value||0),0);
+
+  let ratio = total ? losing/total : 0;
+
+  let risk="LOW";
+  if(ratio > 0.6) risk="HIGH";
+  else if(ratio > 0.3) risk="MEDIUM";
+
+  if(document.getElementById("capUsed")){
+    document.getElementById("capUsed").textContent="$"+total.toFixed(0);
+  }
+  if(document.getElementById("capLosing")){
+    document.getElementById("capLosing").textContent="$"+losing.toFixed(0);
+  }
+  if(document.getElementById("capRisk")){
+    document.getElementById("capRisk").textContent=risk;
+  }
+}
+
+function ponderPerformanceInsight(d){
+  if(!d) return;
+  const m=d.metrics||{}, lab=d.lab||{}, positions=lab.positions||[];
+  const closed=Number(m.closed_trades||0);
+  const winRate=Number(m.win_rate||0);
+  const avgWin=Number(m.avg_win||0);
+  const avgLoss=Number(m.avg_loss||0);
+  const losing=positions.filter(p=>Number(p.unrealized_pl||0)<0).length;
+  const winners=positions.length-losing;
+
+  let read="Learning mode: not enough closed trades yet.";
+  if(closed >= 5){
+    if(winRate >= 55 && Number(m.net_closed_pnl||0) >= 0){
+      read="Closed-trade performance is healthy so far.";
+    } else if(winRate < 45){
+      read="Win rate is weak. Review entries, exits, and score thresholds.";
+    } else {
+      read="Mixed results. Keep collecting trades before changing weights.";
+    }
+  }
+
+  if(positions.length && losing > winners){
+    read += " More open positions are losing than winning.";
+  }
+
+  const elClosed=document.getElementById("insightClosed");
+  const elWin=document.getElementById("insightWinRate");
+  const elAvg=document.getElementById("insightAvg");
+  const elRead=document.getElementById("insightRead");
+
+  if(elClosed) elClosed.textContent=closed;
+  if(elWin) elWin.textContent=winRate.toFixed(2)+"%";
+  if(elAvg) elAvg.textContent="$"+avgWin.toFixed(2)+" / $"+avgLoss.toFixed(2);
+  if(elRead) elRead.textContent=read;
+}
+
+function ponderInsight(d){
+  if(!d) return "No data loaded yet.";
+  const l=d.latest||{}, h=d.health||{}, lab=d.lab||{}, eq=d.equity||[];
+  const positions=lab.positions||[];
+  const open=Number(l.open_pl||0);
+  const health=Number(h.score||0);
+  let trend="flat";
+  if(eq.length>3){
+    const first=Number(eq[0].portfolio_value||0);
+    const last=Number(eq[eq.length-1].portfolio_value||0);
+    if(last>first) trend="up";
+    if(last<first) trend="down";
+  }
+  let weakest="None";
+  if(positions.length){
+    weakest=positions.slice().sort((a,b)=>Number(a.unrealized_pl||0)-Number(b.unrealized_pl||0))[0].symbol;
+  }
+  return `Ponder Summary 🐾
+Health: ${health}/100
+Equity trend: ${trend}
+Risk Level: ${riskLevel} | Open P/L: $${open.toFixed(2)}
+Open positions: ${positions.length}
+Weakest position: ${worst ? worst.symbol : "N/A"} (P/L: $${worst ? Number(worst.unrealized_pl||0).toFixed(2) : "0"}) | ${weakest}
+
+Current read:
+${health>=75 ? "System health is decent." : "System should stay defensive."}
+${open<0 ? "Open P/L is negative, so risk control matters right now." : "Open P/L is positive or neutral."}
+${positions.length ? "Watch the weakest holding and whether rotation/guard logic reacts." : "No open positions to judge yet."}`;
+}
+
+function askPonder(kind){
+  const d=lastProfitLabData;
+  const q=(kind || document.getElementById("ponderQuestion")?.value || "").toLowerCase();
+  const ans=document.getElementById("ponderAnswer");
+  if(!ans) return;
+
+  if(!d){
+    ans.textContent="Ponder is still loading data. Try again in a few seconds.";
+    return;
+  }
+
+  const l=d.latest||{}, h=d.health||{}, lab=d.lab||{}, eq=d.equity||[];
+  const positions=lab.positions||[];
+  const open=Number(l.open_pl||0);
+  const health=Number(h.score||0);
+
+  let first=eq.length?Number(eq[0].portfolio_value||0):0;
+  let last=eq.length?Number(eq[eq.length-1].portfolio_value||0):0;
+  let change=last-first;
+
+  if(q.includes("graph") || q.includes("equity") || q.includes("down") || q.includes("up")){
+    ans.textContent=`The graph is your portfolio value over time.
+
+Start: $${first.toFixed(2)}
+Latest: $${last.toFixed(2)}
+Change: $${change.toFixed(2)}
+
+Ponder’s read:
+${change>=0 ? "The account is slightly up over this window." : "The account is down over this window."}
+The sharp moves are mostly unrealized position value changes, not necessarily closed profit yet. Since closed trades are still low, this is still learning/data collection mode.`;
+  } else if(q.includes("risk") || q.includes("health")){
+    ans.textContent=`Risk read:
+
+AI Health: ${health}/100
+Risk Level: ${riskLevel} | Open P/L: $${open.toFixed(2)}
+Open positions: ${positions.length}
+
+Ponder’s read:
+${health>=80 ? "Health is strong, but do not overtrust it until more closed trades exist." : health>=60 ? "Health is acceptable, but defensive behavior is still smart." : "Health is weak; reduce risk and review exits."}
+${open<0 ? "Because open P/L is negative, watch the kill switch and weakest position." : "Open P/L is not pressuring the system right now."}`;
+  } else if(q.includes("position") || q.includes("weak") || q.includes("nvda") || q.includes("aapl") || q.includes("amzn")){
+    if(!positions.length){
+      ans.textContent="No open positions right now, so Ponder has nothing to rank.";
+    } else {
+      const sorted=positions.slice().sort((a,b)=>Number(a.unrealized_pl||0)-Number(b.unrealized_pl||0));
+      const weak=sorted[0];
+      const best=sorted[sorted.length-1];
+      ans.textContent=`Position read:
+
+Weakest: ${weak.symbol} | P/L $${Number(weak.unrealized_pl||0).toFixed(2)} | ${Number(weak.unrealized_plpc||0).toFixed(2)}%
+Best: ${best.symbol} | P/L $${Number(best.unrealized_pl||0).toFixed(2)} | ${Number(best.unrealized_plpc||0).toFixed(2)}%
+
+Ponder’s read:
+The weakest position is the one to watch for trade guard, rotation, or stale-position logic.`;
+    }
+  } else if(q.includes("change") || q.includes("recent")){
+    if(eq.length < 5){
+      ans.textContent="Not enough equity points yet to detect recent change.";
+      return;
+    }
+
+    let prev = Number(eq[eq.length-5].portfolio_value||0);
+    let curr = Number(eq[eq.length-1].portfolio_value||0);
+    let diff = curr - prev;
+
+    let prevOpen = Number(eq[eq.length-5].open_pl||0);
+    let currOpen = Number(eq[eq.length-1].open_pl||0);
+    let openDiff = currOpen - prevOpen;
+
+    ans.textContent=`Recent Change Analysis 🐾
+
+Portfolio moved: $${diff.toFixed(2)}
+Open P/L moved: $${openDiff.toFixed(2)}
+
+Ponder’s read:
+${diff > 0 ? "Recent account movement is positive." : "Recent account movement is negative or flat."}
+${openDiff > 0 ? "Open positions improved recently." : "Open positions weakened recently."}
+
+Watch:
+- Whether weakest position improves or worsens
+- Whether trade guard reacts if a loser keeps falling
+- Whether rotation frees capital once market opens`;
+
+  } else if(q.includes("suggest") || q.includes("should") || q.includes("next")){
+    const losing = positions.filter(p => Number(p.unrealized_pl||0) < 0).length;
+    const winners = positions.length - losing;
+    const m=d.metrics||{};
+    ans.textContent=`Ponder Strategy Suggestions 🐾
+
+Current state:
+- Winners open: ${winners}
+- Losers open: ${losing}
+- Risk Level: ${riskLevel} | Open P/L: $${open.toFixed(2)}
+- Closed trades: ${m.closed_trades||0}
+- Closed win rate: ${Number(m.win_rate||0).toFixed(2)}%
+
+Ponder thinks:
+${losing > winners ? "- More positions are losing than winning — exits or entries may need review.\\n" : "- Open position balance is not worse than neutral.\\n"}
+${open < 0 ? "- Overall unrealized P/L is negative, so risk control matters.\\n" : "- Open P/L is not currently pressuring the system.\\n"}
+${health < 70 ? "- Health is dropping — defensive mode is appropriate.\\n" : "- Health is acceptable, but more closed trades are needed.\\n"}
+${positions.length >= 3 ? "- Capital is tied up — rotation logic is important.\\n" : "- Position slots are not fully loaded.\\n"}
+
+Best next move:
+Keep collecting data, then tune exits and rotation before changing entry scoring.`;
+  } else {
+    ans.textContent=ponderInsight(d);
+  }
+}
+
+setInterval(()=> {
+  const el=document.getElementById("ponderSummary");
+  if(el && lastProfitLabData){ el.textContent=ponderInsight(lastProfitLabData); }
+}, 3000);
+
+load();
+setInterval(load,10000);
+</script>
+</body>
+</html>
+""")

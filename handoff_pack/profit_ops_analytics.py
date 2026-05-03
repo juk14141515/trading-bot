@@ -1,0 +1,193 @@
+
+import csv, os
+from collections import defaultdict, Counter
+from datetime import datetime
+from dashboard_safety_ui import ai_mood, goal_snapshot
+
+BASE_DIR=os.path.dirname(os.path.abspath(__file__))
+TRADE_FILE=os.path.join(BASE_DIR,"trade_history.csv")
+EQUITY_FILE=os.path.join(BASE_DIR,"equity_history.csv")
+LOG_FILE=os.path.join(BASE_DIR,"log.txt")
+
+def sf(x):
+    try: return float(x)
+    except: return 0.0
+
+def read_equity(limit=1000):
+    rows=[]
+    if not os.path.exists(EQUITY_FILE): return rows
+    try:
+        with open(EQUITY_FILE,newline="",errors="ignore") as f:
+            for r in csv.DictReader(f):
+                rows.append({
+                    "timestamp":r.get("timestamp",""),
+                    "portfolio_value":sf(r.get("portfolio_value")),
+                    "buying_power":sf(r.get("buying_power")),
+                    "open_pl":sf(r.get("open_pl")),
+                })
+    except Exception:
+        return []
+    return rows[-limit:]
+
+def read_trades(limit=1000):
+    rows=[]
+    if not os.path.exists(TRADE_FILE): return rows
+    try:
+        with open(TRADE_FILE,newline="",errors="ignore") as f:
+            for r in csv.DictReader(f):
+                r["_pnl"]=sf(r.get("pnl"))
+                r["_pnl_pct"]=sf(r.get("pnl_pct"))
+                r["_qty"]=sf(r.get("qty"))
+                r["_price"]=sf(r.get("price"))
+                r["_score"]=sf(r.get("score"))
+                rows.append(r)
+    except Exception:
+        return []
+    return rows[-limit:]
+
+def read_logs(limit=400):
+    if not os.path.exists(LOG_FILE): return []
+    try:
+        with open(LOG_FILE,"r",errors="ignore") as f:
+            return [x.rstrip() for x in f.readlines()[-limit:]]
+    except Exception:
+        return []
+
+def max_drawdown(eq):
+    vals=[r["portfolio_value"] for r in eq if r.get("portfolio_value")]
+    if not vals: return 0
+    peak=vals[0]; maxdd=0
+    for v in vals:
+        peak=max(peak,v)
+        if peak:
+            maxdd=max(maxdd,(peak-v)/peak)
+    return round(maxdd*100,2)
+
+def equity_change(eq):
+    vals=[r["portfolio_value"] for r in eq if r.get("portfolio_value")]
+    if len(vals)<2: return {"dollar":0,"pct":0}
+    d=vals[-1]-vals[0]
+    p=(d/vals[0]*100) if vals[0] else 0
+    return {"dollar":round(d,2),"pct":round(p,2)}
+
+def trade_metrics(trades):
+    sells=[t for t in trades if str(t.get("action","")).upper()=="SELL"]
+    buys=[t for t in trades if str(t.get("action","")).upper()=="BUY"]
+    wins=[t for t in sells if t["_pnl"]>0]
+    losses=[t for t in sells if t["_pnl"]<=0]
+
+    net=sum(t["_pnl"] for t in sells)
+    gross_win=sum(t["_pnl"] for t in wins)
+    gross_loss=abs(sum(t["_pnl"] for t in losses))
+    pf=(gross_win/gross_loss) if gross_loss else (gross_win if gross_win else 0)
+
+    bysym=defaultdict(float)
+    sym_counts=Counter()
+    sym_wins=Counter()
+    sym_losses=Counter()
+    reasons=Counter()
+
+    for t in sells:
+        sym=t.get("symbol","UNK")
+        bysym[sym]+=t["_pnl"]
+        sym_counts[sym]+=1
+        if t["_pnl"]>0: sym_wins[sym]+=1
+        else: sym_losses[sym]+=1
+        reasons[t.get("reason","unknown") or "unknown"]+=1
+
+    best=max(bysym,key=bysym.get) if bysym else "-"
+    worst=min(bysym,key=bysym.get) if bysym else "-"
+
+    symbol_rows=[]
+    for sym,pnl in sorted(bysym.items(),key=lambda x:x[1],reverse=True):
+        total=sym_counts[sym]
+        wr=round((sym_wins[sym]/total*100),2) if total else 0
+        symbol_rows.append({
+            "symbol":sym,
+            "pnl":round(pnl,2),
+            "trades":total,
+            "wins":sym_wins[sym],
+            "losses":sym_losses[sym],
+            "win_rate":wr
+        })
+
+    return {
+        "total_trades":len(trades),
+        "buys":len(buys),
+        "closed_trades":len(sells),
+        "wins":len(wins),
+        "losses":len(losses),
+        "win_rate":round((len(wins)/len(sells)*100),2) if sells else 0,
+        "net_closed_pnl":round(net,2),
+        "avg_win":round(gross_win/len(wins),2) if wins else 0,
+        "avg_loss":round(-gross_loss/len(losses),2) if losses else 0,
+        "profit_factor":round(pf,2),
+        "best_symbol":best,
+        "best_symbol_pnl":round(bysym.get(best,0),2) if best!="-" else 0,
+        "worst_symbol":worst,
+        "worst_symbol_pnl":round(bysym.get(worst,0),2) if worst!="-" else 0,
+        "symbol_rows":symbol_rows[:20],
+        "exit_reasons":[{"reason":k,"count":v} for k,v in reasons.most_common(12)]
+    }
+
+def log_intelligence(logs):
+    keys=["SCANNER","ADAPTIVE","CONFIDENCE","BUY DECISION","SKIP BUY","ROTATION","SELL","BUY","ERROR","WEAK POSITION"]
+    counts={k:0 for k in keys}
+    decision=[]; warnings=[]
+    for line in logs:
+        for k in keys:
+            if k in line: counts[k]+=1
+        if any(x in line for x in ["CONFIDENCE","BUY DECISION","SKIP BUY","SCANNER"]):
+            decision.append(line)
+        if any(x in line for x in ["ERROR","STOP_TRADING","EMERGENCY","Traceback"]):
+            warnings.append(line)
+    return {"counts":counts,"decision_feed":decision[-100:],"warnings":warnings[-30:]}
+
+def health_score(latest,metrics,dd,logs):
+    score=100.0
+    open_pl=sf(latest.get("open_pl"))
+    if open_pl<0: score-=min(25,abs(open_pl)/20)
+    if dd>1: score-=min(25,dd*4)
+    if metrics["closed_trades"]>=5 and metrics["win_rate"]<45: score-=20
+    if metrics["closed_trades"]>=5 and metrics["net_closed_pnl"]<0: score-=20
+    if logs["counts"].get("ERROR",0)>0: score-=15
+    if logs["counts"].get("SCANNER",0)==0: score-=10
+
+    score=round(max(0,min(100,score)),1)
+    if metrics["closed_trades"]<5:
+        note="Learning mode: not enough closed trades yet."
+    elif score>=75:
+        note="Healthy: risk and performance look stable."
+    elif score>=50:
+        note="Caution: monitor drawdown, exits, and scanner flow."
+    else:
+        note="Defensive: review weak trades before increasing risk."
+    return {"score":score,"note":note}
+
+def snapshot():
+    eq=read_equity()
+    trades=read_trades()
+    raw_logs=read_logs()
+    latest=eq[-1] if eq else {"timestamp":"-","portfolio_value":0,"buying_power":0,"open_pl":0}
+    metrics=trade_metrics(trades)
+    dd=max_drawdown(eq)
+    logs=log_intelligence(raw_logs)
+    return {
+        "generated_at":datetime.now().isoformat(timespec="seconds"),
+        "latest":latest,
+        "equity":eq,
+        "equity_change":equity_change(eq),
+        "metrics":metrics,
+        "drawdown":dd,
+        "logs":logs,
+        "health":health_score(latest,metrics,dd,logs),
+        "recent_trades":list(reversed(trades[-75:])),
+        "recent_logs":raw_logs[-150:],
+        "ui": {
+            "mood": ai_mood(health_score(latest,metrics,dd,logs)["score"], latest.get("open_pl",0), False),
+            "goals": goal_snapshot({
+                "latest": latest,
+                "metrics": metrics
+            })
+        }
+    }

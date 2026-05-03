@@ -1,0 +1,228 @@
+from flask import Flask, request, Response
+from dotenv import load_dotenv
+import os
+import alpaca_trade_api as tradeapi
+import json
+
+def load_bot_status():
+    try:
+        with open("bot_status.json", "r") as f:
+            return json.load(f)
+    except:
+        return {}
+load_dotenv()
+
+API_KEY = os.getenv("APCA_API_KEY_ID")
+SECRET_KEY = os.getenv("APCA_API_SECRET_KEY")
+BASE_URL = os.getenv("BASE_URL")
+
+api = tradeapi.REST(API_KEY, SECRET_KEY, BASE_URL)
+
+app = Flask(__name__)
+DASHBOARD_USER = os.getenv("DASHBOARD_USER", "admin")
+DASHBOARD_PASS = os.getenv("DASHBOARD_PASS", "changeme")
+
+def check_auth(username, password):
+    return username == DASHBOARD_USER and password == DASHBOARD_PASS
+
+def auth_required():
+    return Response(
+        "Login required",
+        401,
+        {"WWW-Authenticate": 'Basic realm="AI Trading Bot Dashboard"'}
+    )
+
+@app.before_request
+def require_login():
+    auth = request.authorization
+    if not auth or not check_auth(auth.username, auth.password):
+        return auth_required()
+
+def read_logs():
+    try:
+        with open("log.txt", "r") as f:
+            return f.readlines()[-30:]
+    except:
+        return ["No logs yet."]
+
+@app.route("/")
+def dashboard():
+    account = api.get_account()
+    clock = api.get_clock()
+    positions = api.list_positions()
+    logs = read_logs()
+    status = load_bot_status()
+    summary = status.get("summary", {})
+
+    rows = ""
+
+    ai_summary_html = f"""
+        <div class="card">
+            <h2>AI Market Summary</h2>
+            <p>{summary.get("full_summary", "No summary yet.")}</p>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h3>Market Insight</h3>
+                <p>{summary.get("market_summary", "N/A")}</p>
+            </div>
+            <div class="card">
+                <h3>Opportunities</h3>
+                <p>{summary.get("opportunity_summary", "N/A")}</p>
+            </div>
+            <div class="card">
+                <h3>Risk</h3>
+                <p>{summary.get("risk_summary", "N/A")}</p>
+            </div>
+        </div>
+    """
+    total_pl = 0
+
+    for p in positions:
+        pl = float(p.unrealized_pl)
+        total_pl += pl
+        color = "green" if pl >= 0 else "red"
+
+        rows += f"""
+        <tr>
+            <td>{p.symbol}</td>
+            <td>{p.qty}</td>
+            <td>${p.avg_entry_price}</td>
+            <td>${p.current_price}</td>
+            <td class="{color}">${pl:.2f}</td>
+            <td class="{color}">{float(p.unrealized_plpc) * 100:.2f}%</td>
+        </tr>
+        """
+
+    if not rows:
+        rows = "<tr><td colspan='6'>No open positions</td></tr>"
+
+    bot_status = "MARKET OPEN" if clock.is_open else "MARKET CLOSED"
+    status_class = "green" if clock.is_open else "yellow"
+
+    return f"""
+    <html>
+    <head>
+        <title>AI Trading Bot Dashboard</title>
+        <meta http-equiv="refresh" content="10">
+        <style>
+            body {{
+                margin: 0;
+                font-family: Arial, sans-serif;
+                background: #050505;
+                color: white;
+            }}
+            .container {{
+                padding: 25px;
+                max-width: 1200px;
+                margin: auto;
+            }}
+            h1 {{
+                font-size: 34px;
+                margin-bottom: 5px;
+            }}
+            .subtitle {{
+                color: #888;
+                margin-bottom: 25px;
+            }}
+            .grid {{
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                gap: 18px;
+            }}
+            .card {{
+                background: #111;
+                border: 1px solid #222;
+                border-radius: 18px;
+                padding: 22px;
+                box-shadow: 0 0 20px rgba(0,0,0,0.4);
+            }}
+            .big {{
+                font-size: 28px;
+                font-weight: bold;
+            }}
+            .green {{ color: #00ff88; }}
+            .red {{ color: #ff4d4d; }}
+            .yellow {{ color: #ffd84d; }}
+            table {{
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 10px;
+            }}
+            th, td {{
+                padding: 12px;
+                border-bottom: 1px solid #222;
+                text-align: left;
+            }}
+            pre {{
+                background: #070707;
+                padding: 15px;
+                border-radius: 12px;
+                max-height: 320px;
+                overflow-y: auto;
+                font-size: 13px;
+            }}
+            .status {{
+                display: inline-block;
+                padding: 8px 14px;
+                border-radius: 999px;
+                background: #151515;
+                font-weight: bold;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>AI Trading Bot</h1>
+            <div class="subtitle">Live cloud dashboard · auto-refreshes every 10 seconds</div>
+
+            <div class="grid">
+                <div class="card">
+                    <h3>Status</h3>
+                    <div class="status {status_class}">{bot_status}</div>
+                    <p>Account: {account.status}</p>
+                </div>
+
+                <div class="card">
+                    <h3>Portfolio Value</h3>
+                    <div class="big">${account.portfolio_value}</div>
+                </div>
+
+                <div class="card">
+                    <h3>Buying Power</h3>
+                    <div class="big">${account.buying_power}</div>
+                </div>
+
+                <div class="card">
+                    <h3>Open P/L</h3>
+                    <div class="big {'green' if total_pl >= 0 else 'red'}">${total_pl:.2f}</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Open Positions</h2>
+                <table>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Qty</th>
+                        <th>Entry</th>
+                        <th>Current</th>
+                        <th>P/L $</th>
+                        <th>P/L %</th>
+                    </tr>
+                    {rows}
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>Recent Bot Logs</h2>
+                <pre>{"".join(logs)}</pre>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)

@@ -1,0 +1,15 @@
+{
+  "threshold": 70.0,
+  "take_profit_pct": 1.5,
+  "stop_loss_pct": -2.0,
+  "max_hold_minutes": 60,
+  "trades": 780,
+  "wins": 480,
+  "losses": 300,
+  "win_rate": 61.54,
+  "avg_pnl_pct": 0.2425,
+  "total_pnl_pct": 189.14,
+  "worst_trade_pct": -5.08,
+  "quality_score": 34.5254,
+  "symbols_group": "strong_backtest"
+}

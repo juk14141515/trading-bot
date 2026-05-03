@@ -1,0 +1,49 @@
+{
+  "updated_at": "2026-05-02 23:07:17",
+  "status": "research_only",
+  "health_score": 100,
+  "modules": {
+    "capital_engine": "online",
+    "decision_engine": "online",
+    "ai_summary": "online",
+    "alerts": "online",
+    "market_intelligence": "online",
+    "overnight_intelligence": "online",
+    "sell_intelligence": "online",
+    "rotation_engine": "online",
+    "performance_tracker": "online",
+    "shadow_allocator": "online",
+    "market_regime": "online"
+  },
+  "capital": {
+    "portfolio": 100151.42,
+    "cash": 73158.65,
+    "buying_power": 173310.07,
+    "deployable": 53128.37,
+    "capital_mode": "UNDERUTILIZED",
+    "capital_efficiency": "LOW",
+    "next_money_action": "WAIT \u2014 No edge detected. Protect capital."
+  },
+  "decision": {
+    "buy_count": 0,
+    "watch_count": 4,
+    "ignore_count": 11,
+    "top_symbol": "QQQ",
+    "top_score": 73.5,
+    "top_action": "WATCH",
+    "top_reason": "Decent setup, not strong enough yet"
+  },
+  "risk": {
+    "alerts_total": 2,
+    "critical": 1,
+    "warning": 1,
+    "sell_pressure_top": 55
+  },
+  "plain_english": [
+    "System health is 100/100.",
+    "Capital mode is UNDERUTILIZED.",
+    "Top setup is QQQ with action WATCH.",
+    "WAIT \u2014 No edge detected. Protect capital.",
+    "Everything is research-only. No live orders are placed."
+  ]
+}

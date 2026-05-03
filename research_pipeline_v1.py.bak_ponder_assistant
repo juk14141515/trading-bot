@@ -1,0 +1,88 @@
+import json
+import sys
+import subprocess
+from datetime import datetime
+from pathlib import Path
+import pandas as pd
+
+OUT = Path("static/research")
+OUT.mkdir(parents=True, exist_ok=True)
+
+RUN_OPTIMIZER = "--optimizer" in sys.argv
+
+def run(cmd):
+    print("RUN:", " ".join(cmd), flush=True)
+    subprocess.run(cmd, check=False)
+
+def main():
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"=== PIPELINE RUN {now} ===", flush=True)
+
+    run(["python3", "market_scanner_v2.py"])
+    run(["python3", "overnight_brief_v1.py"])
+    run(["python3", "sell_intelligence_v1.py"])
+    run(["python3", "market_regime_filter_v1.py"])
+    run(["python3", "rotation_engine_v3.py"])
+    run(["python3", "rotation_performance_tracker_v2.py"])
+    run(["python3", "shadow_capital_allocator_v1.py"])
+
+    if RUN_OPTIMIZER:
+        run(["python3", "strategy_optimizer_v2_fast.py"])
+    else:
+        print("SKIP optimizer. Use: python3 research_pipeline_v1.py --optimizer", flush=True)
+
+    scanner_csv = Path("market_scanner_results_v2.csv")
+    optimizer_csv = Path("strategy_research_results_v2.csv")
+    best_json = Path("best_strategy_config_v2.json")
+    overnight_json = Path("static/research/overnight_brief_latest.json")
+    sell_json = Path("static/research/sell_intelligence_latest.json")
+
+    payload = {
+        "updated_at": now,
+        "optimizer_ran": RUN_OPTIMIZER,
+        "scanner_top": [],
+        "trade_ready": [],
+        "extended_wait": [],
+        "best_strategy": {},
+        "optimizer_top": [],
+        "overnight_brief": {},
+        "sell_intelligence": {},
+    }
+
+    if scanner_csv.exists():
+        df = pd.read_csv(scanner_csv)
+        payload["scanner_top"] = df.head(15).to_dict(orient="records")
+
+        if "entry_zone" in df.columns:
+            payload["trade_ready"] = df[
+                df["entry_zone"].astype(str).str.contains("Healthy|Pullback", case=False, na=False)
+            ].head(15).to_dict(orient="records")
+
+            payload["extended_wait"] = df[
+                df["entry_zone"].astype(str).str.contains("Extended", case=False, na=False)
+            ].head(15).to_dict(orient="records")
+
+    if best_json.exists():
+        payload["best_strategy"] = json.loads(best_json.read_text())
+
+    if overnight_json.exists():
+        payload["overnight_brief"] = json.loads(overnight_json.read_text())
+
+    if sell_json.exists():
+        payload["sell_intelligence"] = json.loads(sell_json.read_text())
+
+    if optimizer_csv.exists():
+        odf = pd.read_csv(optimizer_csv)
+        payload["optimizer_top"] = odf.head(10).to_dict(orient="records")
+
+    latest = OUT / "market_intelligence_latest.json"
+    latest.write_text(json.dumps(payload, indent=2))
+
+    archive = OUT / f"market_intelligence_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    archive.write_text(json.dumps(payload, indent=2))
+
+    print("Saved:", latest, flush=True)
+
+if __name__ == "__main__":
+    main()
+    run(["python3", "ai_summary_layer_v1.py"])

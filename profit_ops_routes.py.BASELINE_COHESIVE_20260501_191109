@@ -1,0 +1,1049 @@
+
+from flask import Blueprint, jsonify, render_template_string
+from profit_ops_analytics import snapshot
+from dashboard_safety_ui import rate_limit
+
+bp=Blueprint("profit_ops",__name__)
+
+@bp.route("/api/profit-ops")
+@rate_limit(max_requests=180, window_seconds=60)
+def api_profit_ops():
+    return jsonify(snapshot())
+
+@bp.route("/profit")
+@bp.route("/profit/history")
+def profit():
+    return render_template_string("""
+<!doctype html>
+<html>
+<head>
+<title>Ponder Invest AI | Profit Ops</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{--bg:#070b18;--card:#111827;--card2:#151d32;--border:#26334f;--text:#f8fafc;--muted:#a8b3c7;--green:#7cff9b;--red:#ff6f91;--blue:#8ab4ff;--yellow:#ffe86b}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at top left,#123322 0,#0b1024 35%,#050816 100%);color:var(--text);font-family:Arial,sans-serif}
+.wrap{max-width:1480px;margin:auto;padding:28px}
+.top{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start}
+h1{font-size:40px;margin:0 0 8px}.ai{color:var(--green)}
+a{color:var(--blue);text-decoration:none}.muted{color:var(--muted)}
+.pill{display:inline-block;border:1px solid var(--border);background:rgba(255,255,255,.08);border-radius:999px;padding:9px 14px;margin:7px 6px 0 0;font-weight:800}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:16px;margin:22px 0}
+.card{background:linear-gradient(180deg,rgba(21,29,50,.96),rgba(11,17,34,.96));border:1px solid var(--border);border-radius:22px;padding:20px;box-shadow:0 15px 35px rgba(0,0,0,.25)}
+.label{color:var(--muted);font-size:14px;font-weight:700}.value{font-size:30px;font-weight:900;margin-top:10px}
+.good{color:var(--green)}.bad{color:var(--red)}.blue{color:var(--blue)}.yellow{color:var(--yellow)}
+.layout{display:grid;grid-template-columns:2fr 1fr;gap:16px}.layout2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.chartBox{height:390px}.miniChart{height:270px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}th{color:var(--blue)}
+.scroll{overflow:auto}pre{white-space:pre-wrap;word-break:break-word;max-height:460px;overflow:auto;font-size:12px;line-height:1.4;color:#d7def0}
+.sectionTitle{margin:0 0 14px;font-size:21px}
+.barWrap{height:14px;background:#0b1225;border-radius:999px;overflow:hidden;border:1px solid var(--border)}.bar{height:100%;background:linear-gradient(90deg,var(--red),var(--yellow),var(--green));width:0%}
+@media(max-width:900px){.layout,.layout2{grid-template-columns:1fr}.wrap{padding:16px}h1{font-size:30px}}
+
+#skipLink:focus{left:12px}
+a:focus,button:focus{outline:3px solid var(--yellow);outline-offset:3px}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+
+/* =========================
+   PONDER PRO V1 UI SYSTEM
+   UI-only. No trading logic.
+========================= */
+:root{
+  --pp-bg:#050914;
+  --pp-panel:#111a30;
+  --pp-panel2:#0d1528;
+  --pp-border:#263a63;
+  --pp-text:#f4f7ff;
+  --pp-muted:#aab6d3;
+  --pp-accent:#8ab4ff;
+  --pp-good:#7dff9b;
+  --pp-warn:#ffe66d;
+  --pp-bad:#ff6b8a;
+  --pp-radius:22px;
+  --pp-speed:220ms;
+}
+
+html{scroll-behavior:smooth}
+body{
+  background:
+    radial-gradient(circle at top left, rgba(51,255,153,.12), transparent 32%),
+    radial-gradient(circle at top right, rgba(138,180,255,.10), transparent 30%),
+    var(--pp-bg)!important;
+  color:var(--pp-text)!important;
+  transition:background var(--pp-speed), color var(--pp-speed);
+}
+
+.card, .panel, .metric, .box, .tile{
+  border-radius:var(--pp-radius)!important;
+  border:1px solid var(--pp-border)!important;
+  background:linear-gradient(180deg, rgba(17,26,48,.96), rgba(10,16,31,.96))!important;
+  box-shadow:0 18px 45px rgba(0,0,0,.28)!important;
+  transition:transform var(--pp-speed), border-color var(--pp-speed), box-shadow var(--pp-speed);
+}
+
+.card:hover, .panel:hover, .metric:hover, .box:hover, .tile:hover{
+  transform:translateY(-2px);
+  border-color:rgba(138,180,255,.65)!important;
+  box-shadow:0 22px 55px rgba(0,0,0,.36)!important;
+}
+
+.value{
+  letter-spacing:.02em;
+  transition:color var(--pp-speed), transform var(--pp-speed);
+}
+
+.good{color:var(--pp-good)!important}
+.bad{color:var(--pp-bad)!important}
+.warn{color:var(--pp-warn)!important}
+.muted,.label{color:var(--pp-muted)!important}
+
+a, button{
+  transition:transform var(--pp-speed), opacity var(--pp-speed), background var(--pp-speed), border-color var(--pp-speed);
+}
+button:hover, a:hover{transform:translateY(-1px)}
+
+.pp-live-pill{
+  position:fixed;
+  top:14px;
+  right:18px;
+  z-index:9999;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 14px;
+  border-radius:999px;
+  background:rgba(12,20,38,.88);
+  border:1px solid var(--pp-border);
+  backdrop-filter:blur(14px);
+  font-weight:900;
+  color:var(--pp-text);
+  box-shadow:0 16px 40px rgba(0,0,0,.35);
+}
+
+.pp-dot{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:var(--pp-good);
+  box-shadow:0 0 0 0 rgba(125,255,155,.65);
+  animation:ppPulse 1.8s infinite;
+}
+
+@keyframes ppPulse{
+  0%{box-shadow:0 0 0 0 rgba(125,255,155,.55)}
+  70%{box-shadow:0 0 0 12px rgba(125,255,155,0)}
+  100%{box-shadow:0 0 0 0 rgba(125,255,155,0)}
+}
+
+.pp-settings{
+  position:fixed;
+  right:18px;
+  bottom:92px;
+  z-index:9999;
+  width:320px;
+  max-width:calc(100vw - 30px);
+  border-radius:22px;
+  border:1px solid var(--pp-border);
+  background:rgba(8,14,28,.95);
+  backdrop-filter:blur(18px);
+  box-shadow:0 24px 65px rgba(0,0,0,.42);
+  padding:16px;
+  display:none;
+}
+
+.pp-settings.open{display:block; animation:ppFadeIn .22s ease}
+@keyframes ppFadeIn{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)}}
+
+.pp-settings h3{
+  margin:0 0 10px 0;
+  font-size:18px;
+}
+
+.pp-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:9px 0;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+
+.pp-row label{font-weight:800;color:var(--pp-text)}
+.pp-row small{display:block;color:var(--pp-muted);font-size:11px;margin-top:2px}
+
+.pp-toggle{
+  cursor:pointer;
+  border:1px solid var(--pp-border);
+  border-radius:999px;
+  padding:7px 10px;
+  background:#101a31;
+  color:var(--pp-text);
+  font-weight:900;
+  min-width:72px;
+}
+
+.pp-gear{
+  position:fixed;
+  right:18px;
+  bottom:34px;
+  z-index:9999;
+  border:1px solid var(--pp-border);
+  background:linear-gradient(180deg,#172542,#10182d);
+  color:white;
+  border-radius:999px;
+  width:48px;
+  height:48px;
+  font-size:22px;
+  box-shadow:0 18px 45px rgba(0,0,0,.38);
+  cursor:pointer;
+}
+
+.pp-focus .muted,
+.pp-focus table,
+.pp-focus .decisionReplay,
+.pp-focus #decisionReplay{
+  font-size:.92em;
+}
+
+.pp-focus .card:not(:has(#rotScore)):not(:has(#ponderQuestion)):not(:has(#perfStatus)):not(:has(#positions)){
+  opacity:.82;
+}
+
+.pp-colorblind .good::before{content:"▲ "; color:currentColor}
+.pp-colorblind .bad::before{content:"▼ "; color:currentColor}
+.pp-colorblind .warn::before{content:"⚠ "; color:currentColor}
+
+.pp-highcontrast{
+  --pp-bg:#000;
+  --pp-panel:#07111f;
+  --pp-panel2:#020817;
+  --pp-border:#7aa2ff;
+  --pp-text:#ffffff;
+  --pp-muted:#d7e1ff;
+  --pp-accent:#ffffff;
+  --pp-good:#b7ffce;
+  --pp-warn:#fff176;
+  --pp-bad:#ff9cb0;
+}
+
+.pp-theme-ponder{
+  --pp-bg:#070711;
+  --pp-panel:#151226;
+  --pp-panel2:#100e1d;
+  --pp-border:#5d4a7e;
+  --pp-accent:#d9b8ff;
+  --pp-good:#9cffb5;
+  --pp-warn:#ffe082;
+  --pp-bad:#ff7fa3;
+}
+
+.pp-theme-terminal{
+  --pp-bg:#020703;
+  --pp-panel:#07140b;
+  --pp-panel2:#051007;
+  --pp-border:#1d7b3a;
+  --pp-accent:#72ff9d;
+  --pp-good:#72ff9d;
+  --pp-warn:#fff176;
+  --pp-bad:#ff6b6b;
+}
+
+.pp-reduced-motion *,
+.pp-reduced-motion *::before,
+.pp-reduced-motion *::after{
+  animation:none!important;
+  transition:none!important;
+  scroll-behavior:auto!important;
+}
+
+@media(max-width:800px){
+  .pp-live-pill{top:auto;bottom:88px;right:14px;font-size:12px}
+  .pp-settings{right:12px;bottom:86px}
+}
+
+
+/* =========================
+   PONDER PRO V2 ALL PAGES
+   UI-only. No trading logic.
+========================= */
+
+/* Move live badge below nav so it does not cover page links */
+.pp-live-pill{
+  top:86px!important;
+  right:22px!important;
+}
+
+/* Better spacing for top right nav/links */
+nav, .nav, .topnav, .links{
+  padding-right:180px!important;
+}
+
+/* App polish */
+body{
+  overflow-x:hidden!important;
+}
+
+.card, .panel, .metric, .box, .tile{
+  position:relative;
+  overflow:hidden;
+}
+
+.card::after, .panel::after, .metric::after, .box::after, .tile::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  border-radius:inherit;
+  background:linear-gradient(135deg,rgba(255,255,255,.045),transparent 35%);
+  opacity:.55;
+}
+
+/* Fix giant overflow text in learning/event panels */
+#learnTop,
+#learnStatus,
+#perfStatus,
+#perfBest,
+#perfWorst{
+  font-size:clamp(18px,2vw,28px)!important;
+  line-height:1.15!important;
+  word-break:break-word!important;
+  overflow-wrap:anywhere!important;
+  max-width:100%!important;
+}
+
+/* Tables become app-like */
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+tr{
+  transition:background .18s ease, transform .18s ease;
+}
+
+tbody tr:hover{
+  background:rgba(138,180,255,.08)!important;
+}
+
+/* Better scrollbar */
+::-webkit-scrollbar{
+  width:10px;
+  height:10px;
+}
+::-webkit-scrollbar-track{
+  background:#050914;
+}
+::-webkit-scrollbar-thumb{
+  background:#2a3f69;
+  border-radius:999px;
+}
+::-webkit-scrollbar-thumb:hover{
+  background:#45629e;
+}
+
+/* Floating app tool dock */
+.pp-tool-dock{
+  position:fixed;
+  right:22px;
+  top:136px;
+  z-index:9998;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.pp-mini-btn{
+  border:1px solid var(--pp-border,#263a63);
+  background:rgba(12,20,38,.9);
+  color:white;
+  border-radius:14px;
+  width:42px;
+  height:42px;
+  cursor:pointer;
+  box-shadow:0 14px 35px rgba(0,0,0,.32);
+  backdrop-filter:blur(12px);
+}
+
+.pp-mini-btn:hover{
+  transform:translateY(-2px) scale(1.03);
+}
+
+/* Cleaner mobile */
+@media(max-width:900px){
+  .pp-live-pill{
+    top:auto!important;
+    bottom:88px!important;
+    right:14px!important;
+  }
+
+  .pp-tool-dock{
+    top:auto!important;
+    right:14px!important;
+    bottom:150px!important;
+  }
+
+  nav, .nav, .topnav, .links{
+    padding-right:0!important;
+  }
+
+  .card, .panel, .metric, .box, .tile{
+    border-radius:18px!important;
+  }
+}
+
+/* Focus mode: hide secondary clutter more safely */
+.pp-focus .muted{
+  opacity:.82;
+}
+
+.pp-focus table tbody tr:nth-child(n+8){
+  display:none;
+}
+
+/* Colorblind mode stronger labels */
+.pp-colorblind .good,
+.pp-colorblind .bad,
+.pp-colorblind .warn{
+  font-weight:900!important;
+}
+
+
+/* === PONDER PRO VISUAL CLEANUP CSS V1 === */
+
+/* Hide duplicate bottom-right AI health bubble without removing logic */
+div[style*="position:fixed"][style*="bottom"][style*="right"],
+div[style*="position: fixed"][style*="bottom"][style*="right"] {
+  display: none !important;
+}
+
+/* Hide right-side floating dock buttons visually only */
+button[style*="position:fixed"],
+button[style*="position: fixed"] {
+  display: none !important;
+}
+
+/* Give content more breathing room */
+.card, .panel, .metric-card {
+  border-radius: 22px !important;
+}
+
+/* Keep command/status pills readable */
+.badge, .pill, .chip {
+  letter-spacing: 0.2px;
+}
+
+/* === END PONDER PRO VISUAL CLEANUP CSS V1 === */
+
+
+/* === PONDER PRO SAFE VISUAL CLEANUP V2 === */
+
+/* Hide bottom-right duplicate AI Health bubble only */
+div[style*="position: fixed"][style*="bottom"][style*="right"][style*="z-index"],
+div[style*="position:fixed"][style*="bottom"][style*="right"][style*="z-index"] {
+    display: none !important;
+}
+
+}
+
+/* Safer visual polish */
+.card,
+.metric-card,
+.panel {
+    border-radius: 22px !important;
+}
+
+.card:hover,
+.metric-card:hover,
+.panel:hover {
+    transform: translateY(-2px);
+    transition: 0.18s ease;
+}
+
+/* Keep readable contrast */
+body {
+    text-rendering: optimizeLegibility;
+}
+
+/* === END PONDER PRO SAFE VISUAL CLEANUP V2 === */
+
+
+/* === PONDER PRO MOTION POLISH V1 === */
+
+/* Soft animated background glow */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 22% 15%, rgba(125,255,150,0.12), transparent 28%),
+    radial-gradient(circle at 80% 20%, rgba(120,150,255,0.10), transparent 30%),
+    radial-gradient(circle at 45% 90%, rgba(120,255,210,0.06), transparent 35%);
+  animation: ponderGlow 9s ease-in-out infinite alternate;
+}
+
+@keyframes ponderGlow {
+  from { opacity: 0.65; transform: scale(1); }
+  to { opacity: 1; transform: scale(1.03); }
+}
+
+/* Keep actual UI above glow */
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Card entrance + hover */
+.card, .metric-card, .panel {
+  animation: ponderCardIn 0.45s ease both;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.card:hover, .metric-card:hover, .panel:hover {
+  transform: translateY(-3px);
+  border-color: rgba(130,255,160,0.35) !important;
+  box-shadow: 0 16px 42px rgba(0,0,0,0.32);
+}
+
+@keyframes ponderCardIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Live pulse chips */
+.pill, .badge, .chip {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.pill:hover, .badge:hover, .chip:hover {
+  transform: translateY(-1px);
+}
+
+/* Market/open/live pulse */
+.pill:first-child,
+.badge:first-child,
+.chip:first-child {
+  animation: ponderPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes ponderPulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(130,255,160,0); }
+  50% { box-shadow: 0 0 22px rgba(130,255,160,0.18); }
+}
+
+/* Better active sidebar feel */
+a[href="/"],
+a[href="/profit"],
+a[href="/profit-lab"],
+a[href="/history"],
+a[href="/logout"] {
+  transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+}
+
+a[href="/"]:hover,
+a[href="/profit"]:hover,
+a[href="/profit-lab"]:hover,
+a[href="/history"]:hover,
+a[href="/logout"]:hover {
+  transform: translateX(3px);
+}
+
+/* Fun Ponder paw ambience near title */
+h1::after {
+  content: "  🐾";
+  font-size: 0.55em;
+  opacity: 0.7;
+  display: inline-block;
+  animation: ponderPawFloat 3.5s ease-in-out infinite;
+}
+
+@keyframes ponderPawFloat {
+  0%, 100% { transform: translateY(0) rotate(-5deg); opacity: 0.55; }
+  50% { transform: translateY(-5px) rotate(6deg); opacity: 0.9; }
+}
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* === END PONDER PRO MOTION POLISH V1 === */
+
+
+/* === PONDER EXACT UI RESTORE V1 === */
+
+/* Hide only the duplicate bottom-right AI Health badge */
+#ponder_ai_health_badge {
+  display: none !important;
+}
+
+/* Ensure settings + dock are visible above layout */
+.pp-gear,
+.pp-tool-dock,
+#ppToolDock {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 99999 !important;
+}
+
+/* Gear should be a round button */
+.pp-gear {
+  position: fixed !important;
+  right: 22px !important;
+  bottom: 26px !important;
+}
+
+/* Dock sits above gear */
+.pp-tool-dock,
+#ppToolDock {
+  position: fixed !important;
+  right: 22px !important;
+  top: 260px !important;
+  flex-direction: column !important;
+}
+
+/* === END PONDER EXACT UI RESTORE V1 === */
+
+</style>
+</head>
+<body><a id="skipLink" href="#mainContent" style="position:absolute;left:-999px;top:0;background:#8ab4ff;color:#020617;padding:10px;z-index:99999">Skip to main content</a>
+<main id="mainContent" class="wrap">
+<div class="top">
+ <div>
+  <h1>Ponder Invest <span class="ai">AI</span> Profit Ops</h1>
+  <div class="muted">Performance, AI decision feed, trade breakdown, exit reasons, and health score.</div>
+  <div><span class="pill">LIVE</span><span class="pill" id="healthPill">Health: --</span><span class="pill" id="updated">Updated: --</span></div>
+ </div>
+ <div><a href="/">Main Dashboard</a> · <a href="/profit">Profit Ops</a> · <a href="/profit-lab">Profit Lab</a> · <a href="/history">History</a> · <a href="/logout">Logout</a></div>
+</div>
+
+<div class="grid">
+ <div class="card"><div class="label">AI Mood</div><div class="value blue" id="aiMood">--</div><div class="muted" id="aiMoodNote">Waiting for data</div></div>
+ <div class="card"><div class="label">Daily Goal</div><div class="value" id="dailyGoal">$0</div><div class="muted" id="goalProgress">0% progress</div><div class="barWrap" style="margin-top:10px"><div class="bar" id="goalBar"></div></div></div>
+ <div class="card"><div class="label">Accessibility</div><div class="value yellow">Ready</div><div class="muted">Keyboard friendly · high contrast · mobile responsive</div></div>
+ <div class="card"><div class="label">Security</div><div class="value good">Headers</div><div class="muted">Rate limit + browser security headers active</div></div>
+ <div class="card"><div class="label">Portfolio Value</div><div class="value" id="portfolio">$0</div><div class="muted" id="equityChange">$0 / 0%</div></div>
+ <div class="card"><div class="label">Buying Power</div><div class="value" id="buyingPower">$0</div><div class="muted">Available capital</div></div>
+ <div class="card"><div class="label">Open P/L</div><div class="value" id="openPl">$0</div><div class="muted">Unrealized</div></div>
+ <div class="card"><div class="label">Max Drawdown</div><div class="value" id="drawdown">0%</div><div class="muted">From equity history</div></div>
+ <div class="card"><div class="label">Closed Win Rate</div><div class="value" id="winRate">0%</div><div class="muted" id="winsLosses">0 wins · 0 losses</div></div>
+ <div class="card"><div class="label">Closed Net P/L</div><div class="value" id="netPnl">$0</div><div class="muted" id="closedTrades">0 closed trades</div></div>
+ <div class="card"><div class="label">Profit Factor</div><div class="value" id="profitFactor">0.00</div><div class="muted">Gross wins / losses</div></div>
+ <div class="card"><div class="label">Best / Worst</div><div class="value blue" id="bestWorst">- / -</div><div class="muted" id="bestWorstPnl">$0 / $0</div></div>
+</div>
+
+<div class="layout">
+ <div class="card"><h2 class="sectionTitle">Equity Curve</h2><div class="chartBox"><canvas id="equityChart"></canvas></div></div>
+ <div class="card"><h2 class="sectionTitle">AI Health Score</h2><div class="value" id="healthScore">--</div><div class="barWrap"><div class="bar" id="healthBar"></div></div><p class="muted" id="healthNote"></p><h2 class="sectionTitle">Event Counts</h2><table id="eventTable"></table></div>
+</div>
+
+<div class="layout2" style="margin-top:16px">
+ <div class="card"><h2 class="sectionTitle">Trade Breakdown by Symbol</h2><div class="miniChart"><canvas id="symbolChart"></canvas></div><div class="scroll"><table><thead><tr><th>Symbol</th><th>P/L</th><th>Trades</th><th>Wins</th><th>Losses</th><th>Win Rate</th></tr></thead><tbody id="symbolRows"></tbody></table></div></div>
+ <div class="card"><h2 class="sectionTitle">Exit Reason Tracking</h2><div class="miniChart"><canvas id="reasonChart"></canvas></div><table id="reasonRows"></table></div>
+</div>
+
+<div class="card" style="margin-top:16px"><h2 class="sectionTitle">Recent Trade Journal</h2><div class="scroll"><table><thead><tr><th>Time</th><th>Action</th><th>Symbol</th><th>Qty</th><th>Price</th><th>P/L</th><th>P/L %</th><th>Score</th><th>Reason</th></tr></thead><tbody id="tradeRows"></tbody></table></div></div>
+
+<div class="layout2" style="margin-top:16px">
+ <div class="card"><h2 class="sectionTitle">Live Decision Feed</h2><pre id="decisionFeed"></pre></div>
+ <div class="card"><h2 class="sectionTitle">Warnings / Errors</h2><pre id="warnings"></pre></div>
+</div>
+
+<div class="card" style="margin-top:16px"><h2 class="sectionTitle">Recent Bot Logs</h2><pre id="recentLogs"></pre></div>
+</main>
+
+<script>
+let equityChart=null,symbolChart=null,reasonChart=null;
+function money(x){let n=Number(x||0);return "$"+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
+function pct(x){return Number(x||0).toFixed(2)+"%"}
+function cls(x){return Number(x||0)>=0?"good":"bad"}
+function setClass(id,base,x){let e=document.getElementById(id);e.className=base+" "+cls(x)}
+function chart(obj,id,type,labels,datasets,options={}){
+ if(!obj){return new Chart(document.getElementById(id),{type:type,data:{labels:labels,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},...options}})}
+ obj.data.labels=labels;obj.data.datasets=datasets;obj.update();return obj;
+}
+async function load(){
+ let r=await fetch("/api/profit-ops",{cache:"no-store"}); if(!r.ok)return;
+ let d=await r.json(),l=d.latest||{},m=d.metrics||{},h=d.health||{},logs=d.logs||{},ui=d.ui||{};
+ document.getElementById("updated").textContent="Updated: "+(d.generated_at||"--");
+ let mood=(ui.mood||["--",""]);
+ let goals=ui.goals||{};
+ if(document.getElementById("aiMood")){
+   document.getElementById("aiMood").textContent=mood[0]||"--";
+   document.getElementById("aiMoodNote").textContent=mood[1]||"";
+   document.getElementById("dailyGoal").textContent=money(goals.current_total_pl||0)+" / "+money(goals.daily_goal||200);
+   document.getElementById("goalProgress").textContent=(goals.goal_progress_pct||0)+"% progress toward display goal";
+   document.getElementById("goalBar").style.width=(goals.goal_progress_pct||0)+"%";
+ }
+ document.getElementById("portfolio").textContent=money(l.portfolio_value);
+ document.getElementById("buyingPower").textContent=money(l.buying_power);
+ document.getElementById("openPl").textContent=money(l.open_pl);setClass("openPl","value",l.open_pl);
+ document.getElementById("drawdown").textContent=pct(d.drawdown);
+ document.getElementById("winRate").textContent=pct(m.win_rate);
+ document.getElementById("winsLosses").textContent=`${m.wins||0} wins · ${m.losses||0} losses`;
+ document.getElementById("netPnl").textContent=money(m.net_closed_pnl);setClass("netPnl","value",m.net_closed_pnl);
+ document.getElementById("closedTrades").textContent=`${m.closed_trades||0} closed trades · ${m.buys||0} buys`;
+ document.getElementById("profitFactor").textContent=Number(m.profit_factor||0).toFixed(2);
+ document.getElementById("bestWorst").textContent=`${m.best_symbol||"-"} / ${m.worst_symbol||"-"}`;
+ document.getElementById("bestWorstPnl").textContent=`${money(m.best_symbol_pnl)} / ${money(m.worst_symbol_pnl)}`;
+ document.getElementById("equityChange").textContent=`${money((d.equity_change||{}).dollar)} / ${pct((d.equity_change||{}).pct)}`;
+ document.getElementById("healthScore").textContent=(h.score??"--")+"/100";
+ document.getElementById("healthPill").textContent="AI Health: "+(h.score??"--")+"/100";
+ document.getElementById("healthNote").textContent=h.note||"";
+ document.getElementById("healthBar").style.width=(h.score||0)+"%";
+
+ let counts=logs.counts||{};
+ document.getElementById("eventTable").innerHTML="<tbody>"+Object.keys(counts).map(k=>`<tr><th>${k}</th><td>${counts[k]}</td></tr>`).join("")+"</tbody>";
+
+ let eq=d.equity||[];
+ equityChart=chart(equityChart,"equityChart","line",eq.map(x=>x.timestamp),[
+  {label:"Portfolio Value",data:eq.map(x=>x.portfolio_value),tension:.35,pointRadius:2},
+  {label:"Buying Power",data:eq.map(x=>x.buying_power),tension:.35,pointRadius:2},
+  {label:"Open P/L",data:eq.map(x=>x.open_pl),tension:.35,pointRadius:2,yAxisID:"y1"}
+ ],{scales:{x:{ticks:{maxTicksLimit:8}},y:{position:"left"},y1:{position:"right",grid:{drawOnChartArea:false}}}});
+
+ let syms=m.symbol_rows||[];
+ symbolChart=chart(symbolChart,"symbolChart","bar",syms.map(x=>x.symbol),[{label:"Closed P/L",data:syms.map(x=>x.pnl)}]);
+ document.getElementById("symbolRows").innerHTML=syms.map(x=>`<tr><td>${x.symbol}</td><td class="${cls(x.pnl)}">${money(x.pnl)}</td><td>${x.trades}</td><td>${x.wins}</td><td>${x.losses}</td><td>${pct(x.win_rate)}</td></tr>`).join("") || "<tr><td colspan='6'>No closed trades yet.</td></tr>";
+
+ let reasons=m.exit_reasons||[];
+ reasonChart=chart(reasonChart,"reasonChart","bar",reasons.map(x=>x.reason),[{label:"Exit Count",data:reasons.map(x=>x.count)}],{indexAxis:"y"});
+ document.getElementById("reasonRows").innerHTML="<tbody>"+(reasons.map(x=>`<tr><th>${x.reason}</th><td>${x.count}</td></tr>`).join("") || "<tr><td>No exits yet.</td></tr>")+"</tbody>";
+
+ document.getElementById("tradeRows").innerHTML=(d.recent_trades||[]).map(t=>`<tr><td>${t.timestamp||""}</td><td>${t.action||""}</td><td>${t.symbol||""}</td><td>${t.qty||""}</td><td>${t.price||""}</td><td class="${cls(t.pnl||t._pnl)}">${t.pnl||t._pnl||""}</td><td class="${cls(t.pnl_pct||t._pnl_pct)}">${t.pnl_pct||t._pnl_pct||""}</td><td>${t.score||""}</td><td>${t.reason||""}</td></tr>`).join("") || "<tr><td colspan='9'>No trade journal rows yet.</td></tr>";
+
+ document.getElementById("decisionFeed").textContent=(logs.decision_feed||[]).join("\\n") || "No recent confidence/scanner/buy-skip logs yet.";
+ document.getElementById("warnings").textContent=(logs.warnings||[]).join("\\n") || "No recent warnings.";
+ document.getElementById("recentLogs").textContent=(d.recent_logs||[]).join("\\n");
+}
+load();setInterval(load,10000);
+</script>
+
+<script id="ponderProV1">
+(function(){
+  if(window.__ponderProV1Loaded) return;
+  window.__ponderProV1Loaded = true;
+
+  const root = document.documentElement;
+  const body = document.body;
+
+  function get(k,d){return localStorage.getItem("ponderPro_"+k) ?? d}
+  function set(k,v){localStorage.setItem("ponderPro_"+k,v)}
+
+  function apply(){
+    body.classList.toggle("pp-focus", get("focus","off")==="on");
+    body.classList.toggle("pp-colorblind", get("colorblind","on")==="on");
+    body.classList.toggle("pp-highcontrast", get("contrast","off")==="on");
+    body.classList.toggle("pp-reduced-motion", get("motion","on")==="off");
+
+    body.classList.remove("pp-theme-ponder","pp-theme-terminal");
+    const theme=get("theme","default");
+    if(theme==="ponder") body.classList.add("pp-theme-ponder");
+    if(theme==="terminal") body.classList.add("pp-theme-terminal");
+
+    const accent=get("accent","");
+    if(accent) root.style.setProperty("--pp-accent", accent);
+  }
+
+  function makeUI(){
+    if(document.getElementById("ppLivePill")) return;
+
+    const live=document.createElement("div");
+    live.id="ppLivePill";
+    live.className="pp-live-pill";
+    live.innerHTML='<span class="pp-dot"></span><span id="ppLiveText">LIVE · Ponder Pro</span>';
+    document.body.appendChild(live);
+
+    const gear=document.createElement("button");
+    gear.className="pp-gear";
+    gear.innerHTML="⚙️";
+    gear.title="Ponder Pro settings";
+    gear.onclick=()=>document.getElementById("ppSettings").classList.toggle("open");
+    document.body.appendChild(gear);
+
+    const panel=document.createElement("div");
+    panel.id="ppSettings";
+    panel.className="pp-settings";
+    panel.innerHTML=`
+      <h3>🐾 Ponder Pro Settings</h3>
+
+      <div class="pp-row">
+        <div><label>Focus Mode</label><small>Reduce noise and emphasize key panels.</small></div>
+        <button class="pp-toggle" data-key="focus">OFF</button>
+      </div>
+
+      <div class="pp-row">
+        <div><label>Colorblind Mode</label><small>Uses labels/icons, not color alone.</small></div>
+        <button class="pp-toggle" data-key="colorblind">ON</button>
+      </div>
+
+      <div class="pp-row">
+        <div><label>High Contrast</label><small>Sharper borders and readable text.</small></div>
+        <button class="pp-toggle" data-key="contrast">OFF</button>
+      </div>
+
+      <div class="pp-row">
+        <div><label>Animations</label><small>Smooth app feel or reduced motion.</small></div>
+        <button class="pp-toggle" data-key="motion">ON</button>
+      </div>
+
+      <div class="pp-row">
+        <div><label>Theme</label><small>Default / Ponder / Terminal.</small></div>
+        <button class="pp-toggle" data-key="theme">DEFAULT</button>
+      </div>
+
+      <div class="pp-row">
+        <div><label>Refresh</label><small>Refresh page data manually.</small></div>
+        <button class="pp-toggle" id="ppRefreshNow">NOW</button>
+      </div>
+    `;
+    document.body.appendChild(panel);
+
+    panel.querySelectorAll("[data-key]").forEach(btn=>{
+      const key=btn.dataset.key;
+      function label(){
+        let v=get(key, key==="colorblind"||key==="motion" ? "on" : key==="theme" ? "default" : "off");
+        btn.textContent=String(v).toUpperCase();
+      }
+      label();
+
+      btn.onclick=()=>{
+        let v=get(key, key==="colorblind"||key==="motion" ? "on" : key==="theme" ? "default" : "off");
+
+        if(key==="theme"){
+          v = v==="default" ? "ponder" : v==="ponder" ? "terminal" : "default";
+        }else{
+          v = v==="on" ? "off" : "on";
+        }
+
+        set(key,v);
+        label();
+        apply();
+      };
+    });
+
+    document.getElementById("ppRefreshNow").onclick=()=>{
+      const text=document.getElementById("ppLiveText");
+      text.textContent="Refreshing...";
+      if(typeof load==="function"){ load(); }
+      setTimeout(()=>text.textContent="LIVE · Ponder Pro",900);
+    };
+  }
+
+  function enhance(){
+    const title = document.querySelector("h1");
+    if(title && !title.dataset.pp){
+      title.dataset.pp="1";
+      title.innerHTML = title.innerHTML.replace("Ponder", "🐾 Ponder");
+    }
+
+    document.querySelectorAll(".value").forEach(el=>{
+      if(!el.dataset.ppWatch){
+        el.dataset.ppWatch=el.textContent;
+      }else if(el.dataset.ppWatch !== el.textContent){
+        el.animate([{transform:"scale(1.02)",filter:"brightness(1.4)"},{transform:"scale(1)",filter:"brightness(1)"}],{duration:260});
+        el.dataset.ppWatch=el.textContent;
+      }
+    });
+  }
+
+  apply();
+  makeUI();
+  enhance();
+  setInterval(enhance,1500);
+})();
+</script>
+
+
+<script id="ponderProV2">
+(function(){
+  if(window.__ponderProV2Loaded) return;
+  window.__ponderProV2Loaded = true;
+
+  function qs(s){return document.querySelector(s)}
+  function qsa(s){return Array.from(document.querySelectorAll(s))}
+
+  function toast(msg){
+    let t=document.getElementById("ppToast");
+    if(!t){
+      t=document.createElement("div");
+      t.id="ppToast";
+      t.style.cssText="position:fixed;left:50%;bottom:34px;transform:translateX(-50%);z-index:10000;background:rgba(10,16,31,.95);border:1px solid var(--pp-border,#263a63);color:white;padding:12px 16px;border-radius:999px;font-weight:900;box-shadow:0 18px 45px rgba(0,0,0,.35);display:none";
+      document.body.appendChild(t);
+    }
+    t.textContent=msg;
+    t.style.display="block";
+    clearTimeout(window.__ppToastTimer);
+    window.__ppToastTimer=setTimeout(()=>t.style.display="none",1600);
+  }
+
+  function makeDock(){
+    if(document.getElementById("ppToolDock")) return;
+    const dock=document.createElement("div");
+    dock.id="ppToolDock";
+    dock.className="pp-tool-dock";
+    dock.innerHTML=`
+      <button class="pp-mini-btn" title="Top" id="ppGoTop">⬆️</button>
+      <button class="pp-mini-btn" title="Refresh" id="ppDockRefresh">🔄</button>
+      <button class="pp-mini-btn" title="Copy status" id="ppCopyStatus">📋</button>
+    `;
+    document.body.appendChild(dock);
+
+    document.getElementById("ppGoTop").onclick=()=>window.scrollTo({top:0,behavior:"smooth"});
+
+    document.getElementById("ppDockRefresh").onclick=()=>{
+      if(typeof load==="function"){ load(); toast("Ponder refreshed"); }
+      else { location.reload(); }
+    };
+
+    document.getElementById("ppCopyStatus").onclick=async()=>{
+      const health=(document.body.innerText.match(/AI Health[:\s]+[0-9.]+\/100/i)||["AI Health unknown"])[0];
+      const pl=(document.body.innerText.match(/Open P\/L[:\s$+\-.0-9,]+/i)||["Open P/L unknown"])[0];
+      const text=`Ponder Invest AI Status\n${health}\n${pl}\nPage: ${location.pathname}`;
+      try{
+        await navigator.clipboard.writeText(text);
+        toast("Status copied");
+      }catch(e){
+        toast("Copy unavailable");
+      }
+    };
+  }
+
+  function fixLiveBadge(){
+    const pill=document.getElementById("ppLivePill") || document.querySelector(".pp-live-pill");
+    if(pill){
+      pill.style.top="86px";
+      pill.style.right="22px";
+    }
+  }
+
+  function cleanLearningLabels(){
+    const top=document.getElementById("learnTop");
+    if(top && top.textContent.length > 22){
+      top.title=top.textContent;
+      top.textContent=top.textContent.replace("LEARNING_SHADOW_","").replace("_DECISION","");
+    }
+  }
+
+  function enhanceLinks(){
+    qsa("a").forEach(a=>{
+      if(!a.dataset.ppSmooth){
+        a.dataset.ppSmooth="1";
+        a.addEventListener("click",()=>document.body.style.opacity=".94");
+      }
+    });
+  }
+
+  makeDock();
+  fixLiveBadge();
+  cleanLearningLabels();
+  enhanceLinks();
+
+  setInterval(()=>{
+    fixLiveBadge();
+    cleanLearningLabels();
+    enhanceLinks();
+  },1500);
+})();
+</script>
+
+
+<!-- === PONDER FORCE UI RESTORE V1 === -->
+<script>
+window.addEventListener("load", function () {
+  if (!document.getElementById("ppToolDock")) {
+    const dock = document.createElement("div");
+    dock.id = "ppToolDock";
+    dock.style.cssText = `
+      position:fixed;
+      right:22px;
+      top:260px;
+      z-index:99999;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    `;
+    dock.innerHTML = `
+      <button onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Top">⬆️</button>
+      <button onclick="location.reload()" title="Refresh">🔄</button>
+      <button onclick="navigator.clipboard.writeText(location.href)" title="Copy Link">📋</button>
+    `;
+    dock.querySelectorAll("button").forEach(btn => {
+      btn.style.cssText = `
+        width:44px;
+        height:44px;
+        border-radius:14px;
+        border:1px solid rgba(140,160,255,.35);
+        background:rgba(18,24,45,.88);
+        color:white;
+        cursor:pointer;
+        font-size:18px;
+      `;
+    });
+    document.body.appendChild(dock);
+  }
+
+  if (!document.getElementById("ppSettingsButton")) {
+    const gear = document.createElement("button");
+    gear.id = "ppSettingsButton";
+    gear.innerHTML = "⚙️";
+    gear.title = "Ponder Pro Settings";
+    gear.style.cssText = `
+      position:fixed;
+      right:22px;
+      bottom:24px;
+      z-index:100000;
+      width:52px;
+      height:52px;
+      border-radius:50%;
+      border:1px solid rgba(140,160,255,.4);
+      background:rgba(18,24,45,.95);
+      color:white;
+      cursor:pointer;
+      font-size:22px;
+    `;
+
+    const panel = document.createElement("div");
+    panel.id = "ppSettingsPanel";
+    panel.style.cssText = `
+      display:none;
+      position:fixed;
+      right:22px;
+      bottom:88px;
+      z-index:100000;
+      width:280px;
+      padding:18px;
+      border-radius:18px;
+      border:1px solid rgba(140,160,255,.35);
+      background:rgba(18,24,45,.96);
+      color:white;
+      box-shadow:0 18px 45px rgba(0,0,0,.35);
+      font-family:Arial,sans-serif;
+    `;
+    panel.innerHTML = `
+      <h3 style="margin:0 0 10px">🐾 Ponder Pro Settings</h3>
+      <div style="font-size:13px;color:#b8c2d8">Focus Mode: Ready</div>
+      <div style="font-size:13px;color:#b8c2d8">Colorblind Mode: Labels + icons</div>
+      <div style="font-size:13px;color:#b8c2d8">Theme: Default</div>
+    `;
+
+    gear.onclick = () => {
+      panel.style.display = panel.style.display === "none" ? "block" : "none";
+    };
+
+    document.body.appendChild(panel);
+    document.body.appendChild(gear);
+  }
+});
+</script>
+<!-- === END PONDER FORCE UI RESTORE V1 === -->
+
+</body>
+</html>
+""")

@@ -1,0 +1,165 @@
+
+from flask import Blueprint, jsonify, render_template_string
+from profit_ops_analytics import snapshot
+
+profit_lab_bp = Blueprint("profit_lab", __name__)
+
+@profit_lab_bp.route("/api/profit-lab")
+def api_profit_lab():
+    return jsonify(snapshot())
+
+@profit_lab_bp.route("/profit-lab")
+def profit_lab_page():
+    return render_template_string("""
+<!DOCTYPE html>
+<html>
+<head>
+<title>Profit Lab</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body { background:#0b1220; color:white; font-family:sans-serif; }
+.card { background:#111827; padding:16px; border-radius:12px; margin:10px; }
+.grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.value.good { color:#4ade80 }
+.value.bad { color:#f87171 }
+
+.chip{display:inline-block;border-radius:999px;padding:3px 8px;margin-right:8px;font-weight:bold;font-size:11px}
+.good{color:#4ade80}.bad{color:#f87171}.warn{color:#facc15}.info{color:#93c5fd}.neutral{color:#cbd5e1}
+.chip.good{background:rgba(74,222,128,.14)}.chip.bad{background:rgba(248,113,113,.14)}.chip.warn{background:rgba(250,204,21,.14)}.chip.info{background:rgba(147,197,253,.14)}.chip.neutral{background:rgba(203,213,225,.14)}
+</style>
+</head>
+<body>
+
+<h1>Ponder Invest AI – Profit Lab</h1>
+
+<div class="grid">
+  <div class="card">
+    <div>Today P/L</div>
+    <div id="todayPnl" class="value">$0</div>
+  </div>
+
+  <div class="card">
+    <div>Win Rate</div>
+    <div id="todayWin" class="value">0%</div>
+  </div>
+
+  <div class="card">
+    <div>AI Health</div>
+    <div id="health" class="value">--</div>
+  </div>
+
+  <div class="card">
+    <div>Open P/L</div>
+    <div id="openPl" class="value">$0</div>
+  </div>
+</div>
+
+<div class="card" style="height:260px;">
+  <canvas id="chart"></canvas></div><div style='height:20px;'></div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+<div class="card">
+  <h3>Decision Replay</h3>
+  <div id="decisionReplay" style="max-height:260px;overflow:auto;font-family:monospace;font-size:13px"></div>
+</div>
+
+<div class="card">
+  <h3>Candidate Feed</h3>
+  <table style="width:100%">
+    <thead>
+      <tr><th>Symbol</th><th>Score</th><th>Reason</th></tr>
+    </thead>
+    <tbody id="candidateFeed"></tbody>
+  </table>
+</div>
+</div>
+
+<div class="card">
+  <h3>Live Positions</h3>
+  <table style="width:100%">
+    <thead>
+      <tr>
+        <th>Symbol</th><th>Qty</th><th>P/L</th>
+      </tr>
+    </thead>
+    <tbody id="positions"></tbody>
+  </table>
+</div>
+
+<script>
+let chart;
+
+function money(x){return "$"+Number(x||0).toFixed(2)}
+function pct(x){return Number(x||0).toFixed(2)+"%"}
+function cls(x){return Number(x)>=0?"good":"bad"}
+
+async function load(){
+  let r = await fetch("/api/profit-lab");
+  let d = await r.json();
+
+  let l = d.latest || {};
+  let eq = d.equity || [];
+  let lab = d.lab || {};
+
+  document.getElementById("todayPnl").textContent = money(lab.net_today);
+  document.getElementById("todayWin").textContent = pct(lab.win_rate_today);
+  document.getElementById("health").textContent = (d.health?.score || "--");
+  document.getElementById("openPl").textContent = money(l.open_pl);
+
+  // Chart
+  let labels = eq.map(x=>x.timestamp);
+  let values = eq.map(x=>x.portfolio_value);
+
+  if(!chart){
+    chart = new Chart(document.getElementById("chart"), {
+      type:"line",
+      data:{labels:labels, datasets:[{label:"Equity", data:values}]}
+    });
+  } else {
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = values;
+    chart.update();
+  }
+
+  // Positions
+  let rows = (lab.positions || []).map(p =>
+    `<tr>
+      <td>${p.symbol}</td>
+      <td>${p.qty}</td>
+      <td class="${cls(p.unrealized_pl)}">${money(p.unrealized_pl)}</td>
+    </tr>`
+  ).join("");
+
+  document.getElementById("positions").innerHTML =
+    rows || "<tr><td colspan='3'>No positions</td></tr>";
+
+  let replayEl = document.getElementById("decisionReplay");
+  if(replayEl){
+    replayEl.innerHTML = (lab.decision_replay || []).map(x =>
+      `<div style="padding:7px 0;border-bottom:1px solid rgba(255,255,255,.08)">
+        <span class="chip ${x.tone||'neutral'}">${x.label||'LOG'}</span>
+        <span class="${x.tone||'neutral'}">${x.line||''}</span>
+      </div>`
+    ).join("") || "<div>No decision replay yet.</div>";
+  }
+
+  let candidateEl = document.getElementById("candidateFeed");
+  if(candidateEl){
+    candidateEl.innerHTML = (lab.candidate_feed || []).map(x =>
+      `<tr>
+        <td>${x.symbol||"-"}</td>
+        <td>${x.score||"-"}</td>
+        <td>${x.reason||"-"}</td>
+      </tr>`
+    ).join("") || "<tr><td colspan='3'>No candidates yet.</td></tr>";
+  }
+}
+
+load();
+setInterval(load, 5000);
+</script>
+
+</body>
+</html>
+""")

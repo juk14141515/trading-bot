@@ -1,0 +1,60 @@
+{
+  "updated_at": "2026-05-02 21:20:51",
+  "version": "v1",
+  "status": "research_only",
+  "regime": "Neutral",
+  "regime_score": 50,
+  "news_impact": 80,
+  "top_news": [
+    {
+      "headline": "The U.S.-Iran war is coming for your credit score and mortgage application",
+      "source": "CNBC",
+      "impact_score": 80,
+      "tags": [
+        "ai/semis",
+        "risk"
+      ]
+    },
+    {
+      "headline": "Trump says US Navy acting 'like pirates' to carry out naval blockade of Iranian ports - Reuters",
+      "source": "Reuters",
+      "impact_score": 70,
+      "tags": [
+        "macro"
+      ]
+    },
+    {
+      "headline": "Iran offers Strait deal; Trump dissatisfied but prefers non-military path - Reuters",
+      "source": "Reuters",
+      "impact_score": 65,
+      "tags": [
+        "ai/semis"
+      ]
+    },
+    {
+      "headline": "Air India CEO search narrows to Singapore Air exec Kannan and insider Aggarwal, sources say - Reuters",
+      "source": "Reuters",
+      "impact_score": 65,
+      "tags": [
+        "ai/semis"
+      ]
+    },
+    {
+      "headline": "Iranian proposal rejected by Trump would open strait before nuclear talks, Iran official says - Reuters",
+      "source": "Reuters",
+      "impact_score": 65,
+      "tags": [
+        "ai/semis"
+      ]
+    }
+  ],
+  "reasons": [
+    "indices trending up",
+    "high-impact risk news detected",
+    "good opportunity flow"
+  ],
+  "notes": [
+    "Used to adjust rotation aggressiveness later",
+    "Does not affect trading yet"
+  ]
+}

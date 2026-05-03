@@ -1,0 +1,12 @@
+{
+  "version": "ponderv3clean1",
+  "theme": "black_pro",
+  "colorblind": true,
+  "adhd_mode": false,
+  "big_click": true,
+  "compact_mode": false,
+  "show_toasts": true,
+  "show_ponder": true,
+  "refresh_seconds": 45,
+  "future_modules_enabled": true
+}

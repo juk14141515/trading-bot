@@ -1,0 +1,24 @@
+
+{% extends "base.html" %}
+{% block content %}
+<h1>🐕 Ask Ponder</h1>
+<p class="muted">Your dog-themed AI assistant layer, powered by current research JSON.</p>
+
+<section class="card">
+  <button onclick="answer('why_no_trade')">Why didn’t you trade?</button>
+  <button onclick="answer('what_to_do')">What should I do now?</button>
+  <button onclick="answer('biggest_risk')">Biggest risk?</button>
+  <button onclick="answer('plain_english')">Explain simply</button>
+</section>
+
+<section class="card" id="answer">Click a question.</section>
+
+<script>
+const answers = {{ assistant.get("answers", {}) | tojson }};
+const fallback = {{ ai.get("action_items", []) | tojson }};
+function answer(key){
+  const items = answers[key] || fallback || ["No answer yet."];
+  document.getElementById("answer").innerHTML = "<ul>" + items.map(x => `<li>${x}</li>`).join("") + "</ul>";
+}
+</script>
+{% endblock %}

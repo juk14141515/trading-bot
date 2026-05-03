@@ -1,0 +1,74 @@
+new_ponder_site/app.py.backup_mobile_live_v1:31:        "performance": load_json("rotation_performance_latest.json"),
+new_ponder_site/app.py.backup_mobile_live_v1:32:        "shadow": load_json("shadow_capital_allocator_latest.json"),
+new_ponder_site/app.py.backup_profit_center_v1:46:        "performance": load_json("rotation_performance_latest.json"),
+new_ponder_site/app.py.backup_profit_center_v1:47:        "shadow": load_json("shadow_capital_allocator_latest.json"),
+new_ponder_site/templates/dashboard.html.backup_clean_decision_feed_v1:8:{% set shadow = data.get("shadow", {}) %}
+new_ponder_site/templates/dashboard.html.backup_clean_decision_feed_v1:19:{% set risk_mode = shadow.get("risk_mode", shadow.get("mode", "Research")) %}
+new_ponder_site/templates/dashboard.html.backup_clean_decision_feed_v1:25:    <p class="muted">Follow the flow: market → scan → score → risk → rotate → shadow → learn → improve.</p>
+new_ponder_site/templates/dashboard.html.backup_clean_decision_feed_v1:59:    <div><strong>6. Shadow Mode</strong><p>Simulates decisions before real automation.</p></div>
+new_ponder_site/templates/dashboard.html.backup_clean_decision_feed_v1:86:  <div class="card"><h2>💰 Capital</h2><p>Used: {{ shadow.get("capital_used_pct", "—") }}</p><p>Free: {{ shadow.get("capital_free_pct", "—") }}</p></div>
+new_ponder_site/templates/debug_snapshot.html:9:  <p class="muted">This includes bot status, capital, scanner, rotation, sell pressure, shadow action, and module health.</p>
+new_ponder_site/templates/dashboard.html.backup_capital_brain_v1:332:  return "$" + n.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+new_ponder_site/templates/research.html:10:{% set shadow = data.get("shadow", {}) %}
+new_ponder_site/templates/research.html:23:  <button onclick="showTab('shadow')">Shadow</button>
+new_ponder_site/templates/research.html:32:    <div class="card mini"><h3>Pending Learning</h3><div class="big">{{ ai.get("key_readout", {}).get("pending_evaluations", "unknown") }}</div></div>
+new_ponder_site/templates/research.html:100:    <div class="card mini"><h3>Evaluated</h3><div class="big">{{ summary.get("evaluated", 0) }}</div></div>
+new_ponder_site/templates/research.html:101:    <div class="card mini"><h3>Pending</h3><div class="big">{{ summary.get("pending_evaluations", 0) }}</div></div>
+new_ponder_site/templates/research.html:108:<section id="tab-shadow" class="tab card" style="display:none">
+new_ponder_site/templates/research.html:109:  <h2>Shadow Capital</h2>
+new_ponder_site/templates/research.html:111:    {% for s in shadow.get("shadow_actions", [])[:8] %}
+new_ponder_site/templates/research.html:112:      <div class="card mini"><h3>{{ s.get("sell_symbol") }} to {{ s.get("buy_symbol") }}</h3><div class="big small-big">{{ s.get("recommendation") }}</div><p>{{ s.get("confidence") }} · allocation {{ s.get("shadow_allocation_pct") }}%</p></div>
+new_ponder_site/templates/research.html:113:    {% else %}<p>No shadow actions.</p>{% endfor %}
+new_ponder_site/templates/dashboard.html.backup_live_v2:332:  return "$" + n.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+new_ponder_site/templates/dashboard.html.backup_next_move_ai_v1:333:  return "$" + n.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+new_ponder_site/templates/dashboard.html.backup_snapshot_api_v1:415:  return "$" + n.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+new_ponder_site/templates/assistant.html:18:  <div class="card"><h3>Learning</h3><div class="big">{{ ai.get("key_readout", {}).get("pending_evaluations", "—") }}</div><p>Pending outcomes</p></div>
+new_ponder_site/templates/learning.html:7:{% set pending = performance.get("summary", {}).get("pending_evaluations", 0) %}
+new_ponder_site/templates/learning.html:8:{% set evaluated = performance.get("summary", {}).get("evaluated", 0) %}
+new_ponder_site/templates/learning.html:12:  <div class="card"><h3>XP</h3><div class="big">{{ unlocked * 25 + evaluated * 5 }}</div><p>Research learning points</p></div>
+new_ponder_site/templates/learning.html:14:  <div class="card"><h3>Pending Evaluations</h3><div class="big">{{ pending }}</div><p>Let the tracker collect outcomes.</p></div>
+new_ponder_site/templates/learning.html:35:    <div><strong>Shadow Execution Tracker</strong><p>Score would-have-sold and would-have-bought moves.</p></div>
+new_ponder_site/templates/profit_lab.html:7:{% set shadow = dashboard_data.get("top_shadow", {}) %}
+new_ponder_site/templates/profit_lab.html:48:    <h2>Shadow Execution</h2>
+new_ponder_site/templates/profit_lab.html:49:    <div class="big small-big">{{ shadow.get("recommendation", "No shadow action") }}</div>
+new_ponder_site/templates/profit_lab.html:50:    <p>{{ shadow.get("sell_symbol", "-") }} to {{ shadow.get("buy_symbol", "-") }} / {{ shadow.get("confidence", "unknown") }}</p>
+new_ponder_site/templates/profit_lab.html:79:    <li>Stay research-only until there are enough real closed sells and shadow outcomes.</li>
+new_ponder_site/templates/dashboard.html.backup_snapshot_wire_v1:393:  return "$" + n.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+new_ponder_site/templates/dashboard.html:36:{% set top_shadow = dashboard_data.get("top_shadow", {}) %}
+new_ponder_site/templates/dashboard.html:87:    <h3>Shadow Capital</h3>
+new_ponder_site/templates/dashboard.html:88:    <div class="big small-big">{% if top_shadow.get("buy_symbol") %}{{ top_shadow.get("sell_symbol") }} to {{ top_shadow.get("buy_symbol") }}{% else %}none{% endif %}</div>
+new_ponder_site/templates/dashboard.html:89:    <p>{{ top_shadow.get("recommendation", "No shadow allocation yet.") }} - {{ top_shadow.get("confidence", "unknown") }}</p>
+new_ponder_site/templates/dashboard.html:119:      <div><span class="dot warn"></span> Waiting for more evaluated outcomes</div>
+new_ponder_site/templates/dashboard.html:165:    <div><strong>3. Shadow Execution</strong><p>Simulate sell/buy decisions before real automation.</p></div>
+new_ponder_site/app.py:66:    shadow = load_json("shadow_capital_allocator_latest.json")
+new_ponder_site/app.py:70:    performance = load_json("rotation_performance_latest.json")
+new_ponder_site/app.py:84:        "top_shadow": (shadow.get("shadow_actions") or [{}])[0],
+new_ponder_site/app.py:93:            "shadow": shadow,
+new_ponder_site/app.py:153:            {"name": "Shadow Execution Tracker", "status": "next", "detail": "Track would-have-sold and would-have-bought outcomes before automation."},
+new_ponder_site/app.py:165:            "Do not connect auto-rotation until shadow win rate and edge are proven.",
+new_ponder_site/app.py:204:        "top_shadow": data.get("top_shadow"),
+new_ponder_site/app.py:289:        "performance": load_json("rotation_performance_latest.json"),
+new_ponder_site/app.py:290:        "shadow": load_json("shadow_capital_allocator_latest.json"),
+new_ponder_site/app.py:304:    performance = load_json("rotation_performance_latest.json")
+new_ponder_site/app.py.backup_snapshot_api_v1:46:        "performance": load_json("rotation_performance_latest.json"),
+new_ponder_site/app.py.backup_snapshot_api_v1:47:        "shadow": load_json("shadow_capital_allocator_latest.json"),
+new_ponder_site/app.py.backup_capital_v1:46:        "performance": load_json("rotation_performance_latest.json"),
+new_ponder_site/app.py.backup_capital_v1:47:        "shadow": load_json("shadow_capital_allocator_latest.json"),
+new_ponder_site/static/style.css.backup_mobile_live_v1:148:  box-shadow:0 20px 70px rgba(0,0,0,.22);
+new_ponder_site/static/style.css.backup_next_move_ai_v1:148:  box-shadow:0 20px 70px rgba(0,0,0,.22);
+new_ponder_site/static/style.css.backup_capital_v1:148:  box-shadow:0 20px 70px rgba(0,0,0,.22);
+new_ponder_site/static/style.css.backup_action_bias_v1:148:  box-shadow:0 20px 70px rgba(0,0,0,.22);
+new_ponder_site/static/style.css.backup_before_clean_ui_v1:117:  box-shadow:0 0 0 1px rgba(147,197,253,.08), 0 20px 60px rgba(0,0,0,.25);
+new_ponder_site/static/style.css.backup_before_clean_ui_v1:131:  box-shadow:12px 0 40px rgba(0,0,0,.22);
+new_ponder_site/static/site/js/app.js:74:    if (value === undefined || value === null || value === '') return 'unknown';
+new_ponder_site/static/site/js/app.js:77:    return prefix + n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+new_ponder_site/static/site/js/app.js:97:      if (value !== undefined && value !== null) el.textContent = value;
+new_ponder_site/static/site/css/app.css:262:  box-shadow: 0 18px 45px rgba(0,0,0,.45);
+new_ponder_site/static/site/css/app.css:275:  box-shadow: 0 28px 80px rgba(0,0,0,.65);
+new_ponder_site/static/style.css.backup_decision_ui_v2:148:  box-shadow:0 20px 70px rgba(0,0,0,.22);
+new_ponder_site/static/style.css:53:  box-shadow:0 0 0 1px rgba(156,199,255,.08) inset;
+new_ponder_site/static/style.css:113:  box-shadow:0 0 0 1px rgba(147,197,253,.16) inset;
+new_ponder_site/static/style.css:156:  box-shadow:0 0 0 1px rgba(147,197,253,.08), 0 20px 60px rgba(0,0,0,.25);
+new_ponder_site/static/style.css:170:  box-shadow:12px 0 40px rgba(0,0,0,.22);
+new_ponder_site/static/style.css.backup_profit_center_v1:148:  box-shadow:0 20px 70px rgba(0,0,0,.22);
+new_ponder_site/static/style.css.backup_snapshot_wire_v1:148:  box-shadow:0 20px 70px rgba(0,0,0,.22);

@@ -1,0 +1,40 @@
+
+{% extends "base.html" %}
+{% block content %}
+<h1>🐕 Ask Ponder</h1>
+<p class="muted">Ponder is your research-only assistant and system overseer.</p>
+
+<section class="hero assistant-hero">
+  <div class="dog-icon">🐕</div>
+  <div>
+    <h2>Ponder’s Job</h2>
+    <p>Explain the system, warn you when risk is high, and help you avoid emotional trades.</p>
+  </div>
+</section>
+
+<section class="grid">
+  <div class="card"><h3>Mode</h3><div class="big">{{ ai.get("key_readout", {}).get("regime", "—") }}</div><p>Risk-first assistant</p></div>
+  <div class="card"><h3>News Impact</h3><div class="big">{{ ai.get("key_readout", {}).get("news_impact", "—") }}</div><p>High news = caution</p></div>
+  <div class="card"><h3>Learning</h3><div class="big">{{ ai.get("key_readout", {}).get("pending_evaluations", "—") }}</div><p>Pending outcomes</p></div>
+</section>
+
+<section class="card">
+  <h2>Quick Questions</h2>
+  <button onclick="answer('why_no_trade')">Why didn’t you trade?</button>
+  <button onclick="answer('what_to_do')">What should I do now?</button>
+  <button onclick="answer('biggest_risk')">Biggest risk?</button>
+  <button onclick="answer('should_rotate')">Should I rotate?</button>
+  <button onclick="answer('plain_english')">Explain simply</button>
+</section>
+
+<section class="card highlight" id="answer">Click a question and Ponder will answer from current research data.</section>
+
+<script>
+const answers = {{ assistant.get("answers", {}) | tojson }};
+const fallback = {{ ai.get("action_items", []) | tojson }};
+function answer(key){
+  const items = answers[key] || fallback || ["No answer yet."];
+  document.getElementById("answer").innerHTML = "<ul>" + items.map(x => `<li>${x}</li>`).join("") + "</ul>";
+}
+</script>
+{% endblock %}

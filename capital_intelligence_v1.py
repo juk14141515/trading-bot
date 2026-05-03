@@ -1,0 +1,181 @@
+from dotenv import load_dotenv
+import os
+import json
+import csv
+from datetime import datetime, timedelta
+from pathlib import Path
+
+env_path = Path(__file__).resolve().parent / ".env"
+load_dotenv(dotenv_path=env_path)
+
+OUT = Path("static/research")
+OUT.mkdir(parents=True, exist_ok=True)
+DEST = OUT / "capital_intelligence_latest.json"
+HISTORY = OUT / "capital_history.csv"
+
+RESERVE_PCT = float(os.getenv("PONDER_RESERVE_PCT", "20"))
+
+def safe_float(x, default=0):
+    try:
+        return float(x)
+    except Exception:
+        return default
+
+def read_history():
+    if not HISTORY.exists():
+        return []
+    with HISTORY.open() as f:
+        return list(csv.DictReader(f))
+
+def write_history(row):
+    exists = HISTORY.exists()
+    with HISTORY.open("a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=[
+            "timestamp", "equity", "cash", "buying_power", "portfolio_value", "open_pl"
+        ])
+        if not exists:
+            writer.writeheader()
+        writer.writerow(row)
+
+def nearest_baseline(rows, target_dt):
+    if not rows:
+        return None
+    best = None
+    best_gap = None
+    for r in rows:
+        try:
+            t = datetime.strptime(r["timestamp"], "%Y-%m-%d %H:%M:%S")
+            gap = abs((t - target_dt).total_seconds())
+            if best is None or gap < best_gap:
+                best = r
+                best_gap = gap
+        except Exception:
+            pass
+    return best
+
+def pnl_from_baseline(current, base):
+    if not base:
+        return 0
+    return round(current - safe_float(base.get("equity")), 2)
+
+def main():
+    now_dt = datetime.now()
+    now = now_dt.strftime("%Y-%m-%d %H:%M:%S")
+
+    payload = {
+        "updated_at": now,
+        "status": "research_only",
+        "source": "alpaca_read_only",
+        "reserve_pct": RESERVE_PCT,
+        "equity": 0,
+        "cash": 0,
+        "buying_power": 0,
+        "portfolio_value": 0,
+        "open_pl": 0,
+        "today_pl": 0,
+        "week_pl": 0,
+        "all_time_pl": 0,
+        "reserve_cash": 0,
+        "deployable_cash": 0,
+        "capital_used_pct": 0,
+        "capital_mode": "UNKNOWN",
+        "next_money_action": "No account data yet.",
+        "history": [],
+        "notes": [
+            "Read-only live profit and capital intelligence.",
+            "Does not place trades.",
+            "Used for dashboard planning and future allocator research."
+        ]
+    }
+
+    try:
+        import alpaca_trade_api as tradeapi
+
+        key = os.getenv("APCA_API_KEY_ID")
+        secret = os.getenv("APCA_API_SECRET_KEY")
+        base_url = os.getenv("APCA_API_BASE_URL", "https://paper-api.alpaca.markets")
+
+        if not key or not secret:
+            raise RuntimeError("Missing Alpaca env keys")
+
+        api = tradeapi.REST(key, secret, base_url, api_version="v2")
+        acct = api.get_account()
+
+        equity = safe_float(acct.equity)
+        cash = safe_float(acct.cash)
+        buying_power = safe_float(acct.buying_power)
+        portfolio_value = safe_float(acct.portfolio_value)
+        open_pl = safe_float(getattr(acct, "unrealized_pl", 0))
+
+        row = {
+            "timestamp": now,
+            "equity": round(portfolio_value, 2),
+            "cash": round(cash, 2),
+            "buying_power": round(buying_power, 2),
+            "portfolio_value": round(portfolio_value, 2),
+            "open_pl": round(open_pl, 2),
+        }
+        write_history(row)
+
+        rows = read_history()
+        first = rows[0] if rows else None
+        day_base = nearest_baseline(rows, now_dt.replace(hour=0, minute=0, second=0, microsecond=0))
+        week_base = nearest_baseline(rows, now_dt - timedelta(days=7))
+
+        today_pl = pnl_from_baseline(equity, day_base)
+        week_pl = pnl_from_baseline(equity, week_base)
+        all_time_pl = pnl_from_baseline(equity, first)
+
+        reserve_cash = round(equity * (RESERVE_PCT / 100), 2)
+        deployable_cash = round(max(0, cash - reserve_cash), 2)
+        used_pct = round(max(0, min(100, (1 - (cash / equity)) * 100 if equity else 0)), 2)
+
+        if used_pct < 35:
+            mode = "UNDERUTILIZED"
+        elif used_pct < 75:
+            mode = "BALANCED"
+        else:
+            mode = "HEAVY"
+
+        if used_pct < 30:
+            efficiency = "LOW"
+        elif used_pct < 70:
+            efficiency = "GOOD"
+        else:
+            efficiency = "HIGH"
+
+        if deployable_cash > 50000 and today_pl <= 0:
+            action = "WAIT — No edge detected. Protect capital."
+        elif deployable_cash > 50000:
+            action = "READY — Capital available for strong setups."
+        elif used_pct > 70:
+            action = "MANAGE — Focus on current positions."
+        else:
+            action = "BUILD — Slowly deploy into best setups."
+
+        payload.update({
+            "equity": round(portfolio_value, 2),
+            "cash": round(cash, 2),
+            "buying_power": round(buying_power, 2),
+            "portfolio_value": round(portfolio_value, 2),
+            "open_pl": round(open_pl, 2),
+            "today_pl": today_pl,
+            "week_pl": week_pl,
+            "all_time_pl": all_time_pl,
+            "reserve_cash": reserve_cash,
+            "deployable_cash": deployable_cash,
+            "capital_used_pct": used_pct,
+            "capital_mode": mode,
+            "capital_efficiency": efficiency,
+            "next_money_action": action,
+            "history": rows[-120:]
+        })
+
+    except Exception as e:
+        payload["error"] = str(e)
+
+    DEST.write_text(json.dumps(payload, indent=2))
+    print("Saved:", DEST)
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% set ai = data.get("ai", {}) %}
+{% set alerts = data.get("alerts", {}) %}
+{% set rotation = data.get("rotation", {}) %}
+{% set regime = data.get("regime", {}) %}
+{% set decisions = data.get("decisions", {}) %}
+{% set read = ai.get("key_readout", {}) %}
+{% set alerts_sum = alerts.get("summary", {}) %}
+
+{% set regime_text = read.get("regime", regime.get("regime", decisions.get("regime", "Unknown"))) %}
+{% set news_score = read.get("news_impact", decisions.get("news_impact", "—")) %}
+{% set top_rotation = read.get("top_rotation", {}) %}
+{% set decision_summary = decisions.get("summary", {}) %}
+{% set sorted_decisions = decisions.get("decisions", []) | sort(attribute="score", reverse=True) %}
+{% set best = sorted_decisions[0] if sorted_decisions else {} %}
+
+<section class="hero">
+  <div>
+    <div class="eyebrow">Research Mode · No Live Orders · Clean Command Center</div>
+    <h1>Ponder Invest AI</h1>
+    <p class="muted">
+      Main dashboard answers one question: what is the system thinking right now?
+    </p>
+  </div>
+
+  <div class="hero-dog">
+    <div class="dog-icon">🐕</div>
+    <div>
+      <strong>Ponder is watching.</strong>
+      <p class="muted">Analyst only. No live execution.</p>
+    </div>
+  </div>
+</section>
+
+<section class="grid">
+  <div class="card metric">
+    <h3>Market Regime</h3>
+    <div class="big">{{ regime_text }}</div>
+    <p>Score: {{ read.get("regime_score", regime.get("score", "—")) }}</p>
+  </div>
+
+  <div class="card metric">
+    <h3>News Risk</h3>
+    <div class="big">{{ news_score }}</div>
+    <p>Higher = more defensive</p>
+  </div>
+
+  <div class="card metric">
+    <h3>Top Rotation</h3>
+    <div class="big small-big">{{ top_rotation.get("move", "—") }}</div>
+    <p>{{ top_rotation.get("action", "Research only") }}</p>
+  </div>
+
+  <div class="card metric">
+    <h3>Alerts</h3>
+    <div class="big">{{ alerts_sum.get("total", 0) }}</div>
+    <p>{{ alerts_sum.get("critical", 0) }} critical · {{ alerts_sum.get("warning", 0) }} warnings</p>
+  </div>
+</section>
+
+
+<section class="card top-opportunity">
+  <div>
+    <div class="eyebrow">Top Opportunity</div>
+    <h2>🏆 {{ best.get("symbol", "No setup yet") }}</h2>
+    <p class="muted">{{ best.get("reason", "Run research pipeline to generate decisions.") }}</p>
+  </div>
+
+  <div class="opportunity-stats">
+    <div><strong>Action</strong><span class="pill action-{{ best.get("action", "none")|lower|replace(" ", "-")|replace("/", "") }}">{{ best.get("action", "—") }}</span></div>
+    <div><strong>Confidence</strong><span>{{ best.get("confidence", "—") }}</span></div>
+    <div><strong>Score</strong><span>{{ best.get("score", "—") }}</span></div>
+    <div><strong>Sell Pressure</strong><span>{{ best.get("sell_pressure", "—") }}</span></div>
+  </div>
+</section>
+
+<section class="card highlight">
+  <h2>🎯 Decision Feed</h2>
+  <p class="muted">Research-only decisions from Decision Engine. These do not place trades.</p>
+
+  <div class="roadmap-grid">
+    <div><strong>Buy Signals</strong><p>{{ decision_summary.get("buy_count", 0) }}</p></div>
+    <div><strong>Watch</strong><p>{{ decision_summary.get("watch_count", 0) }}</p></div>
+    <div><strong>Ignore</strong><p>{{ decision_summary.get("ignore_count", 0) }}</p></div>
+  </div>
+
+  <div class="decision-list">
+    {% for d in sorted_decisions[:10] %}
+      {% set action_class = d.get("action", "none")|lower|replace(" ", "-")|replace("/", "") %}
+      <div class="decision-card decision-{{ action_class }}">
+        <div class="decision-head">
+          <strong>{{ d.get("symbol", "—") }}</strong>
+          <span class="pill action-{{ action_class }}">{{ d.get("action", "—") }}</span>
+        </div>
+        <div class="decision-meta">
+          <span>Confidence: {{ d.get("confidence", "—") }}</span>
+          <span>Score: {{ d.get("score", "—") }}</span>
+          <span>Sell Pressure: {{ d.get("sell_pressure", "—") }}</span>
+        </div>
+        <p class="muted">{{ d.get("reason", "—") }}</p>
+      </div>
+    {% else %}
+      <p>No decision data yet. Run <code>python3 research_pipeline_v1.py</code>.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="split">
+  <div class="card">
+    <h2>🧠 Ponder Summary</h2>
+    <ul>
+      {% for item in ai.get("plain_english_summary", [])[:5] %}
+        <li>{{ item }}</li>
+      {% else %}
+        <li>No plain-English summary yet.</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>⚙️ System Status</h2>
+    <div class="readiness">
+      <div><span class="dot warn"></span> Research-only mode</div>
+      <div><span class="dot good"></span> Decision feed active</div>
+      <div><span class="dot good"></span> Learning data collecting</div>
+      <div><span class="dot risk"></span> Live execution disabled</div>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>🗺️ How This Flows</h2>
+  <div class="roadmap-grid">
+    <div><strong>1. Market</strong><p>Regime + news risk define environment.</p></div>
+    <div><strong>2. Scanner</strong><p>Finds possible opportunities.</p></div>
+    <div><strong>3. Decision</strong><p>Turns scores into WATCH / BUY / IGNORE.</p></div>
+    <div><strong>4. Learning</strong><p>Tracks outcomes before automation.</p></div>
+  </div>
+</section>
+
+{% endblock %}

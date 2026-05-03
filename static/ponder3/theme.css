@@ -1,0 +1,254 @@
+
+:root{
+  --p-bg:#020617;
+  --p-panel:#07111f;
+  --p-card:#0b1220;
+  --p-card2:#101827;
+  --p-border:#334155;
+  --p-outline:#64748b;
+  --p-green:#86efac;
+  --p-yellow:#facc15;
+  --p-red:#fb7185;
+  --p-blue:#93c5fd;
+  --p-purple:#c4b5fd;
+  --p-text:#f8fafc;
+  --p-muted:#a8b3c7;
+  --p-radius:20px;
+  --p-sidebar:270px;
+}
+body.ponder-v3-active{
+  background:#020617!important;
+}
+#ponderV3Sidebar{
+  position:fixed;
+  left:0; top:0; bottom:0;
+  width:var(--p-sidebar);
+  background:linear-gradient(180deg,#030712,#08111f);
+  border-right:1px solid var(--p-border);
+  z-index:2147483000;
+  color:var(--p-text);
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  padding:18px;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+.ponderV3Brand{
+  font-size:22px;
+  font-weight:950;
+  letter-spacing:.2px;
+}
+.ponderV3Brand span{color:var(--p-green)}
+.ponderV3Sub{color:var(--p-muted);font-size:12px;line-height:1.35}
+.ponderV3NavGroup{margin-top:8px}
+.ponderV3NavTitle{
+  color:var(--p-muted);
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  margin:12px 0 7px;
+}
+.ponderV3NavBtn{
+  width:100%;
+  border:1px solid transparent;
+  background:transparent;
+  color:#dbeafe;
+  text-align:left;
+  padding:12px 13px;
+  border-radius:15px;
+  cursor:pointer;
+  font-weight:800;
+  font-size:14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.ponderV3NavBtn:hover,
+.ponderV3NavBtn.active{
+  background:rgba(148,163,184,.10);
+  border-color:var(--p-border);
+}
+.ponderV3NavBtn.active{border-color:var(--p-green)}
+.ponderV3SidebarBottom{
+  margin-top:auto;
+  color:var(--p-muted);
+  font-size:12px;
+  line-height:1.4;
+}
+#ponderV3Main{
+  position:fixed;
+  left:calc(var(--p-sidebar) + 16px);
+  right:16px;
+  top:16px;
+  bottom:16px;
+  z-index:2147482999;
+  display:none;
+  background:linear-gradient(180deg,rgba(7,17,31,.99),rgba(2,6,23,.99));
+  color:var(--p-text);
+  border:1px solid var(--p-border);
+  border-radius:28px;
+  box-shadow:0 30px 100px rgba(0,0,0,.72);
+  overflow:hidden;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+#ponderV3Main.open{display:block}
+.ponderV3Topbar{
+  padding:18px 22px;
+  border-bottom:1px solid var(--p-border);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  background:rgba(15,23,42,.58);
+}
+.ponderV3Title{font-size:28px;font-weight:950;margin:0}
+.ponderV3Content{
+  padding:22px;
+  overflow:auto;
+  height:calc(100% - 76px);
+}
+.ponderV3Close,.ponderV3SmallBtn,.ponderV3ActionBtn{
+  border:1px solid var(--p-border);
+  background:#0f172a;
+  color:white;
+  border-radius:14px;
+  padding:10px 13px;
+  cursor:pointer;
+  font-weight:850;
+}
+.ponderV3Close:hover,.ponderV3SmallBtn:hover,.ponderV3ActionBtn:hover{
+  border-color:var(--p-green);
+}
+.ponderV3Grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:14px;
+  margin:14px 0;
+}
+.ponderV3Card{
+  border:1px solid var(--p-border);
+  background:linear-gradient(180deg,rgba(15,23,42,.98),rgba(7,17,31,.98));
+  border-radius:var(--p-radius);
+  padding:18px;
+  box-shadow:0 16px 38px rgba(0,0,0,.25);
+}
+.ponderV3Card h3{margin:0 0 8px;font-size:15px;color:#dbeafe}
+.ponderV3Big{font-size:27px;font-weight:950}
+.ponderV3Muted{color:var(--p-muted);font-size:13px}
+.ponderV3Badge{
+  display:inline-block;
+  border:1px solid rgba(134,239,172,.45);
+  background:rgba(34,197,94,.12);
+  color:#d9fbe3;
+  border-radius:999px;
+  padding:4px 10px;
+  font-weight:850;
+  font-size:12px;
+}
+.ponderV3Badge.red{border-color:rgba(251,113,133,.6);background:rgba(251,113,133,.12);color:#fecdd3}
+.ponderV3Badge.yellow{border-color:rgba(250,204,21,.6);background:rgba(250,204,21,.12);color:#fef3c7}
+.ponderV3Table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:12px;
+  font-size:13px;
+}
+.ponderV3Table th,.ponderV3Table td{
+  border-bottom:1px solid rgba(148,163,184,.22);
+  padding:10px;
+  text-align:left;
+  vertical-align:top;
+}
+.ponderV3Table th{color:var(--p-blue)}
+.ponderV3Chart{
+  height:220px;
+  border:1px solid var(--p-border);
+  border-radius:18px;
+  background:#020617;
+  padding:12px;
+  overflow:hidden;
+}
+.ponderV3Bar{
+  height:14px;
+  background:#111827;
+  border:1px solid var(--p-border);
+  border-radius:999px;
+  overflow:hidden;
+}
+.ponderV3Bar > span{
+  display:block;height:100%;
+  background:linear-gradient(90deg,var(--p-red),var(--p-yellow),var(--p-green));
+}
+#ponderV3Pup{
+  position:fixed;
+  right:24px;
+  bottom:90px;
+  width:76px;height:76px;
+  border-radius:26px;
+  border:2px solid var(--p-green);
+  background:rgba(7,17,31,.98);
+  color:white;
+  font-size:31px;
+  z-index:2147483647;
+  cursor:pointer;
+  box-shadow:0 20px 70px rgba(0,0,0,.62);
+}
+#ponderV3Pup.guard{border-color:var(--p-red);box-shadow:0 0 28px rgba(251,113,133,.32),0 20px 70px rgba(0,0,0,.62)}
+#ponderV3Pup.alert{border-color:var(--p-yellow);box-shadow:0 0 28px rgba(250,204,21,.28),0 20px 70px rgba(0,0,0,.62)}
+#ponderV3Pup.hunt{border-color:var(--p-green);box-shadow:0 0 28px rgba(134,239,172,.28),0 20px 70px rgba(0,0,0,.62)}
+#ponderV3Speech{
+  position:fixed;
+  right:112px;
+  bottom:105px;
+  max-width:330px;
+  background:rgba(7,17,31,.98);
+  border:1px solid rgba(134,239,172,.55);
+  color:white;
+  border-radius:16px;
+  padding:12px 14px;
+  font-size:13px;
+  line-height:1.35;
+  z-index:2147483647;
+  box-shadow:0 20px 60px rgba(0,0,0,.55);
+  display:none;
+}
+#ponderV3ToastWrap{
+  position:fixed;
+  right:24px;
+  top:92px;
+  z-index:2147483647;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  max-width:370px;
+}
+.ponderV3Toast{
+  background:rgba(7,17,31,.98);
+  color:#e5e7eb;
+  border:1px solid var(--p-border);
+  border-radius:16px;
+  padding:12px 14px;
+  box-shadow:0 18px 55px rgba(0,0,0,.55);
+  font-size:13px;
+}
+.ponderV3Toast.critical{border-color:var(--p-red)}
+.ponderV3Toast.warning{border-color:var(--p-yellow)}
+.ponderV3SettingsRow{
+  display:flex;
+  justify-content:space-between;
+  gap:14px;
+  align-items:center;
+  padding:12px 0;
+  border-bottom:1px solid rgba(148,163,184,.18);
+}
+body.ponder-colorblind .ponderV3Badge:before{content:"● "}
+body.ponder-adhd .ponderV3Muted, body.ponder-adhd .ponderV3Table{font-size:12px}
+body.ponder-bigclick .ponderV3NavBtn, body.ponder-bigclick .ponderV3ActionBtn{padding:14px 16px;font-size:15px}
+body.ponder-compact .ponderV3Card{padding:13px}
+body.ponder-compact .ponderV3Grid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+@media(max-width:950px){
+  #ponderV3Sidebar{position:static;width:auto;border-right:0;border-bottom:1px solid var(--p-border)}
+  #ponderV3Main{left:10px;right:10px;top:10px;bottom:10px}
+  #ponderV3Pup{right:14px;bottom:88px}
+  #ponderV3Speech{right:14px;bottom:170px;max-width:290px}
+}

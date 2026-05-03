@@ -1,0 +1,526 @@
+
+import os
+import json
+import secrets
+from functools import wraps
+from flask import Flask, request, redirect, url_for, session, render_template_string
+from dotenv import load_dotenv
+import alpaca_trade_api as tradeapi
+
+load_dotenv()
+
+app = Flask(__name__)
+app.secret_key = os.getenv("DASHBOARD_SECRET_KEY", secrets.token_hex(32))
+
+API_KEY = os.getenv("APCA_API_KEY_ID")
+SECRET_KEY = os.getenv("APCA_API_SECRET_KEY")
+BASE_URL = os.getenv("BASE_URL")
+
+DASHBOARD_USER = os.getenv("DASHBOARD_USER")
+DASHBOARD_PASS = os.getenv("DASHBOARD_PASS")
+
+api = tradeapi.REST(API_KEY, SECRET_KEY, BASE_URL, api_version="v2")
+
+
+def money(value):
+    try:
+        return f"${float(value):,.2f}"
+    except Exception:
+        return "$0.00"
+
+
+def check_auth(username, password):
+    if not DASHBOARD_USER or not DASHBOARD_PASS:
+        return True
+    return username == DASHBOARD_USER and password == DASHBOARD_PASS
+
+
+def requires_auth(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if session.get("logged_in"):
+            return func(*args, **kwargs)
+        return redirect(url_for("login"))
+    return wrapper
+
+
+def load_bot_status():
+    try:
+        with open("bot_status.json", "r") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def read_logs():
+    try:
+        with open("log.txt", "r") as f:
+            return f.readlines()[-80:]
+    except Exception:
+        return ["No logs yet."]
+
+
+LOGIN_TEMPLATE = """
+<!doctype html>
+<html>
+<head>
+<title>Ponder Invest AI Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{margin:0;font-family:Arial;background:radial-gradient(circle at top,rgba(0,255,136,.18),transparent 35%),#030712;color:white;display:flex;min-height:100vh;align-items:center;justify-content:center}
+.box{width:92%;max-width:420px;background:#0f172a;border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:28px;box-shadow:0 25px 60px rgba(0,0,0,.45)}
+h1{font-size:32px;margin-top:0} span{color:#00ff88}
+input{width:100%;padding:14px;margin:10px 0;border-radius:14px;border:1px solid rgba(255,255,255,.15);background:#020617;color:white;font-size:16px}
+button{width:100%;padding:14px;border-radius:14px;border:0;background:#00ff88;color:#02120a;font-weight:900;font-size:16px;margin-top:10px}
+.error{color:#ff5c7a}.muted{color:#94a3b8}
+</style>
+</head>
+<body>
+<form class="box" method="POST">
+<h1>Ponder Invest <span>AI</span></h1>
+<p class="muted">Secure dashboard login</p>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+<input name="username" placeholder="Username" autocomplete="username">
+<input name="password" placeholder="Password" type="password" autocomplete="current-password">
+<button type="submit">Sign In</button>
+</form>
+</body>
+</html>
+"""
+
+
+DASHBOARD_TEMPLATE = """
+<!doctype html>
+<html>
+<head>
+<title>Ponder Invest AI</title>
+<meta http-equiv="refresh" content="5">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:radial-gradient(circle at top left,rgba(0,255,136,.14),transparent 28%),radial-gradient(circle at top right,rgba(59,130,246,.16),transparent 30%),#030712;color:#f8fafc}
+.container{max-width:1400px;margin:auto;padding:24px}
+.header{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:22px}
+.brand{font-size:38px;font-weight:900;letter-spacing:-1.2px}.brand span{color:#00ff88}
+.subtitle,.muted{color:#94a3b8}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-bottom:16px}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:16px;margin-bottom:16px}
+.card{background:rgba(15,23,42,.86);border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:20px;box-shadow:0 20px 45px rgba(0,0,0,.35);margin-bottom:16px}
+.big{font-size:30px;font-weight:900}.pill,.mini-pill{padding:9px 14px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);font-weight:900}
+.status-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.green{color:#00ff88}.red{color:#ff5c7a}.yellow{color:#ffd84d}.blue{color:#60a5fa}
+table{width:100%;border-collapse:collapse}th{color:#94a3b8;font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+th,td{padding:13px 10px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left}
+pre{background:#020617;padding:16px;border-radius:16px;overflow:auto;max-height:300px;color:#d1d5db;border:1px solid rgba(255,255,255,.08)}
+li{margin-bottom:8px;line-height:1.35}.footer{color:#64748b;text-align:center;padding:18px}
+.mobile-bar{display:none}
+@media(max-width:760px){
+.container{padding:12px;padding-bottom:80px}.header{position:sticky;top:0;z-index:20;background:rgba(3,7,18,.96);padding:12px;margin:-12px -12px 14px -12px;border-bottom:1px solid rgba(255,255,255,.08);flex-direction:column;align-items:flex-start}
+.brand{font-size:28px}.grid,.grid-2{grid-template-columns:1fr}.card{padding:16px;border-radius:18px}.big{font-size:25px}
+table{display:block;overflow-x:auto;white-space:nowrap}th,td{font-size:12px;padding:10px 8px}pre{font-size:12px;max-height:220px}
+.mobile-bar{display:flex;position:fixed;bottom:0;left:0;right:0;background:rgba(3,7,18,.96);border-top:1px solid rgba(255,255,255,.1);padding:10px;gap:8px;z-index:30;justify-content:space-around}
+.mobile-bar a{color:white;text-decoration:none;font-size:12px;background:rgba(255,255,255,.08);padding:9px 10px;border-radius:999px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<div>
+<div class="brand">Ponder Invest <span>AI</span></div>
+<div class="subtitle">Advanced autonomous paper-trading command center · refreshes every 5 seconds</div>
+<div class="status-row">
+<span class="mini-pill {{ risk_color }}">Risk Mode: {{ risk_mode }}</span>
+<span class="mini-pill {{ slot_color }}">Slots: {{ slot_status }}</span>
+<span class="mini-pill blue">Weakest: {{ weakest_symbol }}</span>
+</div>
+</div>
+<div class="pill {{ status_class }}">{{ bot_status }}</div>
+</div>
+
+<div class="grid">
+<div class="card"><h3>Account Status</h3><div class="big">{{ account.status }}</div><p class="muted">Connected to Alpaca paper trading</p></div>
+<div class="card"><h3>Portfolio Value</h3><div class="big">{{ money(account.portfolio_value) }}</div><p class="muted">Total account value</p></div>
+<div class="card"><h3>Buying Power</h3><div class="big">{{ money(account.buying_power) }}</div><p class="muted">Available deployable capital</p></div>
+<div class="card"><h3>Open P/L</h3><div class="big {{ 'green' if total_pl >= 0 else 'red' }}">{{ money(total_pl) }}</div><p class="muted">Unrealized position P/L</p></div>
+</div>
+
+<div class="grid">
+<div class="card"><h3>Open Win Rate</h3><div class="big">{{ open_win_rate }}%</div><p class="muted">{{ open_winners }} winners · {{ open_losers }} losers</p></div>
+<div class="card"><h3>Capital Deployed</h3><div class="big">{{ deployed_pct }}%</div><p class="muted">{{ money(position_value) }} currently deployed</p></div>
+<div class="card"><h3>Bot Actions</h3><div class="big">{{ buy_count + sell_count + skip_count }}</div><p class="muted">Buys {{ buy_count }} · Sells {{ sell_count }} · Skips {{ skip_count }}</p></div>
+<div class="card"><h3>Rotations</h3><div class="big">{{ rotation_count }}</div><p class="muted">Approved rotation events</p></div>
+<div class="card"><h3>Scanner Events</h3><div class="big">{{ scanner_count }}</div><p class="muted">Recent candidate scans</p></div>
+<div class="card"><h3>Adaptive Events</h3><div class="big">{{ adaptive_count }}</div><p class="muted">Learning adjustments</p></div>
+</div>
+
+<div class="card">
+<h2>AI Market Summary</h2>
+<p><b>Market:</b> {{ summary.get("market_summary","No market summary yet.") }}</p>
+<p><b>Opportunities:</b> {{ summary.get("opportunity_summary","No opportunity summary yet.") }}</p>
+<p><b>Risk:</b> {{ summary.get("risk_summary","No risk summary yet.") }}</p>
+<p class="muted">{{ summary.get("full_summary","") }}</p>
+</div>
+
+<div class="grid-2">
+<div class="card"><h3 id="decisions">Live Decision Panel</h3><ul>{% for item in decision_lines %}<li>{{ item }}</li>{% else %}<li>No recent decisions yet.</li>{% endfor %}</ul></div>
+<div class="card"><h3>AI Reasoning Feed</h3><ul>{% for item in ai_feed %}<li>{{ item }}</li>{% endfor %}</ul></div>
+</div>
+
+<div class="grid-2">
+<div class="card"><h3>Scanner Intelligence</h3><ul>{% for item in scanner_lines %}<li>{{ item }}</li>{% else %}<li>No scanner output yet.</li>{% endfor %}</ul></div>
+<div class="card"><h3>Adaptive Learning Feed</h3><ul>{% for item in adaptive_lines %}<li>{{ item }}</li>{% else %}<li>Adaptive learning is in safe neutral mode.</li>{% endfor %}</ul></div>
+</div>
+
+<div class="card">
+<h2>Performance Intelligence</h2>
+<div class="grid">
+<div><h3>System Health</h3><div class="big {{ health_class }}">{{ health_score }}/100</div><p class="muted">{{ health_label }}</p></div>
+<div><h3>Detected Issues</h3><ul>{% for item in health_notes %}<li>{{ item }}</li>{% endfor %}</ul></div>
+<div><h3>Suggested Actions</h3><ul>{% for item in health_suggestions %}<li>{{ item }}</li>{% endfor %}</ul></div>
+</div>
+</div>
+
+<div class="grid-2">
+<div class="card"><h3>Top Candidates</h3><ul>{% for c in candidates %}<li>{{ c }}</li>{% else %}<li>No candidates yet.</li>{% endfor %}</ul></div>
+<div class="card"><h3>Bot Intelligence</h3>
+<p><b>Market Trend:</b> {{ status_data.get("market_trend","N/A") }}</p>
+<p><b>Positions:</b> {{ status_data.get("positions","N/A") }}</p>
+<p><b>Slots Available:</b> {{ status_data.get("slots_available","N/A") }}</p>
+<p><b>Watchlist Size:</b> {{ watchlist|length }}</p>
+<p><b>Last Action:</b> {{ status_data.get("last_action","None") }}</p>
+</div>
+</div>
+
+<div class="card">
+<h2 id="positions">Position Ranking</h2>
+<p class="muted">Weakest position is marked with ⚠️. Lower score means weaker holding.</p>
+<table>
+<tr><th>Symbol</th><th>Qty</th><th>Entry</th><th>Current</th><th>P/L $</th><th>P/L %</th><th>Score</th></tr>
+{% for r in position_rows %}
+<tr>
+<td>{{ r.symbol }} {{ "⚠️" if r.symbol == weakest_symbol else "" }}</td>
+<td>{{ r.qty }}</td>
+<td>{{ money(r.entry) }}</td>
+<td>{{ money(r.current) }}</td>
+<td class="{{ 'green' if r.pl >= 0 else 'red' }}">{{ money(r.pl) }}</td>
+<td class="{{ 'green' if r.pl >= 0 else 'red' }}">{{ r.plpc }}%</td>
+<td>{{ r.score }}</td>
+</tr>
+{% else %}
+<tr><td colspan="7">No open positions</td></tr>
+{% endfor %}
+</table>
+</div>
+
+<div class="card"><h2 id="logs">Recent Bot Logs</h2><pre>{{ escaped_logs }}</pre></div>
+<div class="footer">Ponder Invest AI · Adaptive cloud trading dashboard · <a href="/history" style="color:#94a3b8;">History</a> · <a href="/logout" style="color:#94a3b8;">Logout</a></div>
+</div>
+
+<div class="mobile-bar"><a href="#">Top</a><a href="#decisions">Decisions</a><a href="#positions">Positions</a><a href="#logs">Logs</a></div>
+</body>
+</html>
+"""
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    error = ""
+    if request.method == "POST":
+        if check_auth(request.form.get("username", ""), request.form.get("password", "")):
+            session["logged_in"] = True
+            return redirect(url_for("dashboard"))
+        error = "Invalid login."
+    return render_template_string(LOGIN_TEMPLATE, error=error)
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
+@app.route("/")
+@requires_auth
+def dashboard():
+    account = api.get_account()
+    clock = api.get_clock()
+    positions = api.list_positions()
+    logs = read_logs()
+    status_data = load_bot_status()
+    summary = status_data.get("summary", {})
+
+    total_pl = 0
+    position_value = 0
+    position_rows = []
+
+    for p in positions:
+        pl = float(p.unrealized_pl)
+        plpc = float(p.unrealized_plpc) * 100
+        position_value += abs(float(p.market_value))
+        total_pl += pl
+
+        score = 50 + (float(p.unrealized_plpc) * 120)
+        if float(p.unrealized_plpc) <= -0.04:
+            score -= 30
+        elif float(p.unrealized_plpc) <= -0.02:
+            score -= 20
+        if float(p.unrealized_plpc) >= 0.03:
+            score += 15
+
+        position_rows.append({
+            "symbol": p.symbol,
+            "qty": p.qty,
+            "entry": p.avg_entry_price,
+            "current": p.current_price,
+            "pl": pl,
+            "plpc": round(plpc, 2),
+            "score": round(score, 1),
+        })
+
+    position_rows.sort(key=lambda x: x["score"])
+    weakest_symbol = position_rows[0]["symbol"] if position_rows else "None"
+
+    bot_status = "MARKET OPEN" if clock.is_open else "MARKET CLOSED"
+    status_class = "green" if clock.is_open else "yellow"
+
+    buy_count = len([l for l in logs if "BUY |" in l or "BUY DECISION" in l])
+    sell_count = len([l for l in logs if "SELL |" in l])
+    skip_count = len([l for l in logs if "SKIP BUY" in l])
+    rotation_count = len([l for l in logs if "ROTATION APPROVED" in l])
+    scanner_count = len([l for l in logs if "SCANNER" in l])
+    adaptive_count = len([l for l in logs if "ADAPTIVE" in l])
+
+    open_winners = len([r for r in position_rows if r["pl"] >= 0])
+    open_losers = len([r for r in position_rows if r["pl"] < 0])
+    open_total = open_winners + open_losers
+    open_win_rate = round((open_winners / open_total) * 100, 1) if open_total else 0
+
+    portfolio_value = float(account.portfolio_value)
+    deployed_pct = round((position_value / portfolio_value) * 100, 1) if portfolio_value else 0
+
+    risk_mode = "Defensive" if total_pl < 0 else "Normal"
+    risk_color = "red" if total_pl < 0 else "green"
+    slot_status = "Full" if status_data.get("slots_available", 0) == 0 else "Available"
+    slot_color = "yellow" if slot_status == "Full" else "green"
+
+    decision_keywords = ["BUY", "SELL", "SKIP BUY", "ROTATION", "NO ROTATION", "BUY DECISION", "ADAPTIVE", "SCANNER"]
+    decision_lines = [l.strip() for l in logs if any(k in l for k in decision_keywords)][-12:][::-1]
+    scanner_lines = [l.strip() for l in logs if "SCANNER" in l][-6:][::-1]
+    adaptive_lines = [l.strip() for l in logs if "ADAPTIVE" in l][-6:][::-1]
+
+    ai_feed = [
+        "Market is open. Scanner and execution logic are active." if clock.is_open else "Market is closed. Bot is online and waiting for the next session.",
+        f"Weakest position: {weakest_symbol}. This is the first rotation candidate.",
+        f"Risk mode: {risk_mode}. Open P/L is {money(total_pl)}.",
+        f"Capital deployed: {deployed_pct}% across {len(positions)} positions.",
+        f"Recent engine activity: {buy_count} buys, {sell_count} sells, {skip_count} skips, {rotation_count} rotations.",
+    ]
+
+    health_score = 100
+    health_notes = []
+    health_suggestions = []
+
+    if open_win_rate < 45 and len(positions) > 0:
+        health_score -= 20
+        health_notes.append("Open win rate is weak.")
+        health_suggestions.append("Tighten candidate quality or improve exits before increasing size.")
+    if total_pl < 0:
+        health_score -= 20
+        health_notes.append("Open P/L is negative.")
+        health_suggestions.append("Keep rotation defensive and avoid adding weak setups.")
+    if scanner_count == 0:
+        health_score -= 15
+        health_notes.append("Scanner has not produced recent events.")
+        health_suggestions.append("Watch scanner logs; if still quiet, lower scanner threshold or expand universe.")
+    if rotation_count == 0 and status_data.get("slots_available", 0) == 0:
+        health_score -= 10
+        health_notes.append("No rotations while slots are full.")
+        health_suggestions.append("Rotation may need stronger candidate flow before it activates.")
+    if adaptive_count == 0:
+        health_score -= 5
+        health_notes.append("Adaptive learning has not activated yet.")
+        health_suggestions.append("Collect more closed trades before enabling factor-level learning.")
+
+    health_score = max(0, min(100, health_score))
+    if health_score >= 80:
+        health_label, health_class = "Strong", "green"
+    elif health_score >= 60:
+        health_label, health_class = "Stable", "yellow"
+    else:
+        health_label, health_class = "Needs Attention", "red"
+
+    if not health_notes:
+        health_notes.append("System health looks stable.")
+    if not health_suggestions:
+        health_suggestions.append("Let the system collect more data before making aggressive changes.")
+
+    return render_template_string(
+        DASHBOARD_TEMPLATE,
+        account=account,
+        bot_status=bot_status,
+        status_class=status_class,
+        total_pl=total_pl,
+        position_value=position_value,
+        deployed_pct=deployed_pct,
+        open_win_rate=open_win_rate,
+        open_winners=open_winners,
+        open_losers=open_losers,
+        buy_count=buy_count,
+        sell_count=sell_count,
+        skip_count=skip_count,
+        rotation_count=rotation_count,
+        scanner_count=scanner_count,
+        adaptive_count=adaptive_count,
+        summary=summary,
+        decision_lines=decision_lines,
+        ai_feed=ai_feed,
+        scanner_lines=scanner_lines,
+        adaptive_lines=adaptive_lines,
+        health_score=health_score,
+        health_class=health_class,
+        health_label=health_label,
+        health_notes=health_notes,
+        health_suggestions=health_suggestions,
+        candidates=status_data.get("top_candidates", []),
+        status_data=status_data,
+        watchlist=status_data.get("watchlist", []),
+        position_rows=position_rows,
+        weakest_symbol=weakest_symbol,
+        risk_mode=risk_mode,
+        risk_color=risk_color,
+        slot_status=slot_status,
+        slot_color=slot_color,
+        escaped_logs="".join(logs),
+        money=money,
+    )
+
+
+if __name__ == "__main__":
+    app.run(host="127.0.0.1", port=5000)
+
+
+@app.route("/history")
+@requires_auth
+def history():
+    import csv
+    import os
+
+    rows = []
+    if os.path.exists("equity_history.csv"):
+        with open("equity_history.csv", "r") as f:
+            rows = list(csv.DictReader(f))[-100:]
+
+    values = []
+    labels = []
+
+    for row in rows:
+        try:
+            values.append(float(row["portfolio_value"]))
+            labels.append(row["timestamp"][5:16].replace("T", " "))
+        except Exception:
+            pass
+
+    points = ""
+    if values:
+        min_v = min(values)
+        max_v = max(values)
+        span = max(max_v - min_v, 1)
+        width = 900
+        height = 260
+
+        coords = []
+        for i, value in enumerate(values):
+            x = int((i / max(len(values) - 1, 1)) * width)
+            y = int(height - ((value - min_v) / span) * height)
+            coords.append(f"{x},{y}")
+
+        points = " ".join(coords)
+
+    table_rows = ""
+    for row in reversed(rows[-25:]):
+        table_rows += f"""
+        <tr>
+            <td>{row.get('timestamp','')}</td>
+            <td>${float(row.get('portfolio_value',0)):,.2f}</td>
+            <td>${float(row.get('buying_power',0)):,.2f}</td>
+            <td>${float(row.get('open_pl',0)):,.2f}</td>
+        </tr>
+        """
+
+    if not table_rows:
+        table_rows = "<tr><td colspan='4'>No history yet. Let the bot run for a few cycles.</td></tr>"
+
+    return f"""
+    <html>
+    <head>
+        <title>Ponder Invest AI History</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta http-equiv="refresh" content="15">
+        <style>
+            body {{
+                margin:0;
+                font-family:Arial;
+                background:#030712;
+                color:white;
+            }}
+            .container {{
+                max-width:1100px;
+                margin:auto;
+                padding:24px;
+            }}
+            .card {{
+                background:#0f172a;
+                border:1px solid rgba(255,255,255,.1);
+                border-radius:22px;
+                padding:20px;
+                margin-bottom:18px;
+            }}
+            a {{ color:#00ff88; }}
+            table {{
+                width:100%;
+                border-collapse:collapse;
+            }}
+            th,td {{
+                padding:12px;
+                border-bottom:1px solid rgba(255,255,255,.08);
+                text-align:left;
+            }}
+            .muted {{ color:#94a3b8; }}
+            svg {{
+                width:100%;
+                background:#020617;
+                border-radius:16px;
+                border:1px solid rgba(255,255,255,.08);
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Ponder Invest AI · History</h1>
+            <p><a href="/">← Back to Dashboard</a></p>
+
+            <div class="card">
+                <h2>Equity Curve</h2>
+                <p class="muted">Tracks portfolio value snapshots collected each bot cycle.</p>
+                <svg viewBox="0 0 900 300">
+                    <polyline fill="none" stroke="#00ff88" stroke-width="4" points="{points}" transform="translate(0,20)" />
+                </svg>
+            </div>
+
+            <div class="card">
+                <h2>Recent Equity Snapshots</h2>
+                <table>
+                    <tr>
+                        <th>Time</th>
+                        <th>Portfolio Value</th>
+                        <th>Buying Power</th>
+                        <th>Open P/L</th>
+                    </tr>
+                    {table_rows}
+                </table>
+            </div>
+        </div>
+    </body>
+    </html>
+    """

@@ -1,0 +1,3240 @@
+
+/* === PONDER_GLOBAL_SAFE_HELPER_V1 === */
+window.safe = window.safe || function(v, fallback="—") {
+  return (v === undefined || v === null || v === "" || Number.isNaN(v)) ? fallback : v;
+};
+var safe = window.safe;
+/* === END PONDER_GLOBAL_SAFE_HELPER_V1 === */
+
+
+window.addEventListener("load", function () {
+  console.log("Ponder clean UI v2 loaded");
+
+  const style = document.createElement("style");
+  style.innerHTML = `
+    .pp-card-hover {
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease !important;
+      will-change: transform;
+    }
+    .pp-card-hover:hover {
+      transform: translateY(-5px) scale(1.01) !important;
+      box-shadow: 0 22px 60px rgba(0,0,0,.45), 0 0 28px rgba(124,255,178,.22) !important;
+      border-color: rgba(124,255,178,.38) !important;
+    }
+    .pp-card-enter {
+      animation: ppCardEnter .35s ease both;
+    }
+    @keyframes ppCardEnter {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  `;
+  document.head.appendChild(style);
+
+  const labels = [
+    "Account Status", "Portfolio Value", "Buying Power", "Open P/L",
+    "Open Win Rate", "Capital Deployed", "Bot Actions", "Rotations",
+    "Scanner Events", "Adaptive Events", "Closed Win Rate", "Closed Net P/L",
+    "Equity Curve", "Recent Equity Snapshots"
+  ];
+
+  function tagCards() {
+    const divs = Array.from(document.querySelectorAll("div"));
+
+    divs.forEach(el => {
+      if (el.closest(".globalSidebar")) return;
+      if (el.id === "ppToolDock" || el.id === "ppSettingsPanel") return;
+
+      const txt = (el.innerText || "").trim();
+      if (!labels.some(label => txt.includes(label))) return;
+
+      const r = el.getBoundingClientRect();
+      if (r.width < 180 || r.height < 80) return;
+      if (r.width > window.innerWidth * 0.75) return;
+
+      el.classList.add("pp-card-hover");
+
+      if (!el.dataset.ppEntered) {
+        el.dataset.ppEntered = "1";
+        el.classList.add("pp-card-enter");
+      }
+    });
+  }
+
+  tagCards();
+  setInterval(tagCards, 2000);
+
+  if (!document.getElementById("ppToolDock")) {
+    const dock = document.createElement("div");
+    dock.id = "ppToolDock";
+    dock.style.cssText = "position:fixed;right:22px;top:260px;z-index:99999;display:flex;flex-direction:column;gap:12px;";
+    dock.innerHTML = "<button>⬆️</button><button>🔄</button><button>📋</button>";
+    const buttons = dock.querySelectorAll("button");
+    buttons[0].onclick = () => window.scrollTo({top:0, behavior:"smooth"});
+    buttons[1].onclick = () => location.reload();
+    buttons[2].onclick = () => navigator.clipboard.writeText(location.href);
+    buttons.forEach(btn => {
+      btn.style.cssText = "width:44px;height:44px;border-radius:14px;border:1px solid rgba(140,160,255,.35);background:rgba(18,24,45,.9);color:white;cursor:pointer;font-size:18px;";
+    });
+    document.body.appendChild(dock);
+  }
+
+  if (!document.getElementById("ppSettingsButton")) {
+    const gear = document.createElement("button");
+    gear.id = "ppSettingsButton";
+    gear.innerHTML = "⚙️";
+    gear.style.cssText = "position:fixed;right:22px;bottom:24px;z-index:100000;width:52px;height:52px;border-radius:50%;border:1px solid rgba(140,160,255,.4);background:rgba(18,24,45,.95);color:white;cursor:pointer;font-size:22px;";
+
+    const panel = document.createElement("div");
+    panel.id = "ppSettingsPanel";
+    panel.style.cssText = "display:none;position:fixed;right:22px;bottom:88px;z-index:100000;width:290px;padding:18px;border-radius:18px;border:1px solid rgba(140,160,255,.35);background:rgba(18,24,45,.96);color:white;box-shadow:0 18px 45px rgba(0,0,0,.35);font-family:Arial,sans-serif;";
+    panel.innerHTML = `
+  <h3 style="margin-top:0">🐾 Ponder Pro Settings</h3>
+  <button data-pp-toggle="focus" style="width:100%;margin:6px 0;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:white;cursor:pointer">Focus Mode</button>
+  <button data-pp-toggle="contrast" style="width:100%;margin:6px 0;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:white;cursor:pointer">High Contrast</button>
+  <button data-pp-toggle="motion" style="width:100%;margin:6px 0;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:white;cursor:pointer">Reduce Motion</button>
+  <button data-pp-toggle="black" style="width:100%;margin:6px 0;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:white;cursor:pointer">True Black Theme</button>
+`;
+
+    gear.onclick = () => panel.style.display = panel.style.display === "none" ? "block" : "none";
+    document.body.appendChild(panel);
+    document.body.appendChild(gear);
+  }
+});
+
+
+// === PONDER MARKET INTELLIGENCE DASHBOARD V1 ===
+window.addEventListener("load", function () {
+  if (window.__ponderMarketIntelV1) return;
+  window.__ponderMarketIntelV1 = true;
+
+  const btn = document.createElement("button");
+  btn.innerHTML = "🧠";
+  btn.title = "Market Intelligence";
+  btn.style.cssText = `
+    position:fixed; right:22px; top:420px; z-index:100000;
+    width:44px; height:44px; border-radius:14px;
+    border:1px solid rgba(140,160,255,.35);
+    background:rgba(18,24,45,.92); color:white;
+    cursor:pointer; font-size:18px;
+  `;
+  document.body.appendChild(btn);
+
+  const panel = document.createElement("div");
+  panel.id = "ponderMarketIntelPanel";
+  panel.style.cssText = `
+    display:none; position:fixed; inset:72px 36px 36px 260px;
+    z-index:100000; overflow:auto; padding:24px;
+    border-radius:24px; border:1px solid rgba(140,160,255,.25);
+    background:rgba(8,12,24,.97); color:white;
+    box-shadow:0 24px 70px rgba(0,0,0,.55);
+    font-family:Arial,sans-serif;
+  `;
+  document.body.appendChild(panel);
+
+  function row(x) {
+    return `
+      <tr>
+        <td>${x.symbol ?? ""}</td>
+        <td>${x.final_score ?? ""}</td>
+        <td>${x.entry_zone ?? ""}</td>
+        <td>${x.pullback_from_sma5_pct ?? ""}%</td>
+        <td>${x.extension_from_sma20_pct ?? ""}%</td>
+        <td>${x.label ?? ""}</td>
+      </tr>
+    `;
+  }
+
+  async function loadIntel() {
+    panel.innerHTML = "<h2>🧠 Market Intelligence</h2><p>Loading research data...</p>";
+    try {
+      const res = await fetch("/static/research/market_intelligence_latest.json?ts=" + Date.now());
+      const data = await res.json();
+
+      panel.innerHTML = `
+        <div style="display:flex;justify-content:space-between;gap:16px;align-items:center">
+          <div>
+            <h1 style="margin:0">🧠 Market Intelligence</h1>
+            <p style="color:#a8b3c7">Updated: ${data.updated_at}</p>
+          </div>
+          <button id="closeIntel" style="padding:10px 14px;border-radius:12px;background:#111827;color:white;border:1px solid #334155;cursor:pointer">Close</button>
+        </div>
+
+        <h2>✅ Trade-Friendly / Pullback Setups</h2>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+          <thead><tr><th>Symbol</th><th>Score</th><th>Entry Zone</th><th>Pullback</th><th>Extension</th><th>Label</th></tr></thead>
+          <tbody>${(data.trade_ready || []).map(row).join("")}</tbody>
+        </table>
+
+        <h2>⚠️ Strong but Extended</h2>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+          <thead><tr><th>Symbol</th><th>Score</th><th>Entry Zone</th><th>Pullback</th><th>Extension</th><th>Label</th></tr></thead>
+          <tbody>${(data.extended_wait || []).map(row).join("")}</tbody>
+        </table>
+
+        <h2>🧪 Best Strategy Research</h2>
+        <pre style="background:rgba(255,255,255,.05);padding:16px;border-radius:16px;white-space:pre-wrap">${JSON.stringify(data.best_strategy || {}, null, 2)}</pre>
+      `;
+
+      panel.querySelectorAll("td,th").forEach(e => {
+        e.style.cssText = "padding:10px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left";
+      });
+
+      document.getElementById("closeIntel").onclick = () => panel.style.display = "none";
+    } catch (e) {
+      panel.innerHTML = "<h2>Market Intelligence</h2><p>No research data found yet. Run <code>python3 research_pipeline_v1.py</code>.</p>";
+    }
+  }
+
+  btn.onclick = function () {
+    panel.style.display = panel.style.display === "none" ? "block" : "none";
+    if (panel.style.display === "block") loadIntel();
+  };
+});
+
+
+// === PONDER INTELLIGENCE UI V2 ===
+window.addEventListener("load", function () {
+  if (window.__ponderIntelUIV2) return;
+  window.__ponderIntelUIV2 = true;
+
+  const style = document.createElement("style");
+  style.innerHTML = `
+    #ponderIntelBtn {
+      position: fixed;
+      right: 22px;
+      top: 420px;
+      z-index: 100000;
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      border: 1px solid rgba(120,180,255,.35);
+      background: rgba(10,14,28,.94);
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 12px 30px rgba(0,0,0,.35);
+    }
+
+    #ponderIntelPanel {
+      display: none;
+      position: fixed;
+      inset: 60px 34px 34px 260px;
+      z-index: 100000;
+      overflow: auto;
+      padding: 26px;
+      border-radius: 26px;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(110,255,170,.08), transparent 30%),
+        linear-gradient(180deg, rgba(9,13,25,.98), rgba(4,6,12,.98));
+      color: white;
+      border: 1px solid rgba(140,160,255,.22);
+      box-shadow: 0 26px 80px rgba(0,0,0,.62);
+      font-family: Arial, sans-serif;
+    }
+
+    .intel-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin: 18px 0 24px;
+    }
+
+    .intel-card {
+      padding: 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.045);
+    }
+
+    .intel-card h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: #a8b3c7;
+    }
+
+    .intel-card .big {
+      font-size: 26px;
+      font-weight: 900;
+    }
+
+    .intel-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 28px;
+      font-size: 13px;
+    }
+
+    .intel-table th, .intel-table td {
+      padding: 10px;
+      border-bottom: 1px solid rgba(255,255,255,.075);
+      text-align: left;
+    }
+
+    .intel-table th {
+      color: #a8b3c7;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .intel-badge {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.08);
+      white-space: nowrap;
+    }
+
+    .intel-close {
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color: white;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    @media (max-width: 900px) {
+      #ponderIntelPanel {
+        inset: 20px;
+      }
+      .intel-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+
+  const btn = document.createElement("button");
+  btn.id = "ponderIntelBtn";
+  btn.innerHTML = "🧠";
+  btn.title = "Market Intelligence";
+  document.body.appendChild(btn);
+
+  const panel = document.createElement("div");
+  panel.id = "ponderIntelPanel";
+  document.body.appendChild(panel);
+
+  function safe(n) {
+    if (n === undefined || n === null || Number.isNaN(n)) return "--";
+    return n;
+  }
+
+  function row(x) {
+    return `
+      <tr>
+        <td><strong>${safe(x.symbol)}</strong></td>
+        <td>${safe(x.final_score)}</td>
+        <td><span class="intel-badge">${safe(x.entry_zone)}</span></td>
+        <td>${safe(x.pullback_from_sma5_pct)}%</td>
+        <td>${safe(x.extension_from_sma20_pct)}%</td>
+        <td>${safe(x.change_5d_pct)}%</td>
+        <td>${safe(x.volume_ratio)}x</td>
+        <td>${safe(x.label)}</td>
+      </tr>
+    `;
+  }
+
+  function table(title, items) {
+    return `
+      <h2>${title}</h2>
+      <table class="intel-table">
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Score</th>
+            <th>Entry Zone</th>
+            <th>Pullback</th>
+            <th>Extension</th>
+            <th>5D</th>
+            <th>Vol</th>
+            <th>Label</th>
+          </tr>
+        </thead>
+        <tbody>${(items || []).map(row).join("")}</tbody>
+      </table>
+    `;
+  }
+
+  async function loadIntel() {
+    panel.style.display = "block";
+    panel.innerHTML = `<h1>🧠 Market Intelligence</h1><p style="color:#a8b3c7">Loading scanner + optimizer research...</p>`;
+
+    try {
+      const res = await fetch("/static/research/market_intelligence_latest.json?ts=" + Date.now());
+      const data = await res.json();
+
+      const tradeReady = data.trade_ready || [];
+      const extended = data.extended_wait || [];
+      const scannerTop = data.scanner_top || [];
+      const best = data.best_strategy || {};
+
+      panel.innerHTML = `
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px">
+          <div>
+            <h1 style="margin:0;font-size:34px">🧠 Market Intelligence</h1>
+            <p style="color:#a8b3c7;margin-top:8px">Research-only scanner. Does not control live trades.</p>
+            <p style="color:#7c8aa5;font-size:13px">Updated: ${safe(data.updated_at)}</p>
+          </div>
+          <button class="intel-close" id="ponderIntelClose">Close</button>
+        </div>
+
+        <div class="intel-grid">
+          <div class="intel-card">
+            <h3>Trade-Friendly Setups</h3>
+            <div class="big">${tradeReady.length}</div>
+            <div style="color:#a8b3c7;font-size:13px">Healthy or pullback zones</div>
+          </div>
+          <div class="intel-card">
+            <h3>Extended / Wait</h3>
+            <div class="big">${extended.length}</div>
+            <div style="color:#a8b3c7;font-size:13px">Strong, but risky to chase</div>
+          </div>
+          <div class="intel-card">
+            <h3>Best Research Config</h3>
+            <div class="big">${safe(best.win_rate)}%</div>
+            <div style="color:#a8b3c7;font-size:13px">Win rate from optimizer</div>
+          </div>
+        </div>
+
+        ${table("✅ Trade-Friendly / Pullback Setups", tradeReady)}
+        ${table("⚠️ Strong but Extended / Wait", extended)}
+        ${table("📡 Scanner Top 15", scannerTop)}
+
+        <h2>🧪 Best Strategy Research</h2>
+        <pre style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);padding:16px;border-radius:16px;white-space:pre-wrap">${JSON.stringify(best, null, 2)}</pre>
+      `;
+
+      document.getElementById("ponderIntelClose").onclick = () => panel.style.display = "none";
+    } catch (e) {
+      panel.innerHTML = `
+        <h1>🧠 Market Intelligence</h1>
+        <p style="color:#ffb4b4">No research file loaded yet.</p>
+        <p>Run:</p>
+        <pre style="background:rgba(255,255,255,.05);padding:16px;border-radius:16px">python3 research_pipeline_v1.py</pre>
+      `;
+    }
+  }
+
+  btn.onclick = function () {
+    if (panel.style.display === "block") {
+      panel.style.display = "none";
+    } else {
+      loadIntel();
+    }
+  };
+});
+
+
+// === PONDER SETTINGS FIX V1 ===
+window.addEventListener("load", function () {
+  if (window.__ponderSettingsFixV1) return;
+  window.__ponderSettingsFixV1 = true;
+
+  function applySetting(name, on) {
+    document.body.classList.toggle(name, on);
+    localStorage.setItem(name, on ? "1" : "0");
+  }
+
+  function restoreSettings() {
+    ["ponder-focus", "ponder-colorblind", "ponder-contrast", "ponder-reduced-motion"].forEach(cls => {
+      if (localStorage.getItem(cls) === "1") document.body.classList.add(cls);
+    });
+  }
+
+  restoreSettings();
+
+  const style = document.createElement("style");
+  style.innerHTML = `
+    body.ponder-focus .card,
+    body.ponder-focus .intel-card {
+      box-shadow: none !important;
+    }
+
+    body.ponder-contrast {
+      filter: contrast(1.08);
+    }
+
+    body.ponder-reduced-motion * {
+      animation: none !important;
+      transition: none !important;
+    }
+
+    body.ponder-colorblind .positive,
+    body.ponder-colorblind .value {
+      text-decoration: underline;
+    }
+
+    #ppSettingsPanel button {
+      cursor: pointer !important;
+    }
+  `;
+  document.head.appendChild(style);
+
+  function fixPanel() {
+    const panel = document.getElementById("ppSettingsPanel");
+    if (!panel) return;
+
+    const buttons = Array.from(panel.querySelectorAll("button"));
+
+    buttons.forEach(btn => {
+      const label = (btn.innerText || "").toLowerCase();
+
+      btn.onclick = function () {
+        if (label.includes("focus")) {
+          applySetting("ponder-focus", !document.body.classList.contains("ponder-focus"));
+        } else if (label.includes("colorblind")) {
+          applySetting("ponder-colorblind", !document.body.classList.contains("ponder-colorblind"));
+        } else if (label.includes("contrast")) {
+          applySetting("ponder-contrast", !document.body.classList.contains("ponder-contrast"));
+        } else if (label.includes("animation")) {
+          applySetting("ponder-reduced-motion", !document.body.classList.contains("ponder-reduced-motion"));
+        } else if (label.includes("refresh") || label.includes("now")) {
+          location.reload();
+        }
+      };
+    });
+  }
+
+  setTimeout(fixPanel, 500);
+  setInterval(fixPanel, 3000);
+});
+
+
+
+// === PONDER SETTINGS CONTROLS V1 ===
+window.addEventListener("load", function () {
+  if (window.__ponderSettingsControlsV1) return;
+  window.__ponderSettingsControlsV1 = true;
+
+  const style = document.createElement("style");
+  style.innerHTML = `
+    body.pp-focus .pp-card-hover:not(:hover) { opacity: .82; }
+    body.pp-contrast { filter: contrast(1.08) brightness(1.04); }
+    body.pp-motion-off *, body.pp-motion-off *::before, body.pp-motion-off *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+    body.pp-black {
+      background: #000 !important;
+    }
+    body.pp-black .globalSidebar {
+      background: #030303 !important;
+    }
+    body.pp-black .card,
+    body.pp-black .pp-card-hover,
+    body.pp-black section,
+    body.pp-black .intel-card {
+      background: rgba(5,5,8,.96) !important;
+      border-color: rgba(120,255,180,.18) !important;
+    }
+  `;
+  document.head.appendChild(style);
+
+  const map = {
+    focus: "pp-focus",
+    contrast: "pp-contrast",
+    motion: "pp-motion-off",
+    black: "pp-black"
+  };
+
+  Object.values(map).forEach(cls => {
+    if (localStorage.getItem(cls) === "1") document.body.classList.add(cls);
+  });
+
+  document.addEventListener("click", function (e) {
+    const btn = e.target.closest("[data-pp-toggle]");
+    if (!btn) return;
+
+    const key = btn.getAttribute("data-pp-toggle");
+    const cls = map[key];
+    if (!cls) return;
+
+    const on = !document.body.classList.contains(cls);
+    document.body.classList.toggle(cls, on);
+    localStorage.setItem(cls, on ? "1" : "0");
+  });
+});
+
+
+// === PONDER UI CONSISTENCY FIX V1 ===
+window.addEventListener("load", function () {
+  if (window.__ponderUIConsistencyV1) return;
+  window.__ponderUIConsistencyV1 = true;
+
+  const style = document.createElement("style");
+  style.innerHTML = `
+    /* Keep settings/intel panels above all visual modes */
+    #ppSettingsPanel,
+    #ppSettingsButton,
+    #ponderIntelBtn,
+    #ponderIntelPanel,
+    #ponderMarketIntelPanel,
+    #ppToolDock {
+      filter: none !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    /* Better contrast mode without hiding overlays */
+    body.pp-contrast {
+      filter: none !important;
+    }
+
+    body.pp-contrast .card,
+    body.pp-contrast .pp-card-hover,
+    body.pp-contrast section,
+    body.pp-contrast table,
+    body.pp-contrast .intel-card {
+      border-color: rgba(150, 255, 190, .36) !important;
+      box-shadow: 0 0 0 1px rgba(150,255,190,.08), 0 18px 45px rgba(0,0,0,.45) !important;
+    }
+
+    /* Premium cohesion for Main + History + older route cards */
+    .container > div,
+    .container section,
+    .content > div,
+    .content section,
+    main > div,
+    main section {
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease !important;
+    }
+
+    .container > div:hover,
+    .container section:hover,
+    .content > div:hover,
+    .content section:hover,
+    main > div:hover,
+    main section:hover {
+      transform: translateY(-3px) !important;
+      box-shadow: 0 20px 55px rgba(0,0,0,.42), 0 0 24px rgba(124,255,178,.14) !important;
+      border-color: rgba(124,255,178,.28) !important;
+    }
+
+    /* History table polish */
+    table {
+      overflow: hidden;
+      border-radius: 16px;
+    }
+
+    tr {
+      transition: background .15s ease !important;
+    }
+
+    tr:hover {
+      background: rgba(124,255,178,.055) !important;
+    }
+
+    /* Make settings buttons obviously interactive */
+    #ppSettingsPanel button {
+      display: block !important;
+      cursor: pointer !important;
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease !important;
+    }
+
+    #ppSettingsPanel button:hover {
+      transform: translateY(-2px);
+      border-color: rgba(124,255,178,.45) !important;
+      box-shadow: 0 0 18px rgba(124,255,178,.18);
+    }
+  `;
+  document.head.appendChild(style);
+
+  function retagMoreCards() {
+    const candidates = Array.from(document.querySelectorAll("div, section, table"));
+    candidates.forEach(el => {
+      if (el.closest(".globalSidebar")) return;
+      if (el.closest("#ppSettingsPanel")) return;
+      if (el.closest("#ponderIntelPanel")) return;
+      if (el.closest("#ponderMarketIntelPanel")) return;
+      if (el.id === "ppToolDock" || el.id === "ppSettingsButton") return;
+
+      const r = el.getBoundingClientRect();
+      if (r.width < 220 || r.height < 90) return;
+      if (r.width > window.innerWidth * 0.92) return;
+
+      const txt = (el.innerText || "").trim();
+      const looksLikeCard =
+        txt.includes("Portfolio") ||
+        txt.includes("Buying Power") ||
+        txt.includes("Open P/L") ||
+        txt.includes("Equity") ||
+        txt.includes("History") ||
+        txt.includes("Snapshot") ||
+        txt.includes("Account") ||
+        txt.includes("Win Rate") ||
+        txt.includes("Bot Actions") ||
+        txt.includes("Scanner") ||
+        txt.includes("Rotations");
+
+      if (looksLikeCard) el.classList.add("pp-card-hover");
+    });
+  }
+
+  retagMoreCards();
+  setInterval(retagMoreCards, 2500);
+
+  // If a mode ever hides settings accidentally, force it back visible when gear clicked.
+  document.addEventListener("click", function(e) {
+    if (e.target && e.target.id === "ppSettingsButton") {
+      setTimeout(() => {
+        const panel = document.getElementById("ppSettingsPanel");
+        if (panel) {
+          panel.style.opacity = "1";
+          panel.style.visibility = "visible";
+          panel.style.filter = "none";
+        }
+      }, 50);
+    }
+  });
+});
+
+
+// === MAIN + HISTORY CARD HOVER FIX V1 ===
+window.addEventListener("load", function () {
+  if (window.__mainHistoryCardHoverV1) return;
+  window.__mainHistoryCardHoverV1 = true;
+
+  const style = document.createElement("style");
+  style.innerHTML = `
+    body .card {
+      transition:
+        transform .18s ease,
+        box-shadow .18s ease,
+        border-color .18s ease,
+        background .18s ease !important;
+      will-change: transform;
+    }
+
+    body .card:hover {
+      transform: translateY(-5px) scale(1.01) !important;
+      border-color: rgba(124,255,178,.38) !important;
+      box-shadow:
+        0 22px 60px rgba(0,0,0,.48),
+        0 0 30px rgba(124,255,178,.18) !important;
+      background:
+        radial-gradient(circle at top left, rgba(124,255,178,.08), transparent 34%),
+        rgba(18,24,45,.92) !important;
+    }
+
+    body .card .big,
+    body .card .value {
+      transition: text-shadow .18s ease, color .18s ease !important;
+    }
+
+    body .card:hover .big,
+    body .card:hover .value {
+      text-shadow: 0 0 18px rgba(124,255,178,.22) !important;
+    }
+
+    body table tr {
+      transition: background .16s ease !important;
+    }
+
+    body table tr:hover {
+      background: rgba(124,255,178,.06) !important;
+    }
+
+    body.pp-motion-off .card,
+    body.pp-motion-off .card:hover,
+    body.pp-motion-off table tr {
+      transition: none !important;
+      transform: none !important;
+    }
+  `;
+  document.head.appendChild(style);
+});
+
+
+// === MAIN + HISTORY CARD HOVER FIX V2 (FORCED OVERRIDE) ===
+window.addEventListener("load", function () {
+  if (window.__mainHistoryCardHoverV2) return;
+  window.__mainHistoryCardHoverV2 = true;
+
+  const style = document.createElement("style");
+  style.innerHTML = `
+    html body .card {
+      transition:
+        transform .18s ease,
+        box-shadow .18s ease,
+        border-color .18s ease,
+        background .18s ease !important;
+    }
+
+    html body .card:hover {
+      transform: translateY(-6px) scale(1.015) !important;
+      border: 1px solid rgba(124,255,178,.5) !important;
+      box-shadow:
+        0 30px 80px rgba(0,0,0,.6),
+        0 0 40px rgba(124,255,178,.25) !important;
+
+      background:
+        radial-gradient(circle at top left, rgba(124,255,178,.12), transparent 40%),
+        rgba(15,20,40,.95) !important;
+    }
+
+    html body .card:hover h3 {
+      color: #7cffb2 !important;
+    }
+
+    html body .card:hover .big,
+    html body .card:hover .value {
+      text-shadow: 0 0 20px rgba(124,255,178,.35) !important;
+    }
+
+    html body table tr:hover {
+      background: rgba(124,255,178,.08) !important;
+    }
+
+    html body.pp-motion-off .card,
+    html body.pp-motion-off .card:hover {
+      transform: none !important;
+      transition: none !important;
+    }
+  `;
+  document.head.appendChild(style);
+
+  console.log("🔥 Main + History hover FIX V2 loaded");
+});
+
+
+// === CALM PREMIUM HOVER OVERRIDE V1 ===
+window.addEventListener("load", function () {
+  if (window.__calmPremiumHoverV1) return;
+  window.__calmPremiumHoverV1 = true;
+
+  const style = document.createElement("style");
+  style.innerHTML = `
+    html body .card,
+    html body .pp-card-hover {
+      transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease !important;
+    }
+
+    html body .card:hover,
+    html body .pp-card-hover:hover {
+      transform: translateY(-2px) !important;
+      border-color: rgba(124,255,178,.30) !important;
+      box-shadow:
+        0 14px 36px rgba(0,0,0,.38),
+        0 0 14px rgba(124,255,178,.12) !important;
+      background: rgba(18,24,45,.92) !important;
+    }
+
+    html body .card:hover h2,
+    html body .card:hover h3,
+    html body .card:hover .big,
+    html body .card:hover .value {
+      text-shadow: 0 0 10px rgba(124,255,178,.16) !important;
+    }
+
+    html body.pp-motion-off .card:hover,
+    html body.pp-motion-off .pp-card-hover:hover {
+      transform: none !important;
+      box-shadow: none !important;
+    }
+  `;
+  document.head.appendChild(style);
+});
+
+
+// === PONDER LEARNING PANEL V1 ===
+window.addEventListener("load", function () {
+  if (window.__ponderLearningPanelV1) return;
+  window.__ponderLearningPanelV1 = true;
+
+  const style = document.createElement("style");
+  style.innerHTML = `
+    #ponderLearningBtn {
+      position: fixed;
+      right: 22px;
+      top: 480px;
+      z-index: 100000;
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      border: 1px solid rgba(124,255,178,.28);
+      background: rgba(8,12,24,.95);
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 14px 32px rgba(0,0,0,.38);
+    }
+
+    #ponderLearningPanel {
+      display: none;
+      position: fixed;
+      inset: 58px 34px 34px 260px;
+      z-index: 100000;
+      overflow: auto;
+      padding: 26px;
+      border-radius: 26px;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(124,255,178,.08), transparent 28%),
+        radial-gradient(circle at 90% 0%, rgba(120,160,255,.08), transparent 30%),
+        rgba(5,8,18,.98);
+      border: 1px solid rgba(124,255,178,.18);
+      box-shadow: 0 28px 90px rgba(0,0,0,.65);
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    .learn-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin: 18px 0 24px;
+    }
+
+    .learn-card {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.045);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .learn-card h3 {
+      margin: 0 0 8px;
+      color: #a8b3c7;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .learn-big {
+      font-size: 25px;
+      font-weight: 900;
+    }
+
+    .learn-good { color: #86ff9d; }
+    .learn-warn { color: #ffe66d; }
+    .learn-bad { color: #ff8b8b; }
+    .learn-info { color: #9db7ff; }
+
+    .learn-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 24px;
+      font-size: 13px;
+    }
+
+    .learn-table th,
+    .learn-table td {
+      padding: 10px;
+      border-bottom: 1px solid rgba(255,255,255,.075);
+      text-align: left;
+    }
+
+    .learn-table th {
+      color: #a8b3c7;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .learn-section {
+      margin-top: 24px;
+    }
+
+    .learn-close {
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color: white;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    @media (max-width: 900px) {
+      #ponderLearningPanel { inset: 20px; }
+      .learn-grid { grid-template-columns: 1fr; }
+    }
+  `;
+  document.head.appendChild(style);
+
+  const btn = document.createElement("button");
+  btn.id = "ponderLearningBtn";
+  btn.innerHTML = "📚";
+  btn.title = "Learning Panel";
+  document.body.appendChild(btn);
+
+  const panel = document.createElement("div");
+  panel.id = "ponderLearningPanel";
+  document.body.appendChild(panel);
+
+  function moneyGuess(txt, label) {
+    const re = new RegExp(label + "[\\s\\S]{0,120}?\\$([0-9,]+\\.?[0-9]*)", "i");
+    const m = txt.match(re);
+    return m ? parseFloat(m[1].replace(/,/g, "")) : null;
+  }
+
+  function safe(x) {
+    if (x === undefined || x === null || Number.isNaN(x)) return "--";
+    return x;
+  }
+
+  function setupRow(x) {
+    return `
+      <tr>
+        <td>${safe(x.symbols_group)}</td>
+        <td>${safe(x.threshold)}</td>
+        <td>${safe(x.take_profit_pct)}%</td>
+        <td>${safe(x.stop_loss_pct)}%</td>
+        <td>${safe(x.max_hold_minutes)}m</td>
+        <td>${safe(x.win_rate)}%</td>
+        <td>${safe(x.avg_pnl_pct)}%</td>
+        <td>${safe(x.trades)}</td>
+      </tr>
+    `;
+  }
+
+  function scannerRow(x) {
+    return `
+      <tr>
+        <td><strong>${safe(x.symbol)}</strong></td>
+        <td>${safe(x.final_score)}</td>
+        <td>${safe(x.entry_zone)}</td>
+        <td>${safe(x.pullback_from_sma5_pct)}%</td>
+        <td>${safe(x.extension_from_sma20_pct)}%</td>
+        <td>${safe(x.label)}</td>
+      </tr>
+    `;
+  }
+
+  async function loadLearning() {
+    panel.style.display = "block";
+    panel.innerHTML = `<h1>📚 Ponder Learning Panel</h1><p style="color:#a8b3c7">Loading research + dashboard context...</p>`;
+
+    const bodyText = document.body.innerText || "";
+    const buyingPower = moneyGuess(bodyText, "Buying Power");
+    const portfolioValue = moneyGuess(bodyText, "Portfolio Value");
+    const openPL = moneyGuess(bodyText, "Open P/L");
+
+    let cashUtil = null;
+    if (buyingPower && portfolioValue) {
+      cashUtil = Math.max(0, Math.min(100, ((portfolioValue - buyingPower) / portfolioValue) * 100));
+    }
+
+    try {
+      const res = await fetch("/static/research/market_intelligence_latest.json?ts=" + Date.now());
+      const data = await res.json();
+
+      const best = data.best_strategy || {};
+      const optimizerTop = data.optimizer_top || [];
+      const tradeReady = data.trade_ready || [];
+      const extended = data.extended_wait || [];
+
+      const noRealSellsNote = `
+        This panel sees closed net P/L as $0 / no real closed-trade learning yet if your dashboard still shows no closed sells.
+        Keep optimizer/scanner in research mode until live sell data exists.
+      `;
+
+      let utilizationLabel = "Unknown";
+      let utilizationClass = "learn-info";
+      if (cashUtil !== null) {
+        if (cashUtil < 35) {
+          utilizationLabel = "Underutilized";
+          utilizationClass = "learn-warn";
+        } else if (cashUtil < 75) {
+          utilizationLabel = "Healthy";
+          utilizationClass = "learn-good";
+        } else {
+          utilizationLabel = "Aggressive";
+          utilizationClass = "learn-bad";
+        }
+      }
+
+      panel.innerHTML = `
+        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start">
+          <div>
+            <h1 style="margin:0;font-size:34px">📚 Ponder Learning Panel</h1>
+            <p style="color:#a8b3c7;margin-top:8px">Research-only learning dashboard. No live-trade control.</p>
+            <p style="color:#7c8aa5;font-size:13px">Updated: ${safe(data.updated_at)}</p>
+          </div>
+          <button class="learn-close" id="ponderLearningClose">Close</button>
+        </div>
+
+        <div class="learn-grid">
+          <div class="learn-card">
+            <h3>Best Strategy Win Rate</h3>
+            <div class="learn-big learn-good">${safe(best.win_rate)}%</div>
+            <div style="color:#a8b3c7;font-size:13px">Optimizer research only</div>
+          </div>
+
+          <div class="learn-card">
+            <h3>Trade-Friendly Setups</h3>
+            <div class="learn-big learn-info">${tradeReady.length}</div>
+            <div style="color:#a8b3c7;font-size:13px">Healthy / pullback zones</div>
+          </div>
+
+          <div class="learn-card">
+            <h3>Cash Utilization</h3>
+            <div class="learn-big ${utilizationClass}">${cashUtil === null ? "--" : cashUtil.toFixed(1) + "%"}</div>
+            <div style="color:#a8b3c7;font-size:13px">${utilizationLabel}</div>
+          </div>
+
+          <div class="learn-card">
+            <h3>Closed Sell Learning</h3>
+            <div class="learn-big learn-warn">Limited</div>
+            <div style="color:#a8b3c7;font-size:13px">Need more real exits</div>
+          </div>
+        </div>
+
+        <div class="learn-section">
+          <h2>🧠 Learning Notes</h2>
+          <div class="learn-card">
+            <p><strong>No real sells yet:</strong> ${noRealSellsNote}</p>
+            <p><strong>Unused cash / buying power:</strong> If utilization is low, the bot may be too conservative, blocked by max positions, or lacking quality candidates.</p>
+            <p><strong>Overnight risk:</strong> Add an overnight scanner/news analyzer before letting the bot act on premarket sentiment.</p>
+          </div>
+        </div>
+
+        <div class="learn-section">
+          <h2>🧪 Best Strategy Config</h2>
+          <div class="learn-card">
+            <pre style="white-space:pre-wrap;margin:0">${JSON.stringify(best, null, 2)}</pre>
+          </div>
+        </div>
+
+        <div class="learn-section">
+          <h2>🏆 Top Optimizer Setups</h2>
+          <table class="learn-table">
+            <thead>
+              <tr>
+                <th>Group</th><th>Threshold</th><th>TP</th><th>SL</th><th>Hold</th><th>Win</th><th>Avg P/L</th><th>Trades</th>
+              </tr>
+            </thead>
+            <tbody>${optimizerTop.map(setupRow).join("")}</tbody>
+          </table>
+        </div>
+
+        <div class="learn-section">
+          <h2>✅ Trade-Friendly Scanner Setups</h2>
+          <table class="learn-table">
+            <thead>
+              <tr>
+                <th>Symbol</th><th>Score</th><th>Entry Zone</th><th>Pullback</th><th>Extension</th><th>Label</th>
+              </tr>
+            </thead>
+            <tbody>${tradeReady.map(scannerRow).join("")}</tbody>
+          </table>
+        </div>
+
+        <div class="learn-section">
+          <h2>⚠️ Extended / Do Not Chase</h2>
+          <table class="learn-table">
+            <thead>
+              <tr>
+                <th>Symbol</th><th>Score</th><th>Entry Zone</th><th>Pullback</th><th>Extension</th><th>Label</th>
+              </tr>
+            </thead>
+            <tbody>${extended.map(scannerRow).join("")}</tbody>
+          </table>
+        </div>
+
+        <div class="learn-section">
+          <h2>🌙 Overnight Analyzer Roadmap</h2>
+          <div class="learn-card">
+            <p><strong>Next module:</strong> overnight_market_brief_v1.py</p>
+            <p>It should collect: futures direction, major index ETFs, top premarket movers, earnings, Fed/economic calendar events, sector news, and high-impact headlines.</p>
+            <p>Output should save to <code>static/research/overnight_brief_latest.json</code> and appear here before market open.</p>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("ponderLearningClose").onclick = () => panel.style.display = "none";
+    } catch (e) {
+      panel.innerHTML = `
+        <h1>📚 Ponder Learning Panel</h1>
+        <p style="color:#ffb4b4">No research data found.</p>
+        <pre>python3 research_pipeline_v1.py</pre>
+      `;
+    }
+  }
+
+  btn.onclick = function () {
+    if (panel.style.display === "block") {
+      panel.style.display = "none";
+    } else {
+      loadLearning();
+    }
+  };
+});
+
+
+// === PANEL REFRESH + HOVER FIX V1 ===
+window.addEventListener("load", function () {
+  if (window.__panelRefreshHoverFixV1) return;
+  window.__panelRefreshHoverFixV1 = true;
+
+  const style = document.createElement("style");
+  style.innerHTML = `
+    body.pp-panel-open .card:hover,
+    body.pp-panel-open .pp-card-hover:hover,
+    body.pp-panel-open section:hover,
+    body.pp-panel-open table:hover {
+      transform: none !important;
+      box-shadow: none !important;
+      border-color: inherit !important;
+    }
+
+    body.pp-panel-open .card::before,
+    body.pp-panel-open .pp-card-hover::before {
+      opacity: 0 !important;
+    }
+
+    #ponderLearningPanel,
+    #ponderIntelPanel,
+    #ponderMarketIntelPanel,
+    #ppSettingsPanel {
+      backdrop-filter: blur(14px);
+    }
+  `;
+  document.head.appendChild(style);
+
+  const panels = [
+    "ponderLearningPanel",
+    "ponderIntelPanel",
+    "ponderMarketIntelPanel",
+    "ppSettingsPanel"
+  ];
+
+  function getOpenPanel() {
+    return panels.find(id => {
+      const el = document.getElementById(id);
+      return el && el.style.display !== "none" && getComputedStyle(el).display !== "none";
+    });
+  }
+
+  function syncPanelState() {
+    const open = getOpenPanel();
+    document.body.classList.toggle("pp-panel-open", !!open);
+    if (open) localStorage.setItem("ponder_open_panel", open);
+  }
+
+  setInterval(syncPanelState, 500);
+
+  document.addEventListener("click", function () {
+    setTimeout(syncPanelState, 50);
+  });
+
+  window.addEventListener("beforeunload", function () {
+    const open = getOpenPanel();
+    if (open) localStorage.setItem("ponder_open_panel", open);
+    else localStorage.removeItem("ponder_open_panel");
+  });
+
+  // Reopen the last panel after refresh
+  setTimeout(function () {
+    const wanted = localStorage.getItem("ponder_open_panel");
+    if (!wanted) return;
+
+    const panel = document.getElementById(wanted);
+    if (!panel) return;
+
+    if (wanted === "ponderLearningPanel") {
+      const btn = document.getElementById("ponderLearningBtn");
+      if (btn) btn.click();
+    } else if (wanted === "ponderIntelPanel") {
+      const btn = document.getElementById("ponderIntelBtn");
+      if (btn) btn.click();
+    } else if (wanted === "ponderMarketIntelPanel") {
+      const btns = Array.from(document.querySelectorAll("button"));
+      const b = btns.find(x => (x.title || "").includes("Market Intelligence") && x.id !== "ponderIntelBtn");
+      if (b) b.click();
+    } else if (wanted === "ppSettingsPanel") {
+      const btn = document.getElementById("ppSettingsButton");
+      if (btn) btn.click();
+    }
+
+    document.body.classList.add("pp-panel-open");
+  }, 900);
+
+  // When close buttons are clicked, do not reopen after refresh.
+  document.addEventListener("click", function(e) {
+    const txt = (e.target.innerText || "").trim().toLowerCase();
+    if (txt === "close") {
+      localStorage.removeItem("ponder_open_panel");
+      setTimeout(() => document.body.classList.remove("pp-panel-open"), 100);
+    }
+  });
+});
+
+
+// === PONDER SOFT REFRESH V1 ===
+window.addEventListener("load", function () {
+  if (window.__ponderSoftRefreshV1) return;
+  window.__ponderSoftRefreshV1 = true;
+
+  async function softRefreshMain() {
+    try {
+      const res = await fetch(window.location.pathname + "?soft_ts=" + Date.now(), {
+        cache: "no-store",
+        credentials: "same-origin"
+      });
+      const html = await res.text();
+      const doc = new DOMParser().parseFromString(html, "text/html");
+
+      const newContainer = doc.querySelector(".container");
+      const oldContainer = document.querySelector(".container");
+
+      if (!newContainer || !oldContainer) return;
+
+      // Keep overlays/buttons/panels untouched. Only replace main dashboard content.
+      oldContainer.innerHTML = newContainer.innerHTML;
+
+      window.dispatchEvent(new Event("ponder-soft-refresh"));
+    } catch (e) {
+      console.log("Soft refresh skipped:", e);
+    }
+  }
+
+  // Main and History pages only for now.
+  const path = window.location.pathname;
+  const canSoftRefresh = path === "/" || path === "/history";
+
+  if (canSoftRefresh) {
+    setInterval(softRefreshMain, path === "/history" ? 15000 : 5000);
+  }
+});
+
+
+// === PONDER OVERNIGHT INTELLIGENCE UI V1 ===
+window.addEventListener("load", function () {
+  if (window.__ponderOvernightUIV1) return;
+  window.__ponderOvernightUIV1 = true;
+
+  const style = document.createElement("style");
+  style.innerHTML = `
+    #ponderOvernightBtn {
+      position: fixed;
+      right: 22px;
+      top: 540px;
+      z-index: 100000;
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      border: 1px solid rgba(160,190,255,.32);
+      background: rgba(8,12,24,.95);
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 14px 32px rgba(0,0,0,.38);
+    }
+
+    #ponderOvernightPanel {
+      display: none;
+      position: fixed;
+      inset: 58px 34px 34px 260px;
+      z-index: 100000;
+      overflow: auto;
+      padding: 26px;
+      border-radius: 26px;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(120,160,255,.10), transparent 28%),
+        radial-gradient(circle at 90% 0%, rgba(124,255,178,.07), transparent 30%),
+        rgba(5,8,18,.98);
+      border: 1px solid rgba(160,190,255,.20);
+      box-shadow: 0 28px 90px rgba(0,0,0,.65);
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    .overnight-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin: 18px 0 24px;
+    }
+
+    .overnight-card {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.045);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .overnight-card h3 {
+      margin: 0 0 8px;
+      color: #a8b3c7;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .overnight-big {
+      font-size: 25px;
+      font-weight: 900;
+    }
+
+    .overnight-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 24px;
+      font-size: 13px;
+    }
+
+    .overnight-table th,
+    .overnight-table td {
+      padding: 10px;
+      border-bottom: 1px solid rgba(255,255,255,.075);
+      text-align: left;
+    }
+
+    .overnight-table th {
+      color: #a8b3c7;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .overnight-close {
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color: white;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    @media (max-width: 900px) {
+      #ponderOvernightPanel { inset: 20px; }
+      .overnight-grid { grid-template-columns: 1fr; }
+    }
+  `;
+  document.head.appendChild(style);
+
+  const btn = document.createElement("button");
+  btn.id = "ponderOvernightBtn";
+  btn.innerHTML = "🌙";
+  btn.title = "Overnight Intelligence";
+  document.body.appendChild(btn);
+
+  const panel = document.createElement("div");
+  panel.id = "ponderOvernightPanel";
+  document.body.appendChild(panel);
+
+  function safe(x) {
+    if (x === undefined || x === null || Number.isNaN(x)) return "--";
+    return x;
+  }
+
+  function moveClass(n) {
+    const v = Number(n);
+    if (v > 0) return "color:#86ff9d";
+    if (v < 0) return "color:#ff8b8b";
+    return "color:#a8b3c7";
+  }
+
+  function row(x) {
+    return `
+      <tr>
+        <td><strong>${safe(x.symbol)}</strong></td>
+        <td>${safe(x.price)}</td>
+        <td style="${moveClass(x.change_1d_pct)}">${safe(x.change_1d_pct)}%</td>
+        <td style="${moveClass(x.change_5d_pct)}">${safe(x.change_5d_pct)}%</td>
+        <td>${safe(x.volume_ratio)}x</td>
+      </tr>
+    `;
+  }
+
+  async function loadOvernight() {
+    panel.style.display = "block";
+    panel.innerHTML = `<h1>🌙 Overnight Intelligence</h1><p style="color:#a8b3c7">Loading overnight brief...</p>`;
+
+    try {
+      const res = await fetch("/static/research/overnight_brief_latest.json?ts=" + Date.now());
+      const data = await res.json();
+
+      panel.innerHTML = `
+        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start">
+          <div>
+            <h1 style="margin:0;font-size:34px">🌙 Overnight Intelligence</h1>
+            <p style="color:#a8b3c7;margin-top:8px">Research-only premarket / overnight awareness layer.</p>
+            <p style="color:#7c8aa5;font-size:13px">Updated: ${safe(data.updated_at)}</p>
+          </div>
+          <button class="overnight-close" id="ponderOvernightClose">Close</button>
+        </div>
+
+        <div class="overnight-grid">
+          <div class="overnight-card">
+            <h3>Market Mode</h3>
+            <div class="overnight-big">${safe(data.market_label)}</div>
+          </div>
+          <div class="overnight-card">
+            <h3>Risk Score</h3>
+            <div class="overnight-big">${safe(data.risk_score)}/100</div>
+          </div>
+          <div class="overnight-card">
+            <h3>Status</h3>
+            <div class="overnight-big">Research Only</div>
+          </div>
+        </div>
+
+        <h2>Index / Market Tape</h2>
+        <table class="overnight-table">
+          <thead><tr><th>Symbol</th><th>Price</th><th>1D</th><th>5D</th><th>Volume</th></tr></thead>
+          <tbody>${(data.index_moves || []).map(row).join("")}</tbody>
+        </table>
+
+        <h2>Top Strength</h2>
+        <table class="overnight-table">
+          <thead><tr><th>Symbol</th><th>Price</th><th>1D</th><th>5D</th><th>Volume</th></tr></thead>
+          <tbody>${(data.top_strength || []).map(row).join("")}</tbody>
+        </table>
+
+        <h2>Top Weakness</h2>
+        <table class="overnight-table">
+          <thead><tr><th>Symbol</th><th>Price</th><th>1D</th><th>5D</th><th>Volume</th></tr></thead>
+          <tbody>${(data.top_weakness || []).map(row).join("")}</tbody>
+        </table>
+
+        <h2>Brief Notes</h2>
+        <div class="overnight-card">
+          <ul>${(data.notes || []).map(n => `<li>${n}</li>`).join("")}</ul>
+        </div>
+      `;
+
+      document.getElementById("ponderOvernightClose").onclick = () => panel.style.display = "none";
+    } catch (e) {
+      panel.innerHTML = `
+        <h1>🌙 Overnight Intelligence</h1>
+        <p style="color:#ffb4b4">No overnight brief found.</p>
+        <pre>python3 overnight_brief_v1.py</pre>
+      `;
+    }
+  }
+
+  btn.onclick = function () {
+    if (panel.style.display === "block") {
+      panel.style.display = "none";
+    } else {
+      loadOvernight();
+    }
+  };
+});
+
+
+// === OVERNIGHT LIVE REFRESH V1 ===
+window.addEventListener("load", function () {
+  if (window.__overnightLiveRefreshV1) return;
+  window.__overnightLiveRefreshV1 = true;
+
+  async function refreshOvernightIfOpen() {
+    const panel = document.getElementById("ponderOvernightPanel");
+    if (!panel) return;
+    if (getComputedStyle(panel).display === "none") return;
+
+    const btn = document.getElementById("ponderOvernightBtn");
+    if (!btn) return;
+
+    // Re-click to reload panel content without page refresh.
+    panel.style.display = "none";
+    btn.click();
+  }
+
+  setInterval(refreshOvernightIfOpen, 60000);
+});
+
+
+// === PONDER SELL INTELLIGENCE UI V1 ===
+window.addEventListener("load", function () {
+  if (window.__ponderSellIntelUIV1) return;
+  window.__ponderSellIntelUIV1 = true;
+
+  const style = document.createElement("style");
+  style.innerHTML = `
+    #ponderSellIntelBtn {
+      position: fixed;
+      right: 22px;
+      top: 600px;
+      z-index: 100000;
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,170,120,.32);
+      background: rgba(8,12,24,.95);
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 14px 32px rgba(0,0,0,.38);
+    }
+
+    #ponderSellIntelPanel {
+      display: none;
+      position: fixed;
+      inset: 58px 34px 34px 260px;
+      z-index: 100000;
+      overflow: auto;
+      padding: 26px;
+      border-radius: 26px;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(255,120,120,.10), transparent 28%),
+        radial-gradient(circle at 90% 0%, rgba(124,255,178,.06), transparent 30%),
+        rgba(5,8,18,.98);
+      border: 1px solid rgba(255,170,120,.20);
+      box-shadow: 0 28px 90px rgba(0,0,0,.65);
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    .sell-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin: 18px 0 24px;
+    }
+
+    .sell-card {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.045);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .sell-card h3 {
+      margin: 0 0 8px;
+      color: #a8b3c7;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .sell-big {
+      font-size: 25px;
+      font-weight: 900;
+    }
+
+    .sell-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 24px;
+      font-size: 13px;
+    }
+
+    .sell-table th,
+    .sell-table td {
+      padding: 10px;
+      border-bottom: 1px solid rgba(255,255,255,.075);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .sell-table th {
+      color: #a8b3c7;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .sell-close {
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color: white;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    @media (max-width: 900px) {
+      #ponderSellIntelPanel { inset: 20px; }
+      .sell-grid { grid-template-columns: 1fr; }
+    }
+  `;
+  document.head.appendChild(style);
+
+  const btn = document.createElement("button");
+  btn.id = "ponderSellIntelBtn";
+  btn.innerHTML = "🛡️";
+  btn.title = "Sell Intelligence";
+  document.body.appendChild(btn);
+
+  const panel = document.createElement("div");
+  panel.id = "ponderSellIntelPanel";
+  document.body.appendChild(panel);
+
+  function safe(x) {
+    if (x === undefined || x === null || Number.isNaN(x)) return "--";
+    return x;
+  }
+
+  function pressureColor(x) {
+    const n = Number(x);
+    if (n >= 75) return "color:#ff8b8b";
+    if (n >= 50) return "color:#ffd36d";
+    if (n >= 30) return "color:#fff18a";
+    return "color:#86ff9d";
+  }
+
+  function row(x) {
+    return `
+      <tr>
+        <td><strong>${safe(x.symbol)}</strong></td>
+        <td style="${pressureColor(x.sell_pressure)};font-weight:900">${safe(x.sell_pressure)}/100</td>
+        <td>${safe(x.verdict)}</td>
+        <td>${safe(x.change_30m_pct)}%</td>
+        <td>${safe(x.change_60m_pct)}%</td>
+        <td>${safe(x.pullback_from_high_pct)}%</td>
+        <td>${safe(x.volume_ratio)}x</td>
+        <td>${(x.reasons || []).join("<br>")}</td>
+      </tr>
+    `;
+  }
+
+  async function loadSellIntel() {
+    panel.style.display = "block";
+    panel.innerHTML = `<h1>🛡️ Sell Intelligence</h1><p style="color:#a8b3c7">Loading sell pressure research...</p>`;
+
+    try {
+      const res = await fetch("/static/research/sell_intelligence_latest.json?ts=" + Date.now());
+      const data = await res.json();
+      const top = data.top_exit_candidate || {};
+      const candidates = data.sell_candidates || [];
+
+      panel.innerHTML = `
+        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start">
+          <div>
+            <h1 style="margin:0;font-size:34px">🛡️ Sell Intelligence</h1>
+            <p style="color:#a8b3c7;margin-top:8px">Research-only exit pressure layer. Does not place sell orders.</p>
+            <p style="color:#7c8aa5;font-size:13px">Updated: ${safe(data.updated_at)}</p>
+          </div>
+          <button class="sell-close" id="ponderSellIntelClose">Close</button>
+        </div>
+
+        <div class="sell-grid">
+          <div class="sell-card">
+            <h3>Top Exit Candidate</h3>
+            <div class="sell-big">${safe(top.symbol)}</div>
+            <div style="color:#a8b3c7;font-size:13px">${safe(top.verdict)}</div>
+          </div>
+          <div class="sell-card">
+            <h3>Sell Pressure</h3>
+            <div class="sell-big" style="${pressureColor(top.sell_pressure)}">${safe(top.sell_pressure)}/100</div>
+            <div style="color:#a8b3c7;font-size:13px">Higher = more exit risk</div>
+          </div>
+          <div class="sell-card">
+            <h3>Status</h3>
+            <div class="sell-big">Research Only</div>
+            <div style="color:#a8b3c7;font-size:13px">No live sell control</div>
+          </div>
+        </div>
+
+        <h2>Exit Pressure Ranking</h2>
+        <table class="sell-table">
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Pressure</th>
+              <th>Verdict</th>
+              <th>30m</th>
+              <th>60m</th>
+              <th>From High</th>
+              <th>Vol</th>
+              <th>Reasons</th>
+            </tr>
+          </thead>
+          <tbody>${candidates.map(row).join("")}</tbody>
+        </table>
+
+        <h2>Notes</h2>
+        <div class="sell-card">
+          <ul>${(data.notes || []).map(n => `<li>${n}</li>`).join("")}</ul>
+        </div>
+      `;
+
+      document.getElementById("ponderSellIntelClose").onclick = () => panel.style.display = "none";
+    } catch (e) {
+      panel.innerHTML = `
+        <h1>🛡️ Sell Intelligence</h1>
+        <p style="color:#ffb4b4">No sell intelligence file found.</p>
+        <pre>python3 sell_intelligence_v1.py</pre>
+      `;
+    }
+  }
+
+  btn.onclick = function () {
+    if (panel.style.display === "block") {
+      panel.style.display = "none";
+    } else {
+      loadSellIntel();
+    }
+  };
+});
+
+
+// === PONDER ROTATION ENGINE UI V1 ===
+window.addEventListener("load", function () {
+  if (window.__ponderRotationUIV1) return;
+  window.__ponderRotationUIV1 = true;
+
+  const style = document.createElement("style");
+  style.innerHTML = `
+    #ponderRotationBtn {
+      position: fixed;
+      right: 22px;
+      top: 660px;
+      z-index: 100000;
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      border: 1px solid rgba(124,255,178,.32);
+      background: rgba(8,12,24,.95);
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 14px 32px rgba(0,0,0,.38);
+    }
+
+    #ponderRotationPanel {
+      display: none;
+      position: fixed;
+      inset: 58px 34px 34px 260px;
+      z-index: 100000;
+      overflow: auto;
+      padding: 26px;
+      border-radius: 26px;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(124,255,178,.10), transparent 28%),
+        radial-gradient(circle at 90% 0%, rgba(255,190,120,.08), transparent 30%),
+        rgba(5,8,18,.98);
+      border: 1px solid rgba(124,255,178,.20);
+      box-shadow: 0 28px 90px rgba(0,0,0,.65);
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    .rotation-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin: 18px 0 24px;
+    }
+
+    .rotation-card {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.045);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .rotation-card h3 {
+      margin: 0 0 8px;
+      color: #a8b3c7;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .rotation-big {
+      font-size: 25px;
+      font-weight: 900;
+    }
+
+    .rotation-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 24px;
+      font-size: 13px;
+    }
+
+    .rotation-table th,
+    .rotation-table td {
+      padding: 10px;
+      border-bottom: 1px solid rgba(255,255,255,.075);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .rotation-table th {
+      color: #a8b3c7;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .rotation-close {
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color: white;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    @media (max-width: 900px) {
+      #ponderRotationPanel { inset: 20px; }
+      .rotation-grid { grid-template-columns: 1fr; }
+    }
+  `;
+  document.head.appendChild(style);
+
+  const btn = document.createElement("button");
+  btn.id = "ponderRotationBtn";
+  btn.innerHTML = "🔄";
+  btn.title = "Rotation Engine";
+  document.body.appendChild(btn);
+
+  const panel = document.createElement("div");
+  panel.id = "ponderRotationPanel";
+  document.body.appendChild(panel);
+
+  function safe(x) {
+    if (x === undefined || x === null || Number.isNaN(x)) return "--";
+    return x;
+  }
+
+  function scoreColor(x) {
+    const n = Number(x);
+    if (n >= 70) return "color:#86ff9d";
+    if (n >= 60) return "color:#ffd36d";
+    return "color:#a8b3c7";
+  }
+
+  function row(x) {
+    return `
+      <tr>
+        <td><strong>${safe(x.sell_symbol)}</strong></td>
+        <td>➡️</td>
+        <td><strong>${safe(x.buy_symbol)}</strong></td>
+        <td style="${scoreColor(x.rotation_score)};font-weight:900">${safe(x.rotation_score)}</td>
+        <td>${safe(x.action)}</td>
+        <td>${safe(x.sell_pressure)}/100</td>
+        <td>${safe(x.buy_score)}</td>
+        <td>${safe(x.entry_zone)}</td>
+        <td>${(x.why || []).join("<br>")}</td>
+      </tr>
+    `;
+  }
+
+  async function loadRotation() {
+    panel.style.display = "block";
+    panel.innerHTML = `<h1>🔄 Rotation Engine</h1><p style="color:#a8b3c7">Loading rotation research...</p>`;
+
+    try {
+      const res = await fetch("/static/research/rotation_engine_latest.json?ts=" + Date.now());
+      const data = await res.json();
+      const top = data.top_rotation || {};
+      const summary = data.summary || {};
+      const rotations = data.rotation_suggestions || [];
+
+      panel.innerHTML = `
+        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start">
+          <div>
+            <h1 style="margin:0;font-size:34px">🔄 Rotation Engine</h1>
+            <p style="color:#a8b3c7;margin-top:8px">Research-only capital rotation layer. Does not place trades.</p>
+            <p style="color:#7c8aa5;font-size:13px">Updated: ${safe(data.updated_at)}</p>
+          </div>
+          <button class="rotation-close" id="ponderRotationClose">Close</button>
+        </div>
+
+        <div class="rotation-grid">
+          <div class="rotation-card">
+            <h3>Top Rotation</h3>
+            <div class="rotation-big">${safe(top.sell_symbol)} ➜ ${safe(top.buy_symbol)}</div>
+            <div style="color:#a8b3c7;font-size:13px">${safe(top.action)}</div>
+          </div>
+          <div class="rotation-card">
+            <h3>Rotation Score</h3>
+            <div class="rotation-big" style="${scoreColor(top.rotation_score)}">${safe(top.rotation_score)}</div>
+            <div style="color:#a8b3c7;font-size:13px">Sell pressure + buy quality</div>
+          </div>
+          <div class="rotation-card">
+            <h3>Rotations Found</h3>
+            <div class="rotation-big">${safe(summary.rotations_found)}</div>
+            <div style="color:#a8b3c7;font-size:13px">Research only</div>
+          </div>
+        </div>
+
+        <h2>Rotation Suggestions</h2>
+        <table class="rotation-table">
+          <thead>
+            <tr>
+              <th>Sell</th>
+              <th></th>
+              <th>Buy</th>
+              <th>Score</th>
+              <th>Action</th>
+              <th>Sell Pressure</th>
+              <th>Buy Score</th>
+              <th>Entry Zone</th>
+              <th>Why</th>
+            </tr>
+          </thead>
+          <tbody>${rotations.map(row).join("")}</tbody>
+        </table>
+
+        <h2>Notes</h2>
+        <div class="rotation-card">
+          <ul>${(data.notes || []).map(n => `<li>${n}</li>`).join("")}</ul>
+        </div>
+      `;
+
+      document.getElementById("ponderRotationClose").onclick = () => panel.style.display = "none";
+    } catch (e) {
+      panel.innerHTML = `
+        <h1>🔄 Rotation Engine</h1>
+        <p style="color:#ffb4b4">No rotation file found.</p>
+        <pre>python3 rotation_engine_v1.py</pre>
+      `;
+    }
+  }
+
+  btn.onclick = function () {
+    if (panel.style.display === "block") {
+      panel.style.display = "none";
+    } else {
+      loadRotation();
+    }
+  };
+});
+
+
+/* === Ponder Shadow Capital Allocator Dashboard Panel v1 === */
+(function () {
+  if (window.__ponderShadowAllocatorUIV1) return;
+  window.__ponderShadowAllocatorUIV1 = true;
+
+  const style = document.createElement("style");
+  style.innerHTML = `
+    #ponderShadowBtn {
+      position: fixed;
+      right: 18px;
+      top: 455px;
+      z-index: 999998;
+      background: #111827;
+      color: #e5e7eb;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 10px 12px;
+      cursor: pointer;
+      box-shadow: 0 10px 25px rgba(0,0,0,.35);
+      font-size: 18px;
+    }
+    #ponderShadowPanel {
+      position: fixed;
+      inset: 55px;
+      z-index: 999999;
+      background: #07111f;
+      color: #e5e7eb;
+      border: 1px solid #334155;
+      border-radius: 22px;
+      padding: 24px;
+      overflow: auto;
+      display: none;
+      box-shadow: 0 25px 80px rgba(0,0,0,.65);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .shadow-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin: 18px 0;
+    }
+    .shadow-card {
+      background: #0f172a;
+      border: 1px solid #243244;
+      border-radius: 18px;
+      padding: 16px;
+    }
+    .shadow-card h3 {
+      margin: 0 0 8px 0;
+      color: #93c5fd;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .shadow-big {
+      font-size: 28px;
+      font-weight: 800;
+    }
+    .shadow-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      font-size: 14px;
+    }
+    .shadow-table th, .shadow-table td {
+      border-bottom: 1px solid #243244;
+      padding: 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .shadow-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .shadow-close {
+      float: right;
+      background: #1f2937;
+      color: #fff;
+      border: 1px solid #475569;
+      border-radius: 12px;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+  `;
+  document.head.appendChild(style);
+
+  const btn = document.createElement("button");
+  btn.id = "ponderShadowBtn";
+  btn.innerText = "🧪";
+  btn.title = "Shadow Capital Allocator";
+  document.body.appendChild(btn);
+
+  const panel = document.createElement("div");
+  panel.id = "ponderShadowPanel";
+  document.body.appendChild(panel);
+
+  function safe(v, fallback = "—") {
+    return v === undefined || v === null || v === "" ? fallback : v;
+  }
+
+  async function fetchJson(path) {
+    const res = await fetch(path + "?ts=" + Date.now());
+    if (!res.ok) throw new Error(path + " failed");
+    return await res.json();
+  }
+
+  async function loadShadowPanel() {
+    panel.style.display = "block";
+    panel.innerHTML = `<h1>🧪 Shadow Capital Allocator</h1><p style="color:#a8b3c7">Loading shadow intelligence...</p>`;
+
+    try {
+      const [shadow, rotation, perf] = await Promise.all([
+        fetchJson("/static/research/shadow_capital_allocator_latest.json"),
+        fetchJson("/static/research/rotation_engine_latest.json"),
+        fetchJson("/static/research/rotation_performance_latest.json")
+      ]);
+
+      const s = shadow.summary || {};
+      const r = rotation.summary || {};
+      const p = perf.summary || {};
+      const top = shadow.top_shadow_action || {};
+      const actions = shadow.shadow_actions || [];
+      const evals = perf.evaluations || [];
+
+      panel.innerHTML = `
+        <button class="shadow-close" id="ponderShadowClose">Close</button>
+        <h1 style="margin:0;font-size:34px">🧪 Shadow Capital Allocator</h1>
+        <p style="color:#a8b3c7;margin-top:8px">
+          Research/shadow only. No live bot orders. Updated: ${safe(shadow.updated_at)}
+        </p>
+
+        <div class="shadow-grid">
+          <div class="shadow-card">
+            <h3>Top Shadow Move</h3>
+            <div class="shadow-big">${safe(top.sell_symbol)} → ${safe(top.buy_symbol)}</div>
+            <div>${safe(top.recommendation)}</div>
+          </div>
+          <div class="shadow-card">
+            <h3>Shadow Moves</h3>
+            <div class="shadow-big">${safe(s.shadow_moves, 0)}</div>
+            <div>Total shadow allocation: ${safe(s.total_shadow_allocation_pct, 0)}</div>
+          </div>
+          <div class="shadow-card">
+            <h3>Rotation Status</h3>
+            <div class="shadow-big">${safe(r.watch_count, 0)} Watch</div>
+            <div>${safe(r.rotate_now_count, 0)} rotate now / ${safe(r.blocked_count, 0)} blocked</div>
+          </div>
+          <div class="shadow-card">
+            <h3>Performance</h3>
+            <div class="shadow-big">${safe(p.win_rate, 0)}%</div>
+            <div>${safe(p.helped, 0)} helped / ${safe(p.hurt, 0)} hurt / ${safe(p.neutral, 0)} neutral</div>
+          </div>
+        </div>
+
+        <h2>Shadow Allocation Recommendations</h2>
+        <table class="shadow-table">
+          <thead>
+            <tr>
+              <th>Move</th>
+              <th>Recommendation</th>
+              <th>Confidence</th>
+              <th>Score</th>
+              <th>Edge</th>
+              <th>Shadow Size</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${actions.slice(0, 15).map(x => `
+              <tr>
+                <td><strong>${safe(x.sell_symbol)} → ${safe(x.buy_symbol)}</strong></td>
+                <td><span class="shadow-badge">${safe(x.recommendation)}</span><br>${safe(x.action)}</td>
+                <td>${safe(x.confidence)}</td>
+                <td>${safe(x.rotation_score)}</td>
+                <td>${safe(x.expected_edge)}</td>
+                <td>${Math.round((Number(x.shadow_allocation_pct || 0)) * 100)}%</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+
+        <h2>Recent Rotation Reality Check</h2>
+        <table class="shadow-table">
+          <thead>
+            <tr>
+              <th>Move</th>
+              <th>Result</th>
+              <th>Alpha</th>
+              <th>Sell Change</th>
+              <th>Buy Change</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${evals.slice(-10).reverse().map(x => `
+              <tr>
+                <td><strong>${safe(x.sell_symbol)} → ${safe(x.buy_symbol)}</strong></td>
+                <td>${safe(x.result)}</td>
+                <td>${safe(x.rotation_alpha_pct)}%</td>
+                <td>${safe(x.sell_change_pct)}%</td>
+                <td>${safe(x.buy_change_pct)}%</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+
+      document.getElementById("ponderShadowClose").onclick = () => panel.style.display = "none";
+    } catch (err) {
+      panel.innerHTML = `
+        <button class="shadow-close" id="ponderShadowClose">Close</button>
+        <h1>🧪 Shadow Capital Allocator</h1>
+        <p style="color:#fca5a5">Could not load shadow dashboard JSON yet.</p>
+        <pre>${err.message}</pre>
+      `;
+      document.getElementById("ponderShadowClose").onclick = () => panel.style.display = "none";
+    }
+  }
+
+  btn.onclick = loadShadowPanel;
+
+  setInterval(() => {
+    if (panel.style.display === "block") loadShadowPanel();
+  }, 60000);
+})();
+
+/* === Login page widget cleanup + right rail spacing fix === */
+(function () {
+  function cleanupLoginWidgets() {
+    const isLogin = window.location.pathname.includes("/login");
+    if (!isLogin) return;
+
+    [
+      "ponderShadowBtn",
+      "ponderShadowPanel",
+      "ponderRotationBtn",
+      "ponderRotationPanel",
+      "ponderSellBtn",
+      "ponderSellPanel",
+      "ponderOvernightBtn",
+      "ponderOvernightPanel",
+      "ponderLearningBtn",
+      "ponderLearningPanel",
+      "ponderMarketBtn",
+      "ponderMarketPanel"
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    });
+  }
+
+  function improveRightRailSpacing() {
+    if (window.location.pathname.includes("/login")) return;
+
+    const positions = [
+      ["ponderMarketBtn", "285px"],
+      ["ponderLearningBtn", "340px"],
+      ["ponderOvernightBtn", "395px"],
+      ["ponderSellBtn", "450px"],
+      ["ponderRotationBtn", "505px"],
+      ["ponderShadowBtn", "560px"]
+    ];
+
+    positions.forEach(([id, top]) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.style.top = top;
+        el.style.right = "18px";
+      }
+    });
+  }
+
+  cleanupLoginWidgets();
+  improveRightRailSpacing();
+
+  setTimeout(cleanupLoginWidgets, 500);
+  setTimeout(improveRightRailSpacing, 500);
+  setTimeout(cleanupLoginWidgets, 1500);
+  setTimeout(improveRightRailSpacing, 1500);
+})();
+
+/* === Collapse All Widgets Into Single Hub Button === */
+(function () {
+  const keep = ["ponderHubBtn", "ponderHubPanel"];
+
+  const allBtns = [
+    "ponderIntelBtn",
+    "ponderLearningBtn",
+    "ponderOvernightBtn",
+    "ponderSellIntelBtn",
+    "ponderRotationBtn",
+    "ponderShadowBtn"
+  ];
+
+  const allPanels = [
+    "ponderIntelPanel",
+    "ponderLearningPanel",
+    "ponderOvernightPanel",
+    "ponderSellIntelPanel",
+    "ponderRotationPanel",
+    "ponderShadowPanel"
+  ];
+
+  function hideAll() {
+    if (window.location.pathname.includes("/login")) return;
+
+    [...allBtns, ...allPanels].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = "none";
+    });
+  }
+
+  setTimeout(hideAll, 500);
+  setTimeout(hideAll, 1500);
+})();
+
+/* === PonderAI Research Hub v1 === */
+(function () {
+  if (window.__ponderResearchHubV1) return;
+  window.__ponderResearchHubV1 = true;
+
+  const hiddenBtns = [
+    "ponderIntelBtn",
+    "ponderLearningBtn",
+    "ponderOvernightBtn",
+    "ponderSellIntelBtn",
+    "ponderRotationBtn",
+    "ponderShadowBtn"
+  ];
+
+  const hiddenPanels = [
+    "ponderIntelPanel",
+    "ponderLearningPanel",
+    "ponderOvernightPanel",
+    "ponderSellIntelPanel",
+    "ponderRotationPanel",
+    "ponderShadowPanel"
+  ];
+
+  function isLogin() {
+    return window.location.pathname.includes("/login");
+  }
+
+  function hideOldWidgets() {
+    if (isLogin()) return;
+    [...hiddenBtns, ...hiddenPanels].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = "none";
+    });
+  }
+
+  if (isLogin()) return;
+
+  const style = document.createElement("style");
+  style.innerHTML = `
+    #ponderHubBtn {
+      position: fixed;
+      right: 18px;
+      top: 285px;
+      z-index: 999998;
+      background: linear-gradient(135deg,#111827,#1e293b);
+      color: #e5e7eb;
+      border: 1px solid #60a5fa;
+      border-radius: 16px;
+      padding: 12px 14px;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(0,0,0,.4);
+      font-size: 22px;
+    }
+
+    #ponderHubPanel {
+      position: fixed;
+      inset: 48px;
+      z-index: 999999;
+      background: #07111f;
+      color: #e5e7eb;
+      border: 1px solid #334155;
+      border-radius: 24px;
+      padding: 24px;
+      overflow: auto;
+      display: none;
+      box-shadow: 0 25px 80px rgba(0,0,0,.7);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .hub-close {
+      float: right;
+      background: #1f2937;
+      color: #fff;
+      border: 1px solid #475569;
+      border-radius: 12px;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+
+    .hub-tabs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 20px 0;
+    }
+
+    .hub-tab {
+      background: #111827;
+      color: #dbeafe;
+      border: 1px solid #334155;
+      border-radius: 999px;
+      padding: 9px 13px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .hub-tab.active {
+      border-color: #86efac;
+      color: #86efac;
+      background: #10201a;
+    }
+
+    .hub-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+      gap: 14px;
+      margin: 18px 0;
+    }
+
+    .hub-card {
+      background: #0f172a;
+      border: 1px solid #243244;
+      border-radius: 18px;
+      padding: 16px;
+    }
+
+    .hub-card h3 {
+      margin: 0 0 8px 0;
+      color: #93c5fd;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .hub-big {
+      font-size: 28px;
+      font-weight: 900;
+    }
+
+    .hub-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 14px;
+      font-size: 14px;
+    }
+
+    .hub-table th, .hub-table td {
+      border-bottom: 1px solid #243244;
+      padding: 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .hub-muted {
+      color: #a8b3c7;
+    }
+
+    .hub-badge {
+      display: inline-block;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      font-size: 12px;
+    }
+  `;
+  document.head.appendChild(style);
+
+  const btn = document.createElement("button");
+  btn.id = "ponderHubBtn";
+  btn.innerText = "🧠";
+  btn.title = "Research Hub";
+  document.body.appendChild(btn);
+
+  const panel = document.createElement("div");
+  panel.id = "ponderHubPanel";
+  document.body.appendChild(panel);
+
+  function safe(v, fallback = "—") {
+    return v === undefined || v === null || v === "" ? fallback : v;
+  }
+
+  async function getJson(path) {
+    const res = await fetch(path + "?ts=" + Date.now());
+    if (!res.ok) throw new Error(path);
+    return await res.json();
+  }
+
+  async function loadData() {
+    const results = await Promise.allSettled([
+      getJson("/static/research/market_intelligence_latest.json"),
+      getJson("/static/research/overnight_brief_latest.json"),
+      getJson("/static/research/sell_intelligence_latest.json"),
+      getJson("/static/research/rotation_engine_latest.json"),
+      getJson("/static/research/rotation_performance_latest.json"),
+      getJson("/static/research/shadow_capital_allocator_latest.json"),
+      getJson("/static/research/market_regime_filter_latest.json"),
+      getJson("/static/research/ai_summary_latest.json"),
+      getJson("/static/research/notifications_latest.json")
+    ]);
+
+    return {
+      market: results[0].value || {},
+      overnight: results[1].value || {},
+      sell: results[2].value || {},
+      rotation: results[3].value || {},
+      perf: results[4].value || {},
+      shadow: results[5].value || {},
+      regime: results[6].value || {},
+      ai: results[7].value || {},
+      notifications: results[8].value || {},
+      ai: results[7].value || {}
+    };
+  }
+
+  function tabs(active) {
+    const names = [
+      ["overview", "📊 Overview"],
+      ["market", "🧠 Market"],
+      ["overnight", "🌙 Overnight"],
+      ["sell", "🛡️ Sell"],
+      ["rotation", "🔄 Rotation"],
+      ["shadow", "🧪 Shadow"],
+      ["performance", "📈 Performance"],
+      ["regime", "🌡️ Regime"],
+      ["ai", "🤖 AI Summary"],
+      ["notifications", "🔔 Alerts"]
+    ];
+
+    return `<div class="hub-tabs">${
+      names.map(([id,label]) => `<button class="hub-tab ${active === id ? "active" : ""}" data-tab="${id}">${label}</button>`).join("")
+    }</div>`;
+  }
+
+  function renderOverview(d) {
+    const topRot = d.rotation.top_rotation || {};
+    const topShadow = d.shadow.top_shadow_action || {};
+    const perf = d.perf.summary || {};
+    const rs = d.rotation.summary || {};
+    const ss = d.shadow.summary || {};
+    const regime = d.regime || {};
+    const ai = d.ai || {};
+    const aiSummary = ai.plain_english_summary || [];
+    const aiActions = ai.action_items || [];
+
+    return `
+      <div class="hub-grid">
+        <div class="hub-card">
+          <h3>Market Regime</h3>
+          <div class="hub-big">${safe(regime.regime, safe(d.overnight.market_label))}</div>
+          <div class="hub-muted">Regime score: ${safe(regime.regime_score)} · Overnight risk: ${safe(d.overnight.risk_score)}</div>
+        </div>
+        <div class="hub-card">
+          <h3>Top Rotation</h3>
+          <div class="hub-big">${safe(topRot.sell_symbol)} → ${safe(topRot.buy_symbol)}</div>
+          <div>${safe(topRot.action)} · ${safe(topRot.confidence)} confidence</div>
+        </div>
+        <div class="hub-card">
+          <h3>Shadow Allocation</h3>
+          <div class="hub-big">${safe(topShadow.sell_symbol)} → ${safe(topShadow.buy_symbol)}</div>
+          <div>${safe(ss.shadow_moves, 0)} moves · ${safe(ss.total_shadow_allocation_pct, 0)} total shadow allocation</div>
+        </div>
+        <div class="hub-card">
+          <h3>Rotation Performance</h3>
+          <div class="hub-big">${safe(perf.win_rate, 0)}%</div>
+          <div>${safe(perf.helped, 0)} helped / ${safe(perf.hurt, 0)} hurt / ${safe(perf.neutral, 0)} neutral</div>
+        </div>
+      </div>
+
+      <div class="hub-card">
+        <h3>AI Summary</h3>
+        <p>${safe(aiSummary[0], "AI summary is loading.")}</p>
+        <ul>
+          ${aiSummary.slice(1, 4).map(x => `<li>${x}</li>`).join("")}
+        </ul>
+      </div>
+
+      <div class="hub-card">
+        <h3>Recommended Next Actions</h3>
+        <ul>
+          ${aiActions.slice(0, 4).map(x => `<li>${x}</li>`).join("") || "<li>No action items yet.</li>"}
+        </ul>
+      </div>
+
+      <div class="hub-card">
+        <h3>System Readout</h3>
+        <p>Rotation v3.2: ${safe(rs.watch_count, 0)} watch, ${safe(rs.rotate_now_count, 0)} rotate now, ${safe(rs.blocked_count, 0)} blocked.</p>
+        <p>Everything here is research/shadow-only. No live orders are placed from this hub.</p>
+      </div>
+    `;
+  }
+
+  function renderMarket(d) {
+    const rows = d.market.trade_ready || d.market.top_candidates || [];
+    return `
+      <h2>🧠 Market Intelligence</h2>
+      <p class="hub-muted">Updated: ${safe(d.market.updated_at)}</p>
+      <table class="hub-table">
+        <thead><tr><th>Symbol</th><th>Score</th><th>Entry</th><th>Label</th></tr></thead>
+        <tbody>${rows.slice(0,15).map(x => `
+          <tr><td><strong>${safe(x.symbol)}</strong></td><td>${safe(x.final_score)}</td><td>${safe(x.entry_zone)}</td><td>${safe(x.label)}</td></tr>
+        `).join("")}</tbody>
+      </table>
+    `;
+  }
+
+  function renderOvernight(d) {
+    const strong = d.overnight.top_strength || [];
+    const weak = d.overnight.top_weakness || [];
+    return `
+      <h2>🌙 Overnight Intelligence</h2>
+      <div class="hub-grid">
+        <div class="hub-card"><h3>Market Label</h3><div class="hub-big">${safe(d.overnight.market_label)}</div></div>
+        <div class="hub-card"><h3>Risk Score</h3><div class="hub-big">${safe(d.overnight.risk_score)}</div></div>
+      </div>
+      <h3>Top Strength</h3>
+      <table class="hub-table"><tbody>${strong.slice(0,8).map(x => `<tr><td><strong>${x.symbol}</strong></td><td>${x.change_1d_pct}%</td><td>${x.change_5d_pct}% 5D</td></tr>`).join("")}</tbody></table>
+      <h3>Top Weakness</h3>
+      <table class="hub-table"><tbody>${weak.slice(0,8).map(x => `<tr><td><strong>${x.symbol}</strong></td><td>${x.change_1d_pct}%</td><td>${x.change_5d_pct}% 5D</td></tr>`).join("")}</tbody></table>
+    `;
+  }
+
+  function renderSell(d) {
+    const rows = d.sell.sell_candidates || [];
+    return `
+      <h2>🛡️ Sell Intelligence</h2>
+      <p class="hub-muted">Updated: ${safe(d.sell.updated_at)}</p>
+      <table class="hub-table">
+        <thead><tr><th>Symbol</th><th>Pressure</th><th>Verdict</th><th>Reasons</th></tr></thead>
+        <tbody>${rows.map(x => `
+          <tr><td><strong>${x.symbol}</strong></td><td>${x.sell_pressure}</td><td>${x.verdict}</td><td>${(x.reasons || []).join(", ")}</td></tr>
+        `).join("")}</tbody>
+      </table>
+    `;
+  }
+
+  function renderRotation(d) {
+    const rows = d.rotation.rotation_suggestions || [];
+    return `
+      <h2>🔄 Rotation Engine v3</h2>
+      <p class="hub-muted">Updated: ${safe(d.rotation.updated_at)}</p>
+      <table class="hub-table">
+        <thead><tr><th>Move</th><th>Action</th><th>Confidence</th><th>Score</th><th>Edge</th><th>History Adj.</th></tr></thead>
+        <tbody>${rows.slice(0,20).map(x => `
+          <tr>
+            <td><strong>${x.sell_symbol} → ${x.buy_symbol}</strong></td>
+            <td><span class="hub-badge">${x.action}</span></td>
+            <td>${x.confidence}</td>
+            <td>${x.rotation_score}</td>
+            <td>${x.expected_edge}</td>
+            <td>${x.historical_adjustment}</td>
+          </tr>
+        `).join("")}</tbody>
+      </table>
+    `;
+  }
+
+  function renderShadow(d) {
+    const rows = d.shadow.shadow_actions || [];
+    return `
+      <h2>🧪 Shadow Capital Allocator</h2>
+      <p class="hub-muted">Updated: ${safe(d.shadow.updated_at)}</p>
+      <table class="hub-table">
+        <thead><tr><th>Move</th><th>Recommendation</th><th>Confidence</th><th>Score</th><th>Size</th></tr></thead>
+        <tbody>${rows.slice(0,20).map(x => `
+          <tr>
+            <td><strong>${x.sell_symbol} → ${x.buy_symbol}</strong></td>
+            <td>${x.recommendation}<br><span class="hub-badge">${x.action}</span></td>
+            <td>${x.confidence}</td>
+            <td>${x.rotation_score}</td>
+            <td>${Math.round(Number(x.shadow_allocation_pct || 0) * 100)}%</td>
+          </tr>
+        `).join("")}</tbody>
+      </table>
+    `;
+  }
+
+
+
+  function renderAiSummary(d) {
+    const ai = d.ai || {};
+    const summary = ai.plain_english_summary || [];
+    const actions = ai.action_items || [];
+    const readout = ai.key_readout || {};
+    const news = ai.top_news || [];
+
+    return `
+      <h2>🤖 AI Summary Layer</h2>
+      <p class="hub-muted">Updated: ${safe(ai.updated_at)} · Status: ${safe(ai.status)}</p>
+
+      <div class="hub-grid">
+        <div class="hub-card">
+          <h3>Regime</h3>
+          <div class="hub-big">${safe(readout.regime)}</div>
+          <div class="hub-muted">Score: ${safe(readout.regime_score)} · News impact: ${safe(readout.news_impact)}</div>
+        </div>
+        <div class="hub-card">
+          <h3>Top Rotation</h3>
+          <div class="hub-big">${safe(readout.top_rotation?.move)}</div>
+          <div>${safe(readout.top_rotation?.action)} · ${safe(readout.top_rotation?.confidence)} confidence</div>
+        </div>
+        <div class="hub-card">
+          <h3>Learning Status</h3>
+          <div class="hub-big">${safe(readout.pending_evaluations, 0)}</div>
+          <div class="hub-muted">Pending evaluations</div>
+        </div>
+      </div>
+
+      <h3>Plain-English Summary</h3>
+      <div class="hub-card">
+        <ul>
+          ${summary.map(x => `<li>${x}</li>`).join("") || "<li>No summary available yet.</li>"}
+        </ul>
+      </div>
+
+      <h3>Action Items</h3>
+      <div class="hub-card">
+        <ul>
+          ${actions.map(x => `<li>${x}</li>`).join("") || "<li>No action items available yet.</li>"}
+        </ul>
+      </div>
+
+      <h3>Top News Drivers</h3>
+      <table class="hub-table">
+        <thead><tr><th>Headline</th><th>Source</th><th>Impact</th><th>Tags</th></tr></thead>
+        <tbody>
+          ${news.map(n => `
+            <tr>
+              <td><strong>${safe(n.headline)}</strong></td>
+              <td>${safe(n.source)}</td>
+              <td>${safe(n.impact_score)}</td>
+              <td>${(n.tags || []).join(", ")}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+  }
+
+  function renderRegime(d) {
+    const r = d.regime || {};
+    const inputs = r.inputs || {};
+    const reasons = r.reasons || [];
+    return `
+      <h2>🌡️ Market Regime Filter</h2>
+      <p class="hub-muted">Updated: ${safe(r.updated_at)} · Status: ${safe(r.status)}</p>
+
+      <div class="hub-grid">
+        <div class="hub-card">
+          <h3>Regime</h3>
+          <div class="hub-big">${safe(r.regime)}</div>
+        </div>
+        <div class="hub-card">
+          <h3>Regime Score</h3>
+          <div class="hub-big">${safe(r.regime_score)}</div>
+        </div>
+        <div class="hub-card">
+          <h3>Rotation Bias</h3>
+          <div class="hub-big">${safe(r.rotation_bias, "Research")}</div>
+        </div>
+        <div class="hub-card">
+          <h3>Status</h3>
+          <div class="hub-big">${safe(r.status)}</div>
+        </div>
+      </div>
+
+      <h3>Reasons</h3>
+      <ul>
+        ${reasons.map(x => `<li>${x}</li>`).join("") || "<li>No reasons found yet.</li>"}
+      </ul>
+
+      <h3>Inputs</h3>
+      <table class="hub-table">
+        <tbody>
+          ${Object.entries(inputs).map(([k,v]) => `<tr><td><strong>${k}</strong></td><td>${Array.isArray(v) ? v.join(", ") : v}</td></tr>`).join("")}
+        </tbody>
+      </table>
+
+      <p class="hub-muted">This is research-only. It does not affect live trading yet.</p>
+    `;
+  }
+
+  function renderPerformance(d) {
+    const rows = d.perf.evaluations || [];
+    const p = d.perf.summary || {};
+    return `
+      <h2>📈 Rotation Performance Tracker</h2>
+      <div class="hub-grid">
+        <div class="hub-card"><h3>Win Rate</h3><div class="hub-big">${safe(p.win_rate, 0)}%</div></div>
+        <div class="hub-card"><h3>Helped</h3><div class="hub-big">${safe(p.helped, 0)}</div></div>
+        <div class="hub-card"><h3>Hurt</h3><div class="hub-big">${safe(p.hurt, 0)}</div></div>
+        <div class="hub-card"><h3>Neutral</h3><div class="hub-big">${safe(p.neutral, 0)}</div></div>
+      </div>
+      <table class="hub-table">
+        <thead><tr><th>Move</th><th>Result</th><th>Alpha</th><th>Sell Change</th><th>Buy Change</th></tr></thead>
+        <tbody>${rows.slice(-25).reverse().map(x => `
+          <tr>
+            <td><strong>${x.sell_symbol} → ${x.buy_symbol}</strong></td>
+            <td>${x.result}</td>
+            <td>${x.rotation_alpha_pct}%</td>
+            <td>${x.sell_change_pct}%</td>
+            <td>${x.buy_change_pct}%</td>
+          </tr>
+        `).join("")}</tbody>
+      </table>
+    `;
+  }
+
+  async function render(active = "overview") {
+    hideOldWidgets();
+
+    panel.style.display = "block";
+    panel.innerHTML = `<h1>🧠 Research Hub</h1><p class="hub-muted">Loading research brain...</p>`;
+
+    try {
+      const d = await loadData();
+
+      const views = {
+        overview: renderOverview,
+        market: renderMarket,
+        overnight: renderOvernight,
+        sell: renderSell,
+        rotation: renderRotation,
+        shadow: renderShadow,
+        performance: renderPerformance,
+        regime: renderRegime,
+        ai: renderAiSummary,
+        notifications: renderNotifications
+      };
+
+      panel.innerHTML = `
+        <button class="hub-close" id="ponderHubClose">Close</button>
+        <h1 style="margin:0;font-size:34px">🧠 PonderAI Research Hub</h1>
+        <p class="hub-muted">One command center for research-only intelligence.</p>
+        ${tabs(active)}
+        <div id="ponderHubContent">${views[active](d)}</div>
+      `;
+
+      document.getElementById("ponderHubClose").onclick = () => panel.style.display = "none";
+
+      panel.querySelectorAll(".hub-tab").forEach(t => {
+        t.onclick = () => render(t.dataset.tab);
+      });
+    } catch (err) {
+      panel.innerHTML = `
+        <button class="hub-close" id="ponderHubClose">Close</button>
+        <h1>🧠 Research Hub</h1>
+        <p style="color:#fca5a5">Could not load research JSON.</p>
+        <pre>${err.message}</pre>
+      `;
+      document.getElementById("ponderHubClose").onclick = () => panel.style.display = "none";
+    }
+  }
+
+  btn.onclick = () => render("overview");
+
+  setInterval(() => {
+    hideOldWidgets();
+    if (panel.style.display === "block") {
+      const active = panel.querySelector(".hub-tab.active")?.dataset?.tab || "overview";
+      render(active);
+    }
+  }, 60000);
+
+  setTimeout(hideOldWidgets, 500);
+  setTimeout(hideOldWidgets, 1500);
+})();
+
+/* === Research Hub Polish v2: hide old widgets hard + cleaner modal === */
+(function () {
+  const css = document.createElement("style");
+  css.innerHTML = `
+    #ponderIntelBtn,
+    #ponderLearningBtn,
+    #ponderOvernightBtn,
+    #ponderSellIntelBtn,
+    #ponderRotationBtn,
+    #ponderShadowBtn,
+    #ponderMarketIntelPanel,
+    #ponderIntelPanel,
+    #ponderLearningPanel,
+    #ponderOvernightPanel,
+    #ponderSellIntelPanel,
+    #ponderRotationPanel,
+    #ponderShadowPanel {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
+    #ponderHubBtn {
+      top: 410px !important;
+      right: 20px !important;
+      width: 54px !important;
+      height: 54px !important;
+      border-radius: 18px !important;
+      border: 1px solid rgba(134,239,172,.7) !important;
+      background: rgba(15,23,42,.92) !important;
+      backdrop-filter: blur(12px) !important;
+    }
+
+    #ponderHubPanel {
+      inset: 7vh 5vw !important;
+      max-width: 1280px !important;
+      margin: auto !important;
+      border-radius: 24px !important;
+      background: rgba(7,17,31,.97) !important;
+    }
+
+    #ponderHubPanel .hub-grid {
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+    }
+
+    #ponderHubPanel .hub-card {
+      min-height: 110px !important;
+    }
+
+    #ponderHubPanel h1 {
+      font-size: 30px !important;
+    }
+
+    #ponderHubPanel .hub-big {
+      font-size: 24px !important;
+      line-height: 1.1 !important;
+    }
+
+    #ponderHubPanel .hub-tabs {
+      position: sticky;
+      top: -24px;
+      background: rgba(7,17,31,.96);
+      padding: 12px 0;
+      z-index: 3;
+    }
+
+    @media (max-width: 900px) {
+      #ponderHubPanel {
+        inset: 16px !important;
+        padding: 18px !important;
+      }
+    }
+  `;
+  document.head.appendChild(css);
+
+  function hardHideOld() {
+    if (window.location.pathname.includes("/login")) return;
+
+    [
+      "ponderIntelBtn",
+      "ponderLearningBtn",
+      "ponderOvernightBtn",
+      "ponderSellIntelBtn",
+      "ponderRotationBtn",
+      "ponderShadowBtn",
+      "ponderMarketIntelPanel",
+      "ponderIntelPanel",
+      "ponderLearningPanel",
+      "ponderOvernightPanel",
+      "ponderSellIntelPanel",
+      "ponderRotationPanel",
+      "ponderShadowPanel"
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.style.setProperty("display", "none", "important");
+        el.style.setProperty("visibility", "hidden", "important");
+        el.style.setProperty("pointer-events", "none", "important");
+      }
+    });
+  }
+
+  hardHideOld();
+  setInterval(hardHideOld, 1000);
+})();
+
+
+function renderAiSummary(d) {
+  const ai = d.ai || {};
+  const summary = ai.plain_english_summary || [];
+  const actions = ai.action_items || [];
+  const readout = ai.key_readout || {};
+
+  return `
+    <h2>🤖 AI Summary</h2>
+    <p class="hub-muted">Updated: ${safe(ai.updated_at)} · Status: ${safe(ai.status)}</p>
+
+    <div class="hub-grid">
+      <div class="hub-card">
+        <h3>Regime</h3>
+        <div class="hub-big">${safe(readout.regime)}</div>
+        <div class="hub-muted">Score: ${safe(readout.regime_score)} · News impact: ${safe(readout.news_impact)}</div>
+      </div>
+      <div class="hub-card">
+        <h3>Top Rotation</h3>
+        <div class="hub-big">${safe(readout.top_rotation?.move)}</div>
+        <div>${safe(readout.top_rotation?.action)} · ${safe(readout.top_rotation?.confidence)} confidence</div>
+      </div>
+      <div class="hub-card">
+        <h3>Learning Status</h3>
+        <div class="hub-big">${safe(readout.pending_evaluations, 0)}</div>
+        <div class="hub-muted">Pending evaluations</div>
+      </div>
+    </div>
+
+    <h3>🧭 What Should I Do?</h3>
+    <div class="hub-card" style="border-color:#86efac">
+      <ul>${actions.map(x => `<li>${x}</li>`).join("") || "<li>Observe the system and avoid live changes until more data is available.</li>"}</ul>
+    </div>
+
+    <h3>Plain-English Summary</h3>
+    <div class="hub-card">
+      <ul>${summary.map(x => `<li>${x}</li>`).join("") || "<li>No summary available yet.</li>"}</ul>
+    </div>
+  `;
+}
+
+function renderNotifications(d) {
+  const n = d.notifications || {};
+  const alerts = n.alerts || [];
+  const summary = n.summary || {};
+
+  return `
+    <h2>🔔 System Alerts</h2>
+    <p class="hub-muted">Updated: ${safe(n.updated_at)} · Status: ${safe(n.status)}</p>
+
+    <div class="hub-grid">
+      <div class="hub-card"><h3>Critical</h3><div class="hub-big">${safe(summary.critical, 0)}</div></div>
+      <div class="hub-card"><h3>Warnings</h3><div class="hub-big">${safe(summary.warning, 0)}</div></div>
+      <div class="hub-card"><h3>Achievements</h3><div class="hub-big">${safe(summary.achievement, 0)}</div></div>
+      <div class="hub-card"><h3>Total</h3><div class="hub-big">${safe(summary.total, 0)}</div></div>
+    </div>
+
+    <table class="hub-table">
+      <thead><tr><th>Level</th><th>Category</th><th>Title</th><th>Message</th></tr></thead>
+      <tbody>
+        ${alerts.map(a => `
+          <tr>
+            <td><span class="hub-badge">${safe(a.level)}</span></td>
+            <td>${safe(a.category)}</td>
+            <td><strong>${safe(a.title)}</strong></td>
+            <td>${safe(a.message)}</td>
+          </tr>
+        `).join("") || `<tr><td colspan="4">No alerts yet.</td></tr>`}
+      </tbody>
+    </table>
+  `;
+}
+
+/* === PONDER_SAFE_POPUPS_AND_DOG_V1 === */
+(function () {
+  if (window.__ponderSafePopupsDogV1) return;
+  window.__ponderSafePopupsDogV1 = true;
+
+  if (location.pathname.includes("/login")) return;
+
+  const style = document.createElement("style");
+  style.innerHTML = `
+    #ponderPupBtn {
+      position: fixed;
+      right: 105px;
+      bottom: 88px;
+      width: 58px;
+      height: 58px;
+      border-radius: 18px;
+      border: 2px solid rgba(134,239,172,.85);
+      background: rgba(7,17,31,.97);
+      color: white;
+      font-size: 28px;
+      z-index: 2147483647;
+      cursor: pointer;
+      box-shadow: 0 18px 55px rgba(0,0,0,.6);
+    }
+    #ponderToastWrap {
+      position: fixed;
+      right: 22px;
+      top: 90px;
+      z-index: 2147483647;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 360px;
+    }
+    .ponderToast {
+      background: rgba(7,17,31,.97);
+      color: #e5e7eb;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 12px 14px;
+      box-shadow: 0 18px 55px rgba(0,0,0,.55);
+      font-size: 13px;
+    }
+    .ponderToast.critical { border-color: #fb7185; }
+    .ponderToast.warning { border-color: #facc15; }
+    .ponderToastTitle { font-weight: 900; margin-bottom: 4px; }
+  `;
+  document.head.appendChild(style);
+
+  function ensureToastWrap() {
+    let wrap = document.getElementById("ponderToastWrap");
+    if (!wrap) {
+      wrap = document.createElement("div");
+      wrap.id = "ponderToastWrap";
+      document.body.appendChild(wrap);
+    }
+    return wrap;
+  }
+
+  function openHub(tabText) {
+    const hubBtn = document.getElementById("ponderHubBtn") || document.querySelector('[title="Research Hub"]');
+    if (hubBtn) hubBtn.click();
+
+    setTimeout(() => {
+      const btns = Array.from(document.querySelectorAll("button"));
+      const target = btns.find(b => (b.textContent || "").includes(tabText));
+      if (target) target.click();
+    }, 400);
+  }
+
+  function makePonderButton() {
+    if (document.getElementById("ponderPupBtn")) return;
+
+    const btn = document.createElement("button");
+    btn.id = "ponderPupBtn";
+    btn.title = "Ask Ponder";
+    btn.innerHTML = "🐕";
+    btn.onclick = () => openHub("AI Summary");
+    document.body.appendChild(btn);
+  }
+
+  function toast(alert) {
+    const key = "ponder_seen_" + (alert.title || "") + "::" + (alert.message || "");
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, "1");
+
+    const el = document.createElement("div");
+    el.className = "ponderToast " + (alert.level || "info");
+    el.innerHTML = `
+      <div class="ponderToastTitle">🐕 ${alert.title || "Ponder Alert"}</div>
+      <div>${alert.message || ""}</div>
+    `;
+
+    ensureToastWrap().appendChild(el);
+    setTimeout(() => el.remove(), alert.level === "critical" ? 10000 : 7000);
+  }
+
+  async function pollAlerts() {
+    try {
+      const res = await fetch("/static/research/notifications_latest.json?ts=" + Date.now(), { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      const alerts = data.alerts || [];
+
+      alerts
+        .filter(a => ["critical", "warning"].includes(a.level))
+        .slice(0, 3)
+        .forEach(toast);
+    } catch (e) {}
+  }
+
+  function boot() {
+    console.log("🐕 Ponder booting globally...");
+
+    setInterval(makePonderButton, 3000);
+
+    pollAlerts();
+    setTimeout(pollAlerts, 5000);
+    setTimeout(pollAlerts, 15000);
+
+    setInterval(pollAlerts, 45000);
+
+    const observer = new MutationObserver(() => {
+      makePonderButton();
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+})();
+
+
+/* === PONDER_MOOD_SYSTEM_V1 === */
+(function () {
+  if (window.__ponderMoodSystemV1) return;
+  window.__ponderMoodSystemV1 = true;
+
+  // Hard kill on login page
+  if (location.pathname === "/login" || location.pathname.startsWith("/login")) {
+    console.log("🚫 Ponder disabled on login page");
+    setInterval(() => {
+      ["ponderPupBtn", "ponderToastWrap"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+      });
+    }, 500);
+    return;
+  }
+
+  function moodLabel(levels) {
+    if ((levels.critical || 0) > 0) return { icon: "🛡️🐕", title: "Guard Mode", border: "#fb7185", msg: "Ponder is guarding you. Critical market risk is active." };
+    if ((levels.warning || 0) > 0) return { icon: "⚠️🐕", title: "Alert Mode", border: "#facc15", msg: "Ponder smells risk. Stay careful." };
+    if ((levels.total || 0) === 0) return { icon: "😴🐕", title: "Idle Mode", border: "#94a3b8", msg: "Ponder is resting. No major alerts right now." };
+    return { icon: "🐕", title: "Watch Mode", border: "#86efac", msg: "Ponder is watching the system." };
+  }
+
+  async function updatePonderMood() {
+    try {
+      const res = await fetch("/static/research/notifications_latest.json?ts=" + Date.now(), { cache: "no-store" });
+      if (!res.ok) return;
+
+      const data = await res.json();
+      const summary = data.summary || {};
+      const mood = moodLabel(summary);
+
+      const btn = document.getElementById("ponderPupBtn");
+      if (!btn) return;
+
+      btn.innerHTML = mood.icon;
+      btn.title = mood.title;
+      btn.style.borderColor = mood.border;
+
+      if (btn.dataset.lastMood !== mood.title) {
+        btn.dataset.lastMood = mood.title;
+        console.log("🐕 Ponder:", mood.title, "-", mood.msg);
+      }
+    } catch (e) {}
+  }
+
+  setTimeout(updatePonderMood, 1500);
+  setInterval(updatePonderMood, 45000);
+})();
+/* === END PONDER_MOOD_SYSTEM_V1 === */

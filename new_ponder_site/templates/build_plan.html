@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>Ponder Build Plan</h1>
+    <p class="muted">A stable roadmap for adding the rest of the planned options without turning the dashboard into clutter.</p>
+  </div>
+  <div class="status-pill">Research-first</div>
+</header>
+
+<section class="brand-panel">
+  <div class="ponder-badge large">P</div>
+  <div>
+    <h2>Ponder's Rule</h2>
+    <p>Watch first. Explain clearly. Protect capital. Automate only after evidence.</p>
+  </div>
+</section>
+
+<section class="split">
+  <div class="card">
+    <h2>Codex Cloud Handoff</h2>
+    <p class="muted">Codex Cloud can continue this work from another device when the code is in a private GitHub repo. This local desktop chat cannot be moved automatically, so use Snapshot as the handoff.</p>
+    <button onclick="copyCloudHandoff()">Copy Cloud Task Prompt</button>
+    <pre id="cloudHandoff">{{ handoff | tojson(indent=2) }}</pre>
+  </div>
+  <div class="card highlight">
+    <h2>How To Use From Any Device</h2>
+    <ol>
+      <li>Push the project to a private GitHub repo.</li>
+      <li>Open ChatGPT/Codex Cloud on the other device.</li>
+      <li>Start a task on that repo.</li>
+      <li>Paste the Cloud Task Prompt plus the Snapshot JSON.</li>
+      <li>Keep secrets in <code>.env</code>; never paste API keys.</li>
+    </ol>
+  </div>
+</section>
+
+<section class="roadmap-columns">
+  <div class="card">
+    <h2>Now</h2>
+    {% for item in roadmap.get("now", []) %}
+      <div class="road-item">
+        <strong>{{ item.name }}</strong>
+        <span>{{ item.status }}</span>
+        <p>{{ item.detail }}</p>
+      </div>
+    {% endfor %}
+  </div>
+  <div class="card">
+    <h2>Next</h2>
+    {% for item in roadmap.get("next", []) %}
+      <div class="road-item">
+        <strong>{{ item.name }}</strong>
+        <span>{{ item.status }}</span>
+        <p>{{ item.detail }}</p>
+      </div>
+    {% endfor %}
+  </div>
+  <div class="card">
+    <h2>Later Labs</h2>
+    {% for item in roadmap.get("later", []) %}
+      <div class="road-item">
+        <strong>{{ item.name }}</strong>
+        <span>{{ item.status }}</span>
+        <p>{{ item.detail }}</p>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="card">
+  <h2>Guardrails</h2>
+  <ul>
+    {% for item in roadmap.get("guardrails", []) %}
+      <li>{{ item }}</li>
+    {% endfor %}
+  </ul>
+</section>
+
+<script>
+async function copyCloudHandoff(){
+  const text = document.getElementById('cloudHandoff').textContent;
+  await navigator.clipboard.writeText(text);
+  alert('Cloud handoff copied.');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,68 @@
+
+{% extends "base.html" %}
+{% block content %}
+<h1>Research Center</h1>
+<p class="muted">All non-live intelligence modules in one organized view.</p>
+
+<div class="tabs">
+  <button onclick="showTab('ai')">AI Summary</button>
+  <button onclick="showTab('alerts')">Alerts</button>
+  <button onclick="showTab('market')">Market</button>
+  <button onclick="showTab('overnight')">Overnight</button>
+  <button onclick="showTab('sell')">Sell</button>
+  <button onclick="showTab('rotation')">Rotation</button>
+  <button onclick="showTab('performance')">Performance</button>
+  <button onclick="showTab('shadow')">Shadow</button>
+  <button onclick="showTab('future')">Future Labs</button>
+</div>
+
+<section id="tab-ai" class="tab card">
+  <h2>🤖 AI Summary</h2>
+  {% set ai = data.get("ai", {}) %}
+  <h3>What Should I Do?</h3>
+  <ul>{% for x in ai.get("action_items", []) %}<li>{{ x }}</li>{% else %}<li>No action items yet.</li>{% endfor %}</ul>
+  <h3>Simple Summary</h3>
+  <ul>{% for x in ai.get("plain_english_summary", []) %}<li>{{ x }}</li>{% else %}<li>No summary yet.</li>{% endfor %}</ul>
+</section>
+
+<section id="tab-alerts" class="tab card" style="display:none">
+  <h2>🔔 Alerts</h2>
+  {% set alerts = data.get("alerts", {}) %}
+  <table>
+    <thead><tr><th>Level</th><th>Category</th><th>Title</th><th>Message</th></tr></thead>
+    <tbody>
+      {% for a in alerts.get("alerts", []) %}
+        <tr><td>{{ a.get("level") }}</td><td>{{ a.get("category") }}</td><td><strong>{{ a.get("title") }}</strong></td><td>{{ a.get("message") }}</td></tr>
+      {% else %}
+        <tr><td colspan="4">No alerts.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{% for name in ["market","overnight","sell","rotation","performance","shadow"] %}
+<section id="tab-{{ name }}" class="tab card" style="display:none">
+  <h2>{{ name|title }}</h2>
+  <pre>{{ data.get(name, {}) | tojson(indent=2) }}</pre>
+</section>
+{% endfor %}
+
+<section id="tab-future" class="tab card" style="display:none">
+  <h2>Future Research Labs</h2>
+  <div class="grid">
+    <div class="card mini"><h3>IPO Watch</h3><p>Track upcoming IPOs, hype, lockups, and early price behavior.</p></div>
+    <div class="card mini"><h3>Day Trading Lab</h3><p>Fast-market setups with different entries/exits, research-only.</p></div>
+    <div class="card mini"><h3>Crypto / ETF / Commodities</h3><p>Separate market scanners and learning outputs later.</p></div>
+    <div class="card mini"><h3>Social Trend Scanner</h3><p>TikTok/social catalyst research, not live trading.</p></div>
+    <div class="card mini"><h3>Event Impact Layer</h3><p>News/event tagging and historical outcome learning.</p></div>
+    <div class="card mini"><h3>Strategy Sandbox</h3><p>Paper-test parameter changes before applying anything.</p></div>
+  </div>
+</section>
+
+<script>
+function showTab(name){
+  document.querySelectorAll('.tab').forEach(x => x.style.display='none');
+  document.getElementById('tab-'+name).style.display='block';
+}
+</script>
+{% endblock %}

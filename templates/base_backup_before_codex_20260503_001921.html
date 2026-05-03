@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+  <title>Ponder Invest AI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/site/css/app.css?v=clean1">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">🐾 Ponder<span>AI</span></div>
+    <a href="/">Dashboard</a>
+    <a href="/profit">Profit Ops</a>
+    <a href="/profit-lab">Profit Lab</a>
+    <a href="/research">Research</a>
+    <a href="/learning">Learning</a>
+    <a href="/settings">Settings</a>
+    <a href="/history">History</a>
+    <a href="/logout">Logout</a>
+  </aside>
+
+  <main class="main">
+    {% block content %}{% endblock %}
+  </main>
+
+  <button id="ponderAssistantBtn">🐕</button>
+  <section id="ponderPanel"></section>
+
+  <script src="/static/site/js/app.js?v=clean1"></script>
+</body>
+</html>

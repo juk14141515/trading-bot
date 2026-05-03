@@ -2,3 +2,9 @@
 log.txt
 __pycache__/
 *.pyc
+# local artifacts
+*.log
+__pycache__/
+venv/
+.env
+*.tar.gz

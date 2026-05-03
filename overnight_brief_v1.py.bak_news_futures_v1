@@ -1,0 +1,153 @@
+import json
+from datetime import datetime, timedelta
+from pathlib import Path
+
+import pandas as pd
+import yfinance as yf
+
+OUT = Path("static/research")
+OUT.mkdir(parents=True, exist_ok=True)
+
+INDEXES = {
+    "SPY": "S&P 500 ETF",
+    "QQQ": "Nasdaq 100 ETF",
+    "IWM": "Small Caps ETF",
+    "DIA": "Dow ETF",
+}
+
+WATCH = [
+    "NVDA", "AMD", "AAPL", "MSFT", "AMZN", "GOOGL", "META", "TSLA",
+    "QCOM", "MU", "INTC", "AVGO", "SMCI", "COIN", "PLTR"
+]
+
+
+def flatten(df):
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = [c[0] if isinstance(c, tuple) else c for c in df.columns]
+    return df.dropna()
+
+
+def get_move(symbol, days=7):
+    end = datetime.now()
+    start = end - timedelta(days=days + 5)
+
+    df = yf.download(
+        symbol,
+        start=start.strftime("%Y-%m-%d"),
+        end=end.strftime("%Y-%m-%d"),
+        interval="1d",
+        progress=False,
+        auto_adjust=True,
+    )
+
+    if df.empty or len(df) < 2:
+        return None
+
+    df = flatten(df)
+    close = df["Close"].astype(float)
+    volume = df["Volume"].astype(float)
+
+    last = float(close.iloc[-1])
+    prev = float(close.iloc[-2])
+    change_1d = (last - prev) / prev * 100
+
+    change_5d = 0
+    if len(close) >= 6:
+        change_5d = (last - float(close.iloc[-6])) / float(close.iloc[-6]) * 100
+
+    avg_vol = float(volume.tail(10).mean()) if len(volume) >= 10 else float(volume.mean())
+    vol_ratio = float(volume.iloc[-1] / avg_vol) if avg_vol else 1
+
+    return {
+        "symbol": symbol,
+        "price": round(last, 2),
+        "change_1d_pct": round(change_1d, 2),
+        "change_5d_pct": round(change_5d, 2),
+        "volume_ratio": round(vol_ratio, 2),
+    }
+
+
+def risk_label(index_moves):
+    if not index_moves:
+        return "Unknown", 50
+
+    avg_1d = sum(x["change_1d_pct"] for x in index_moves) / len(index_moves)
+
+    if avg_1d > 0.8:
+        return "Risk-On / Bullish", 80
+    if avg_1d > 0.2:
+        return "Mild Risk-On", 65
+    if avg_1d > -0.3:
+        return "Neutral / Mixed", 50
+    if avg_1d > -1.0:
+        return "Caution / Weak Tape", 35
+    return "Risk-Off / Defensive", 20
+
+
+def main():
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    index_moves = []
+    for symbol, name in INDEXES.items():
+        data = get_move(symbol)
+        if data:
+            data["name"] = name
+            index_moves.append(data)
+
+    movers = []
+    for symbol in WATCH:
+        data = get_move(symbol)
+        if data:
+            movers.append(data)
+
+    movers = sorted(movers, key=lambda x: x["change_1d_pct"], reverse=True)
+
+    top_strength = movers[:5]
+    top_weakness = sorted(movers, key=lambda x: x["change_1d_pct"])[:5]
+
+    market_label, risk_score = risk_label(index_moves)
+
+    notes = []
+
+    if top_strength:
+        notes.append(
+            "Strongest watchlist names: " +
+            ", ".join([f"{x['symbol']} ({x['change_1d_pct']}%)" for x in top_strength[:3]])
+        )
+
+    if top_weakness:
+        notes.append(
+            "Weakest watchlist names: " +
+            ", ".join([f"{x['symbol']} ({x['change_1d_pct']}%)" for x in top_weakness[:3]])
+        )
+
+    if risk_score >= 65:
+        notes.append("Market backdrop favors selective momentum / pullback entries.")
+    elif risk_score <= 35:
+        notes.append("Market backdrop suggests caution, smaller sizing, or fewer new entries.")
+    else:
+        notes.append("Market backdrop is mixed; prioritize quality setups and avoid chasing extended names.")
+
+    payload = {
+        "updated_at": now,
+        "market_label": market_label,
+        "risk_score": risk_score,
+        "index_moves": index_moves,
+        "top_strength": top_strength,
+        "top_weakness": top_weakness,
+        "notes": notes,
+        "status": "research_only",
+    }
+
+    latest = OUT / "overnight_brief_latest.json"
+    latest.write_text(json.dumps(payload, indent=2))
+
+    archive = OUT / f"overnight_brief_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    archive.write_text(json.dumps(payload, indent=2))
+
+    print("Saved:", latest)
+    print(json.dumps(payload, indent=2))
+
+
+if __name__ == "__main__":
+    main()

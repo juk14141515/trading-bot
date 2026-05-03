@@ -1,0 +1,138 @@
+{
+  "updated_at": "2026-05-02 00:56:51",
+  "status": "research_only",
+  "sell_candidates": [
+    {
+      "symbol": "AAPL",
+      "price": 280.15,
+      "sell_pressure": 55,
+      "verdict": "\ud83d\udfe0 Trim / Tighten Stop",
+      "change_30m_pct": -0.05,
+      "change_60m_pct": -0.16,
+      "pullback_from_high_pct": -0.4,
+      "volume_ratio": 4.85,
+      "reasons": [
+        "price below short SMA",
+        "price below 20-bar trend",
+        "selling volume elevated"
+      ]
+    },
+    {
+      "symbol": "MSFT",
+      "price": 414.51,
+      "sell_pressure": 55,
+      "verdict": "\ud83d\udfe0 Trim / Tighten Stop",
+      "change_30m_pct": -0.4,
+      "change_60m_pct": -0.17,
+      "pullback_from_high_pct": -0.55,
+      "volume_ratio": 5.46,
+      "reasons": [
+        "price below short SMA",
+        "price below 20-bar trend",
+        "selling volume elevated"
+      ]
+    },
+    {
+      "symbol": "NVDA",
+      "price": 198.42,
+      "sell_pressure": 55,
+      "verdict": "\ud83d\udfe0 Trim / Tighten Stop",
+      "change_30m_pct": -0.72,
+      "change_60m_pct": -0.02,
+      "pullback_from_high_pct": -0.72,
+      "volume_ratio": 3.81,
+      "reasons": [
+        "price below short SMA",
+        "price below 20-bar trend",
+        "selling volume elevated"
+      ]
+    },
+    {
+      "symbol": "TSLA",
+      "price": 390.66,
+      "sell_pressure": 55,
+      "verdict": "\ud83d\udfe0 Trim / Tighten Stop",
+      "change_30m_pct": -0.65,
+      "change_60m_pct": -1.1,
+      "pullback_from_high_pct": -1.62,
+      "volume_ratio": 2.97,
+      "reasons": [
+        "price below short SMA",
+        "price below 20-bar trend",
+        "selling volume elevated"
+      ]
+    },
+    {
+      "symbol": "META",
+      "price": 608.74,
+      "sell_pressure": 55,
+      "verdict": "\ud83d\udfe0 Trim / Tighten Stop",
+      "change_30m_pct": -0.46,
+      "change_60m_pct": -0.4,
+      "pullback_from_high_pct": -0.71,
+      "volume_ratio": 4.45,
+      "reasons": [
+        "price below short SMA",
+        "price below 20-bar trend",
+        "selling volume elevated"
+      ]
+    },
+    {
+      "symbol": "AMZN",
+      "price": 268.34,
+      "sell_pressure": 55,
+      "verdict": "\ud83d\udfe0 Trim / Tighten Stop",
+      "change_30m_pct": -0.19,
+      "change_60m_pct": -0.23,
+      "pullback_from_high_pct": -0.47,
+      "volume_ratio": 5.82,
+      "reasons": [
+        "price below short SMA",
+        "price below 20-bar trend",
+        "selling volume elevated"
+      ]
+    },
+    {
+      "symbol": "AMD",
+      "price": 360.55,
+      "sell_pressure": 0,
+      "verdict": "\ud83d\udfe2 Hold / No Sell Signal",
+      "change_30m_pct": 0.1,
+      "change_60m_pct": 0.64,
+      "pullback_from_high_pct": -0.3,
+      "volume_ratio": 3.54,
+      "reasons": []
+    },
+    {
+      "symbol": "GOOGL",
+      "price": 385.69,
+      "sell_pressure": 0,
+      "verdict": "\ud83d\udfe2 Hold / No Sell Signal",
+      "change_30m_pct": 0.03,
+      "change_60m_pct": 0.27,
+      "pullback_from_high_pct": 0.0,
+      "volume_ratio": 4.0,
+      "reasons": []
+    }
+  ],
+  "top_exit_candidate": {
+    "symbol": "AAPL",
+    "price": 280.15,
+    "sell_pressure": 55,
+    "verdict": "\ud83d\udfe0 Trim / Tighten Stop",
+    "change_30m_pct": -0.05,
+    "change_60m_pct": -0.16,
+    "pullback_from_high_pct": -0.4,
+    "volume_ratio": 4.85,
+    "reasons": [
+      "price below short SMA",
+      "price below 20-bar trend",
+      "selling volume elevated"
+    ]
+  },
+  "notes": [
+    "Research-only sell pressure analysis. Does not place trades.",
+    "Use this to compare against live positions before connecting to bot.",
+    "Best next step: log actual sell outcomes so sell rules can be backtested."
+  ]
+}

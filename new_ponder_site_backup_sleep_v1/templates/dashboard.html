@@ -1,0 +1,36 @@
+
+{% extends "base.html" %}
+{% block content %}
+<h1>Ponder Invest AI</h1>
+<p class="muted">Clean dashboard shell. Research-only. No live orders.</p>
+
+{% set read = ai.get("key_readout", {}) %}
+<section class="grid">
+  <div class="card"><h3>Regime</h3><div class="big">{{ read.get("regime", "—") }}</div></div>
+  <div class="card"><h3>News Impact</h3><div class="big">{{ read.get("news_impact", "—") }}</div></div>
+  <div class="card"><h3>Top Rotation</h3><div class="big">{{ read.get("top_rotation", {}).get("move", "—") }}</div><p>{{ read.get("top_rotation", {}).get("action", "") }}</p></div>
+  <div class="card"><h3>Alerts</h3><div class="big">{{ alerts.get("summary", {}).get("total", 0) }}</div></div>
+</section>
+
+<section class="card">
+  <h2>What Should I Do?</h2>
+  <ul>
+    {% for item in ai.get("action_items", []) %}
+      <li>{{ item }}</li>
+    {% else %}
+      <li>No action items yet.</li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section class="card">
+  <h2>Plain-English Summary</h2>
+  <ul>
+    {% for item in ai.get("plain_english_summary", []) %}
+      <li>{{ item }}</li>
+    {% else %}
+      <li>No summary yet.</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

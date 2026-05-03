@@ -1,0 +1,275 @@
+from pathlib import Path
+from datetime import datetime
+import shutil
+
+ROOT = Path("/home/ubuntu/trading-bot")
+STAMP = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+def backup(name):
+    p = ROOT / name
+    if p.exists():
+        b = ROOT / f"{name}.bak_clean_rebuild_{STAMP}"
+        shutil.copy2(p, b)
+        print(f"BACKUP | {name} -> {b.name}")
+
+backup("profit_lab_routes.py")
+
+code = r'''
+import os
+from datetime import date
+from flask import Blueprint, jsonify, render_template_string
+import alpaca_trade_api as tradeapi
+from profit_ops_analytics import snapshot
+
+profit_lab_bp = Blueprint("profit_lab", __name__)
+
+def get_positions_safe():
+    try:
+        key = os.getenv("APCA_API_KEY_ID")
+        secret = os.getenv("APCA_API_SECRET_KEY")
+        base_url = os.getenv("BASE_URL") or os.getenv("APCA_API_BASE_URL") or "https://paper-api.alpaca.markets"
+        if not key or not secret:
+            return []
+        api = tradeapi.REST(key, secret, base_url, api_version="v2")
+        rows = []
+        for p in api.list_positions():
+            rows.append({
+                "symbol": p.symbol,
+                "qty": float(p.qty),
+                "entry_price": float(p.avg_entry_price),
+                "current_price": float(p.current_price),
+                "market_value": float(p.market_value),
+                "unrealized_pl": float(p.unrealized_pl),
+                "unrealized_plpc": round(float(p.unrealized_plpc) * 100, 2),
+            })
+        return rows
+    except Exception as e:
+        return [{"symbol":"ERROR","qty":0,"entry_price":0,"current_price":0,"market_value":0,"unrealized_pl":0,"unrealized_plpc":0,"error":str(e)}]
+
+def build_replay(logs):
+    rows = []
+    for line in logs[-150:]:
+        label = None
+        tone = "neutral"
+        if "BUY DECISION" in line:
+            label, tone = "BUY", "good"
+        elif "SKIP BUY" in line:
+            label, tone = "SKIP", "warn"
+        elif "CONFIDENCE" in line:
+            label, tone = "CONFIDENCE", "info"
+        elif "SCANNER" in line:
+            label, tone = "SCANNER", "info"
+        elif "ROTATION" in line:
+            label, tone = "ROTATION", "warn"
+        elif "SELL" in line:
+            label, tone = "SELL", "bad"
+        elif "TRADE GUARD" in line or "FORCE EXIT" in line:
+            label, tone = "GUARD", "bad"
+        if label:
+            rows.append({"label":label,"tone":tone,"line":line})
+    return rows[-80:]
+
+def build_candidates(logs):
+    rows = []
+    for line in logs[-200:]:
+        u = line.upper()
+        if not any(k in u for k in ["CONFIDENCE","BUY DECISION","SKIP BUY","SCANNER","CANDIDATE"]):
+            continue
+        reason = "observed"
+        if "market closed" in line.lower():
+            reason = "market closed"
+        elif "max positions" in line.lower():
+            reason = "slots full"
+        elif "threshold" in line.lower():
+            reason = "below threshold"
+        elif "rotation" in line.lower():
+            reason = "rotation check"
+        symbol = "-"
+        score = "-"
+        for part in line.replace("|"," ").replace(","," ").split():
+            clean = part.strip().upper()
+            if clean.isalpha() and 1 <= len(clean) <= 5 and clean not in ["BUY","SELL","SKIP","NEW","CYCLE","MARKET","CLOSED","SCANNER","CONFIDENCE","DECISION"]:
+                symbol = clean
+                break
+            if "score=" in part.lower() or "confidence=" in part.lower():
+                score = part.split("=")[-1]
+        rows.append({"symbol":symbol,"score":score,"reason":reason,"line":line})
+    return rows[-40:]
+
+def lab_snapshot():
+    s = snapshot()
+    logs = s.get("recent_logs", [])
+    today = date.today().isoformat()
+    trades = s.get("recent_trades", [])
+
+    todays = [t for t in trades if str(t.get("timestamp","")).startswith(today)]
+    sells = [t for t in todays if str(t.get("action","")).upper() == "SELL"]
+    buys = [t for t in todays if str(t.get("action","")).upper() == "BUY"]
+
+    net = 0
+    wins = 0
+    losses = 0
+    for t in sells:
+        pnl = float(t.get("pnl") or t.get("_pnl") or 0)
+        net += pnl
+        if pnl > 0:
+            wins += 1
+        else:
+            losses += 1
+
+    s["lab"] = {
+        "today": today,
+        "buys_today": len(buys),
+        "sells_today": len(sells),
+        "net_today": round(net, 2),
+        "wins_today": wins,
+        "losses_today": losses,
+        "win_rate_today": round((wins / len(sells) * 100), 2) if sells else 0,
+        "positions": get_positions_safe(),
+        "decision_replay": build_replay(logs),
+        "candidate_feed": build_candidates(logs),
+    }
+    return s
+
+@profit_lab_bp.route("/api/profit-lab")
+def api_profit_lab():
+    return jsonify(lab_snapshot())
+
+@profit_lab_bp.route("/profit-lab")
+def profit_lab():
+    return render_template_string("""
+<!doctype html>
+<html>
+<head>
+<title>Ponder Profit Lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{--bg:#070b18;--card:#111827;--border:#26334f;--muted:#a8b3c7;--green:#7cff9b;--red:#ff6f91;--blue:#8ab4ff;--yellow:#ffe86b}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at top left,#123322 0,#0b1024 35%,#050816 100%);color:white;font-family:Arial,sans-serif}
+.wrap{max-width:1450px;margin:auto;padding:28px}
+.top{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+h1{font-size:36px;margin:0 0 6px}.ai{color:var(--green)}a{color:var(--blue);text-decoration:none}.muted{color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin:18px 0}
+.card{background:linear-gradient(180deg,rgba(21,29,50,.96),rgba(11,17,34,.96));border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 15px 35px rgba(0,0,0,.22)}
+.label{color:var(--muted);font-size:13px;font-weight:700}.value{font-size:28px;font-weight:900;margin-top:8px}
+.good{color:var(--green)}.bad{color:var(--red)}.warn{color:var(--yellow)}.info{color:var(--blue)}
+.chartBox{height:340px}
+.layout{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px;border-bottom:1px solid var(--border);text-align:left}th{color:var(--blue)}
+pre,.replay{white-space:pre-wrap;word-break:break-word;max-height:310px;overflow:auto;font-size:12px;line-height:1.35}
+.chip{display:inline-block;border-radius:999px;padding:3px 8px;margin-right:8px;font-weight:900;font-size:11px}
+.chip.good{background:rgba(124,255,155,.12);color:var(--green)}.chip.bad{background:rgba(255,111,145,.12);color:var(--red)}.chip.warn{background:rgba(255,232,107,.12);color:var(--yellow)}.chip.info{background:rgba(138,180,255,.12);color:var(--blue)}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.wrap{padding:16px}h1{font-size:28px}.chartBox{height:280px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Ponder Invest <span class="ai">AI</span> Profit Lab</h1>
+      <div class="muted">Clean experimental analytics page. Safe from the stable Profit Ops dashboard.</div>
+    </div>
+    <div><a href="/">Main</a> · <a href="/profit">Profit Ops</a> · <a href="/profit-lab">Profit Lab</a></div>
+  </div>
+
+  <div class="grid">
+    <div class="card"><div class="label">Today P/L</div><div id="todayPnl" class="value">$0</div><div id="todayStats" class="muted">0 buys · 0 sells</div></div>
+    <div class="card"><div class="label">Today Win Rate</div><div id="todayWin" class="value">0%</div><div id="todayWL" class="muted">0 wins · 0 losses</div></div>
+    <div class="card"><div class="label">AI Health</div><div id="health" class="value info">--</div><div id="healthNote" class="muted">Waiting</div></div>
+    <div class="card"><div class="label">Open P/L</div><div id="openPl" class="value">$0</div><div class="muted">Unrealized</div></div>
+  </div>
+
+  <div class="card">
+    <h2>Equity Lab Chart</h2>
+    <div class="chartBox"><canvas id="chart"></canvas></div>
+  </div>
+
+  <div class="layout">
+    <div class="card">
+      <h2>Decision Replay</h2>
+      <div id="decisionReplay" class="replay">Loading...</div>
+    </div>
+
+    <div class="card">
+      <h2>Candidate Feed</h2>
+      <table>
+        <thead><tr><th>Symbol</th><th>Score</th><th>Reason</th></tr></thead>
+        <tbody id="candidateFeed"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Live Positions</h2>
+      <table>
+        <thead><tr><th>Symbol</th><th>Qty</th><th>Open P/L</th><th>P/L %</th></tr></thead>
+        <tbody id="positions"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let chart=null;
+function money(x){let n=Number(x||0);return "$"+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
+function pct(x){return Number(x||0).toFixed(2)+"%"}
+function cls(x){return Number(x||0)>=0?"good":"bad"}
+
+async function load(){
+  const r=await fetch("/api/profit-lab",{cache:"no-store"});
+  if(!r.ok)return;
+  const d=await r.json();
+  const l=d.latest||{}, lab=d.lab||{}, h=d.health||{}, logs=d.logs||{}, eq=d.equity||[];
+
+  document.getElementById("todayPnl").textContent=money(lab.net_today);
+  document.getElementById("todayPnl").className="value "+cls(lab.net_today);
+  document.getElementById("todayStats").textContent=`${lab.buys_today||0} buys · ${lab.sells_today||0} sells`;
+  document.getElementById("todayWin").textContent=pct(lab.win_rate_today);
+  document.getElementById("todayWL").textContent=`${lab.wins_today||0} wins · ${lab.losses_today||0} losses`;
+  document.getElementById("health").textContent=(h.score??"--")+"/100";
+  document.getElementById("healthNote").textContent=h.note||"";
+  document.getElementById("openPl").textContent=money(l.open_pl);
+  document.getElementById("openPl").className="value "+cls(l.open_pl);
+
+  const labels=eq.map(x=>x.timestamp);
+  const datasets=[
+    {label:"Portfolio Value",data:eq.map(x=>x.portfolio_value),tension:.35,pointRadius:2},
+    {label:"Open P/L",data:eq.map(x=>x.open_pl),tension:.35,pointRadius:2,yAxisID:"y1"}
+  ];
+  const options={responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},scales:{x:{ticks:{maxTicksLimit:8}},y:{position:"left"},y1:{position:"right",grid:{drawOnChartArea:false}}}};
+  if(!chart){chart=new Chart(document.getElementById("chart"),{type:"line",data:{labels,datasets},options});}
+  else{chart.data.labels=labels;chart.data.datasets=datasets;chart.update();}
+
+  document.getElementById("decisionReplay").innerHTML=(lab.decision_replay||[]).map(x=>`
+    <div style="padding:7px 0;border-bottom:1px solid rgba(255,255,255,.08)">
+      <span class="chip ${x.tone||'info'}">${x.label||'LOG'}</span>${x.line||''}
+    </div>
+  `).join("") || "No decision replay yet.";
+
+  document.getElementById("candidateFeed").innerHTML=(lab.candidate_feed||[]).map(x=>`
+    <tr><td>${x.symbol||"-"}</td><td>${x.score||"-"}</td><td>${x.reason||"-"}</td></tr>
+  `).join("") || "<tr><td colspan='3'>No candidates yet.</td></tr>";
+
+  document.getElementById("positions").innerHTML=(lab.positions||[]).map(p=>`
+    <tr>
+      <td>${p.symbol||""}</td>
+      <td>${Number(p.qty||0).toFixed(2)}</td>
+      <td class="${cls(p.unrealized_pl)}">${money(p.unrealized_pl)}</td>
+      <td class="${cls(p.unrealized_plpc)}">${pct(p.unrealized_plpc)}</td>
+    </tr>
+  `).join("") || "<tr><td colspan='4'>No open positions.</td></tr>";
+}
+load();
+setInterval(load,10000);
+</script>
+</body>
+</html>
+""")
+'''
+
+Path("/home/ubuntu/trading-bot/profit_lab_routes.py").write_text(code)
+print("DONE: Clean Profit Lab rebuilt")
+print("NEXT:")
+print("python3 -m py_compile profit_lab_routes.py")
+print("sudo systemctl restart tradebot-dashboard")

@@ -1,0 +1,144 @@
+from flask import Flask, render_template, jsonify, request, Response
+import json
+import os
+from pathlib import Path
+from functools import wraps
+
+app = Flask(__name__)
+
+ROOT = Path(__file__).resolve().parent.parent
+RESEARCH = ROOT / "static" / "research"
+
+
+def load_json(name):
+    path = RESEARCH / name
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text())
+    except Exception as e:
+        return {"error": str(e), "file": name}
+
+
+def dashboard_data():
+    return {
+        "ai": load_json("ai_summary_latest.json"),
+        "alerts": load_json("notifications_latest.json"),
+        "market": load_json("market_intelligence_latest.json"),
+        "overnight": load_json("overnight_brief_latest.json"),
+        "sell": load_json("sell_intelligence_latest.json"),
+        "rotation": load_json("rotation_engine_latest.json"),
+        "performance": load_json("rotation_performance_latest.json"),
+        "shadow": load_json("shadow_capital_allocator_latest.json"),
+        "regime": load_json("market_regime_filter_latest.json"),
+        "assistant": load_json("ponder_assistant_latest.json"),
+        "achievements": load_json("achievements_latest.json"),
+        "decisions": load_json("decision_engine_latest.json"),
+    }
+
+
+def auth_enabled():
+    return bool(os.getenv("DASHBOARD_USER") and os.getenv("DASHBOARD_PASS"))
+
+
+def check_auth(username, password):
+    return (
+        username == os.getenv("DASHBOARD_USER")
+        and password == os.getenv("DASHBOARD_PASS")
+    )
+
+
+def auth_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if not auth_enabled():
+            return fn(*args, **kwargs)
+
+        auth = request.authorization
+        if auth and check_auth(auth.username, auth.password):
+            return fn(*args, **kwargs)
+
+        return Response(
+            "Login required",
+            401,
+            {"WWW-Authenticate": 'Basic realm="Ponder Invest AI"'},
+        )
+
+    return wrapper
+
+
+@app.route("/")
+@auth_required
+def dashboard():
+    return render_template("dashboard.html", data=dashboard_data())
+
+
+@app.route("/research")
+@auth_required
+def research():
+    return render_template("research.html", data=dashboard_data())
+
+
+@app.route("/assistant")
+@auth_required
+def assistant():
+    data = dashboard_data()
+    return render_template("assistant.html", ai=data["ai"], assistant=data["assistant"])
+
+
+@app.route("/learning")
+@auth_required
+def learning():
+    data = dashboard_data()
+    return render_template(
+        "learning.html",
+        achievements=data["achievements"],
+        performance=data["performance"],
+    )
+
+
+@app.route("/settings")
+@auth_required
+def settings():
+    return render_template("settings.html")
+
+
+@app.route("/api/dashboard")
+@auth_required
+def api_dashboard():
+    return jsonify(dashboard_data())
+
+
+@app.route("/debug-snapshot")
+@auth_required
+def debug_snapshot():
+    data = dashboard_data()
+    files = {}
+    for rel in [
+        "new_ponder_site/app.py",
+        "new_ponder_site/templates/base.html",
+        "new_ponder_site/templates/dashboard.html",
+        "new_ponder_site/templates/research.html",
+        "new_ponder_site/templates/assistant.html",
+        "new_ponder_site/templates/learning.html",
+        "new_ponder_site/templates/settings.html",
+        "new_ponder_site/static/style.css",
+    ]:
+        p = ROOT / rel
+        files[rel] = p.read_text()[:12000] if p.exists() else "MISSING"
+
+    return render_template("debug_snapshot.html", data=data, files=files)
+
+
+@app.route("/health")
+def health():
+    return {
+        "status": "ok",
+        "site": "new_ponder_site",
+        "research_path": str(RESEARCH),
+        "auth_enabled": auth_enabled(),
+    }
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5050)

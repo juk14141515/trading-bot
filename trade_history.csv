@@ -1,0 +1,3 @@
+timestamp,symbol,side,qty,price,reason,score,pnl,pnl_pct
+2026-05-01T13:30:31.564683,NVDA,sell,70.004285918,201.05,fast_cut_loss_-4.30%,,-625.8383161069198,-0.04257345587885136
+2026-05-01T17:34:22.331347,AMD,buy,28,360.29,buy order submitted,72.5,,

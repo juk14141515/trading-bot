@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Snapshot</h1>
+<p class="muted">One-click context for the next debugging or upgrade chat.</p>
+
+<section class="card highlight">
+  <h2>Copy for Codex / ChatGPT</h2>
+  <button onclick="copyPonderSnapshot()">Copy Snapshot</button>
+  <p class="muted">This includes bot status, capital, scanner, rotation, sell pressure, shadow action, and module health.</p>
+</section>
+
+<section class="card">
+  <h2>Current Snapshot</h2>
+  <pre>{{ snapshot | tojson(indent=2) }}</pre>
+</section>
+{% endblock %}

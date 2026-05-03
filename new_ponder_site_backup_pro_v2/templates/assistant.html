@@ -1,0 +1,31 @@
+
+{% extends "base.html" %}
+{% block content %}
+<h1>🐕 Ask Ponder</h1>
+<p class="muted">Ponder is your research-only trading assistant and system overseer.</p>
+
+<section class="grid">
+  <div class="card"><h3>Mode</h3><div class="big">{{ ai.get("key_readout", {}).get("regime", "—") }}</div><p>Ponder watches risk first.</p></div>
+  <div class="card"><h3>News Impact</h3><div class="big">{{ ai.get("key_readout", {}).get("news_impact", "—") }}</div><p>High news = fewer forced trades.</p></div>
+  <div class="card"><h3>Learning</h3><div class="big">{{ ai.get("key_readout", {}).get("pending_evaluations", "—") }}</div><p>Pending outcomes.</p></div>
+</section>
+
+<section class="card">
+  <h2>Quick Questions</h2>
+  <button onclick="answer('why_no_trade')">Why didn’t you trade?</button>
+  <button onclick="answer('what_to_do')">What should I do now?</button>
+  <button onclick="answer('biggest_risk')">Biggest risk?</button>
+  <button onclick="answer('plain_english')">Explain simply</button>
+</section>
+
+<section class="card highlight" id="answer">Click a question and Ponder will answer from current research data.</section>
+
+<script>
+const answers = {{ assistant.get("answers", {}) | tojson }};
+const fallback = {{ ai.get("action_items", []) | tojson }};
+function answer(key){
+  const items = answers[key] || fallback || ["No answer yet."];
+  document.getElementById("answer").innerHTML = "<ul>" + items.map(x => `<li>${x}</li>`).join("") + "</ul>";
+}
+</script>
+{% endblock %}

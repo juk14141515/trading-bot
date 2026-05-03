@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Ponder Invest AI</h1>
+<p class="muted">Clean dashboard prototype. This does not place trades.</p>
+
+<section class="grid" id="dashboardCards"></section>
+
+<section class="card">
+  <h2>What Should I Do?</h2>
+  <ul id="actionItems"></ul>
+</section>
+
+<section class="card">
+  <h2>Plain-English Summary</h2>
+  <ul id="summaryItems"></ul>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>loadDashboard();</script>
+{% endblock %}

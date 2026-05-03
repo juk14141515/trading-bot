@@ -1,0 +1,2786 @@
+===== FILE STRUCTURE =====
+./calm_alive_ui_v1.py
+./trade_memory.py
+./profit_ops_routes.py.BASELINE_COHESIVE_20260501_191207
+./web_dashboard.py.bak_global_app_shell_v1_20260501_041047
+./profit_lab_routes.py.bak_decay_verdict_v1_20260501_040716
+./volatility.py
+./inject_profit_lab_ui_fix.py
+./shadow_capital_allocator_v1.py
+./inject_rotation_engine_v2_connected.py
+./inject_dashboard_pro_v2.py
+./web_dashboard.py.backup_render_fix
+./inject_scanner_v2_pullback.py
+./web_dashboard.py.bak_full_ponder_pro_v3_20260501_175409
+./profit_lab_routes.py.bak_rotation_engine_v1_20260501_042624
+./web_dashboard.py.backup_force_20260430_065206
+./profit_ops_analytics.py.bak_dashboard_safety_ui_v1_20260501_003933
+./test_finnhub.py
+./fix_duplicate_panels.py
+./best_strategy_config_v2.json
+./web_dashboard.py.bak_ponder_pro_v1_20260501_173931
+./ponder_full_snapshot.txt
+./fix_dashboard_env_service_v1.py
+./bot.py.bak_trade_logic_v1_20260501_003428
+./bot_backup_smart_push_20260430_235749.py
+./hard_patch_dashboard.py
+./profit_ops_routes.py.bak_ai_health_v3
+./inject_profit_lab_render_v1.py
+./profit_lab_routes.py.bak_ponder_brain_v3_20260501_034740
+./remove_exact_ai_health_bubble.py
+./rotation_engine_v2.py
+./web_dashboard.py.bak_disable_full_refresh_v1
+./web_dashboard.py.bak_no_login_ponder_moods
+./rotation_performance_tracker_v1.py
+./upgrade_external_ui_alive_v1.py
+./fix_scan_loop.py
+./install_clean_ponder_site_v1.py
+./rotation_performance_tracker_v2.py
+./metrics_tracker.py
+./web_dashboard.py.bak_profit_lab_v1_20260501_004739
+./profit_lab_routes.py.bak_clean_rebuild_20260501_041928
+./web_dashboard.py.bak_profit_ops_v3_20260501_003012
+./overnight_brief_v1.py.bak_news_futures_v1
+./inject_profit_lab_layout_fix_v1.py
+./inject_profit_lab_layout_fix_v2.py
+./profit_lab_routes.bak_ui_final
+./inject_rotation_suggestions_v1.py
+./research_pipeline.log
+./ponder_assistant_v1.py
+./force_hover_v6.py
+./bot_backup_scanner_v2_20260430_211606.py
+./adaptive_learning_backup_v2_20260430_233736.py
+./profit_lab_routes.py.bak_global_app_shell_v1_20260501_041047
+./profit_lab_routes.py.bak_decision_feed_v1_20260501_033121
+./backtest_results_v1.csv
+./force_ai_summary_insert.py
+./inject_profit_lab_full_fix_v2.py
+./web_dashboard.py.bak_before_ponder_v3
+./profit_ops_routes.py.BASELINE_COHESIVE_20260501_191109
+./fix_profit_lab_stray_text_v2.py
+./inject_rotation_fix_decision_v3.py
+./profit_lab_routes.py.bak_rotation_json_v5_20260501_043718
+./top_10_candidates_v1.json
+./profit_ops_routes.py.bak_ponder_pro_v2_20260501_174629
+./install_new_ponder_site.py
+./profit_lab_routes.py.bak_stray_fix_v2_20260501_041536
+./profit_lab_routes.py.bak_cleanup_20260501_034829
+./inject_learning_dashboard_v2.py
+./backtest_sim_v1.py
+./rotation_engine_v3.py
+./research_pipeline_v1.py
+./web_dashboard.py.bak_ai_health_line_remove
+./web_dashboard.py.bak_before_modular_ponder_v2
+./risk_manager.py
+./rollback_clean_ponder_site_v1.sh
+./small_cap_scanner.py
+./bot.py.STABLE_AFTER_FIX_20260501_231547
+./profit_lab_routes.py.bak_stray_fix_20260501_041336
+./disable_full_page_refresh_v1.py
+./profit_lab_routes.py.bak_learning_v2_20260501_050246
+./web_dashboard_pre_hardfix_20260430_213301.py
+./enhanced_scanner.py
+./inject_profit_lab_clean_v3.py
+./profit_lab_routes.py.BASELINE_COHESIVE_20260501_191207
+./web_dashboard_broken_before_repair_20260430_213144.py
+./profit_ops_routes.py.bak_safe_visual_cleanup_v2
+./inject_rotation_engine_v1.py
+./inject_global_app_shell_v1.py
+./install_rotation_ui_v1.py
+./learning_shadow.py
+./research_pipeline_v1.py.bak_ponder_assistant
+./web_dashboard.py.bak_ponder_pro_v2_20260501_174629
+./web_dashboard.py
+./rebuild_dashboard_clean.py
+./inject_rotation_engine_v2_decay_trend_confidence.py
+./log.txt
+./profit_lab_routes.py.bak_rotation_v2_decay_20260501_044329
+./profit_lab_routes.py.bak_profit_lab_html_fix_v1_20260501_030303
+./new_ponder_site_backup_sleep_v1/templates/research.html
+./new_ponder_site_backup_sleep_v1/templates/settings.html
+./new_ponder_site_backup_sleep_v1/templates/base.html
+./new_ponder_site_backup_sleep_v1/templates/assistant.html
+./new_ponder_site_backup_sleep_v1/templates/learning.html
+./new_ponder_site_backup_sleep_v1/templates/dashboard.html
+./new_ponder_site_backup_sleep_v1/app.py
+./new_ponder_site_backup_sleep_v1/static/style.css
+./new_ponder_site_backup_sleep_v1/site_config.json
+./position_timers.json
+./research_pipeline_v1.py.bak_shadow_allocator
+./inject_learning_shadow_v1.py
+./web_dashboard.py.bak_clean_site_v1
+./bot_backup_before_rotation_inject_20260430_204125.py
+./upgrade_regime_news_impact_v1.py
+./repair_dashboard_mobile_login.py
+./strategy_optimizer_v2_fast.py
+./scoring_engine.py
+./rewrite_dashboard_clean.py
+./profit_ops_routes.py.bak_ponder_ui_loader_v1
+./notification_engine_v1.py
+./fix_dashboard_render.py
+./web_dashboard.py.bak_global_ui_loader_calm_v1
+./reset_ponder_ui_clean_v2.py
+./learning_shadow_log.csv
+./install_blackout_theme_v1.py
+./profit_lab_routes.py.bak_clean_rebuild_20260501_033924
+./bot_backup_qol_history_20260430_233032.py
+./inject_ponder_brain_upgrade_v2.py
+./force_hover_real_v5.py
+./web_dashboard.py.bak_exact_ui_restore_v1
+./rotation_tuner_v1.py
+./fix_dashboard_ai_summary.py
+./today.log
+./strategy_optimizer_v1.py
+./web_dashboard.py.backup_clean_20260430_072659
+./make_overnight_live_v1.py
+./profit_lab_routes.py.bak_command_bar_v1
+./bot_backup_fix_watchlist_20260430_211252.py
+./trade_guard_v1.py
+./hard_fix_dashboard.py
+./bot_backup_adaptive_learning_20260430_210723.py
+./research_pipeline_v1.py.bak_ponder_assistant_v1
+./web_dashboard_backup_pro_v2_20260430_212259.py
+./bot_backup_push_alerts_20260430_234332.py
+./fix_ui_consistency_v1.py
+./profit_lab_routes.py.bak_ponder_pro_v1_20260501_173931
+./research_pipeline_v1.py.bak_ai_summary
+./fix_motion_selectors_v3.py
+./profit_lab_routes.py.bak_layout_fix_v2_20260501_033433
+./inject_dashboard_intelligence.py
+./inject_profit_lab_v1.py
+./profit_lab_routes.py.bak_rotation_suggestions_v1_20260501_035343
+./install_ponder_modular_ui_v3.py
+./install_premium_ui_v1.py
+./profit_ops_routes.py.bak_ponder_pro_v1_20260501_173931
+./research_pipeline_v1.py.bak_rotation_v2
+./web_dashboard_backup_qol_history_20260430_233032.py
+./profit_lab_routes.py.bak_rotation_engine_v2_20260501_043037
+./exit_manager.py
+./profit_lab_routes.py.bak_motion_polish_v1
+./fix_momentum_and_news_v1.py
+./bot_backup_alerts_20260430_212949.py
+./profit_lab_routes.py.bak_ai_health_v3
+./fix_exact_ui_restore_v1.py
+./profit_lab_routes.py.bak_ponder_ui_loader_v1
+./templates/research.html
+./templates/settings.html
+./templates/base.html
+./templates/learning.html
+./templates/dashboard.html
+./market_regime_filter_v1.py.bak_news_impact
+./web_dashboard.py.bak_exact_ai_health_bubble
+./web_dashboard.py.bak_login_guard_precise
+./bot_backup_structured_logs_20260430_210354.py
+./profit_ops_routes.py.bak_full_ponder_pro_v3_20260501_175409
+./profit_lab_routes.py.bak_ponder_brain_v1_20260501_034255
+./overnight_brief_v1.py.bak_dotenv_path
+./fix_main_history_card_hover_v2.py
+./profit_ops_analytics.py.bak_replay_spy_session_v1_20260501_004156
+./overnight_brief_v1.py.bak_load_dotenv
+./inject_safe_visual_cleanup_v2.py
+./bot.py.backup_scoring_2026-04-30_0313
+./remove_ai_health_bubble_lines.py
+./install_ponder_site_v4.py
+./fix_float_warning_v1.py
+./rebuild_settings_controls_v1.py
+./install_external_ui_layer_v1.py
+./bot.py.bak_fix_buy_decision_indent_20260501_045426
+./inject_runtime_ui_loader_v1.py
+./fix_ui_artifacts.py
+./web_dashboard.py.bak_fix_clean_routes_v1
+./inject_rotation_json_v5.py
+./research_pipeline_v1.py.bak_sell_intel_v1
+./web_dashboard.py.bak_visual_cleanup_css_v1
+./web_dashboard.py.bak_profit_ops_lite_20260501_001736
+./momentum.py
+./profit_lab_routes.py.bak_profit_lab_render_v1_20260501_025206
+./profit_ops_routes.py.bak_motion_polish_v1
+./inject_learning_v2_performance.py
+./inject_profit_lab_ui_fix_routes.py
+./ponder_assistant_v1.py.bak_dog_theme
+./profit_lab_routes.py.bak_profit_lab_live_v2_20260501_005953
+./profit_lab_routes.py.bak_profit_lab_live_v2_20260501_005905
+./web_dashboard.py.BASELINE_COHESIVE_20260501_191207
+./web_dashboard.py.backup_ai_safe_20260430_071021
+./inject_scanner_v2.py
+./profit_lab_routes.py.bak_ui_cleanup_20260501_035024
+./upgrade_live_pl_v1.py
+./market_scanner_results_v1.csv
+./__pycache__/profit_lab_routes.cpython-310.pyc
+./__pycache__/scoring_engine.cpython-310.pyc
+./__pycache__/rotation_engine_v2.cpython-310.pyc
+./__pycache__/research_pipeline_v1.cpython-310.pyc
+./__pycache__/risk_manager.cpython-310.pyc
+./__pycache__/rotation_performance_tracker_v1.cpython-310.pyc
+./__pycache__/profit_ops_routes.cpython-310.pyc
+./__pycache__/metrics_tracker.cpython-310.pyc
+./__pycache__/adaptive_learning.cpython-310.pyc
+./__pycache__/rotation_performance_tracker_v2.cpython-310.pyc
+./__pycache__/enhanced_scanner.cpython-310.pyc
+./__pycache__/rotation_engine_v3.cpython-310.pyc
+./__pycache__/trade_memory.cpython-310.pyc
+./__pycache__/small_cap_scanner.cpython-310.pyc
+./__pycache__/dashboard_safety_ui.cpython-310.pyc
+./__pycache__/ai_summary_layer_v1.cpython-310.pyc
+./__pycache__/ponder_assistant_v1.cpython-310.pyc
+./__pycache__/push_alerts.cpython-310.pyc
+./__pycache__/trade_guard_v1.cpython-310.pyc
+./__pycache__/exit_manager.cpython-310.pyc
+./__pycache__/profit_ops_analytics.cpython-310.pyc
+./__pycache__/rotation_manager.cpython-310.pyc
+./__pycache__/volatility.cpython-310.pyc
+./__pycache__/learning_shadow.cpython-310.pyc
+./__pycache__/overnight_brief_v1.cpython-310.pyc
+./__pycache__/shadow_capital_allocator_v1.cpython-310.pyc
+./__pycache__/rotation_tuner_v1.cpython-310.pyc
+./__pycache__/market_regime_filter_v1.cpython-310.pyc
+./__pycache__/backtest.cpython-310.pyc
+./__pycache__/web_dashboard.cpython-310.pyc
+./__pycache__/achievements_engine_v1.cpython-310.pyc
+./install_ponder_modular_ui_v2.py
+./inject_profit_lab_positions_v1.py
+./venv/bin/curl-cffi
+./venv/bin/activate.fish
+./venv/bin/gunicornc
+./venv/bin/sample
+./venv/bin/pwiz
+./venv/bin/pip3.10
+./venv/bin/wsdump
+./venv/bin/pip
+./venv/bin/gunicorn
+./venv/bin/f2py
+./venv/bin/activate
+./venv/bin/pip3
+./venv/bin/markdown-it
+./venv/bin/flask
+./venv/bin/dotenv
+./venv/bin/normalizer
+./venv/bin/activate.csh
+./venv/bin/numpy-config
+./venv/bin/pygmentize
+./venv/bin/Activate.ps1
+./venv/pyvenv.cfg
+./web_dashboard.py.bak_ponder_ui_loader_v1
+./market_scanner_v2.py
+./inject_upgrade_v2.py
+./install_learning_panel_v1.py
+./profit_ops_routes.py.bak_profit_lab_live_v2_20260501_005953
+./fix_profit_lab_visual_artifacts_v3.py
+./fix_watchlist_syntax.py
+./profit_ops_routes.py.bak_profit_ops_v3_20260501_003012
+./web_dashboard.py.bak_dashboard_safety_ui_v1_20260501_003933
+./web_dashboard.py.bak_motion_polish_v1
+./trade_history.csv
+./rotation_engine_state.json
+./upgrade_overnight_news_futures_v1.py
+./profit_lab_routes.py.bak_ponder_pro_v2_20260501_174629
+./bot_status.py
+./fix_finnhub_env_v1.py
+./profit_lab_routes.py
+./.env
+./enhanced_scanner_backup_v2_20260430_211606.py
+./inject_kill_ai_health_bubble_v3.py
+./bot_backup_before_strategy_upgrade.py
+./profit_ops_routes.py.bak_command_bar_v1
+./profit_lab_routes.py.bak_profit_lab_positions_v1_20260501_004944
+./adaptive_learning.py
+./inject_dashboard_safety_ui_v1.py
+./bot.py.bak_profit_ops_lite_20260501_001736
+./overnight.log
+./bot.py.bak_fix_momentum_news_20260501_173337
+./profit_lab_routes.py.bak_cleanup_20260501_034926
+./web_dashboard.py.bak_before_ponder_site_v4
+./nuclear_fix_dashboard.py
+./upgrade_priority_cards.py
+./inject_full_ponder_pro_v3.py
+./research_pipeline_v1.py.bak_perf_v2
+./research_pipeline_v1.py.bak_overnight_v1
+./dashboard.py
+./profit_lab_routes.py.bak_exact_ui_restore_v1
+./web_dashboard_backup_perf_intel_20260430_212542.py
+./inject_profit_lab_html_fix_v1.py
+./market_regime_filter_v1.py
+./inject_ponder_motion_polish_v1.py
+./research_pipeline_v1.py.bak_achievements
+./profit_lab_routes.py.bak_force_rotation_json_v4_20260501_043541
+./web_dashboard.bak_ui_final
+./profit_ops_routes.py.bak_exact_ui_restore_v1
+./web_dashboard.py.bak_safe_visual_cleanup_v2
+./install_sell_intel_ui_v1.py
+./upgrade_new_ponder_site_sleep_v1.py
+./profit_ops_routes.bak_ui_final
+./top_10_candidates_v2.json
+./rotation_engine_v1.py
+./profit_ops_routes.py
+./bot_backup_full_upgrade_20260430_204518.py
+./bot_backup_learning_v2_20260430_233736.py
+./learning_shadow.py.bak_learning_v2_20260501_050246
+./fix_buy.py
+./profit_ops_routes.py.bak_profit_lab_live_v2_20260501_005905
+./static/ponder_ui.js.bak_intelligence_ui_v2
+./static/ponder_ui.js.bak_regime_ui
+./static/ponder_ui.js.bak_ui_simplify
+./static/ponder3/theme.css
+./static/ponder3/config.json
+./static/ponder3/app.js
+./static/ponder_ui.js.bak_final_fix_v1
+./static/ponder_ui.js.bak_ponder_boot_global
+./static/ponder_ui.js.bak_brain_summary
+./static/ponder_ui.js.bak_restore_ponder_avatar_hub
+./static/ponder_ui.js.bak_login_widget_fix
+./static/ponder_ui.js.BASELINE_COHESIVE_20260501_191109
+./static/ponder_ui.js.bak_alive_v1
+./static/ponder_ui.js.bak_soft_refresh_v1
+./static/ponder4/theme.css
+./static/ponder4/app.js
+./static/ponder4/settings.json
+./static/ponder_ui.js.bak_overnight_ui_v1
+./static/ponder_ui.js.bak_old_monolith_before_modular_v2
+./static/ponder_ui.js.bak_calm_motion_v2
+./static/ponder_ui.js.bak_main_history_hover_v2
+./static/ponder_ui.js.bak_ui_consistency_v1
+./static/ponder_ui.js.bak_rebuild_settings_controls_v1
+./static/ponder_ui.js.bak_learning_panel_v1
+./static/ponder_ui.js
+./static/ponder_ui.js.bak_v6
+./static/ponder_ui.js.bak_overnight_live_v1
+./static/ponder_ui.js.bak_achievements_ui
+./static/ponder_ui.js.bak_dedupe_ai_notifications
+./static/ponder_ui.js.bak_what_should_i_do
+./static/ponder_ui.js.bak_blackout_theme_v1
+./static/ponder_ui.js.bak_live_alert_toasts
+./static/ponder_ui.js.bak_before_ai_notifications_restore
+./static/ponder_ui.js.STABLE_AFTER_FIX_20260501_231547
+./static/ponder_ui.js.bak_livepl
+./static/ponder_ui.js.bak_before_clean_v2
+./static/research/overnight_brief_20260502_004324.json
+./static/research/market_intelligence_20260502_011703.json
+./static/research/rotation_engine_v3_20260502_024156.json
+./static/research/rotation_engine_latest.json
+./static/research/notifications_latest.json
+./static/research/sell_intelligence_20260502_012106.json
+./static/research/market_intelligence_20260502_035733.json
+./static/research/market_intelligence_20260502_004412.json
+./static/research/market_intelligence_20260501_234713.json
+./static/research/rotation_engine_v2_20260502_011656.json
+./static/research/rotation_engine_v3_20260502_012040.json
+./static/research/market_intelligence_20260502_014605.json
+./static/research/rotation_suggestions_log.jsonl
+./static/research/overnight_brief_20260502_004848.json
+./static/research/market_regime_filter_latest.json
+./static/research/overnight_brief_latest.json
+./static/research/achievements_latest.json
+./static/research/market_intelligence_20260501_234725.json
+./static/research/sell_intelligence_20260502_014216.json
+./static/research/rotation_engine_v3_20260502_014933.json
+./static/research/overnight_brief_20260502_011654.json
+./static/research/overnight_brief_20260502_020405.json
+./static/research/sell_intelligence_20260502_005653.json
+./static/research/market_intelligence_20260502_014937.json
+./static/research/sell_intelligence_20260502_014932.json
+./static/research/overnight_brief_20260502_014214.json
+./static/research/rotation_engine_20260502_010212.json
+./static/research/overnight_brief_20260502_004412.json
+./static/research/overnight_brief_20260502_004945.json
+./static/research/rotation_engine_v3_20260502_020522.json
+./static/research/ai_summary_latest.json
+./static/research/overnight_brief_20260502_020520.json
+./static/research/rotation_engine_v3_20260502_035719.json
+./static/research/rotation_engine_v3_20260502_012106.json
+./static/research/overnight_brief_20260502_005651.json
+./static/research/overnight_brief_20260502_020225.json
+./static/research/market_intelligence_20260502_020527.json
+./static/research/sell_intelligence_20260502_012239.json
+./static/research/sell_intelligence_20260502_020522.json
+./static/research/market_intelligence_latest.json
+./static/research/market_intelligence_20260502_014217.json
+./static/research/overnight_brief_20260502_014602.json
+./static/research/overnight_brief_20260502_012104.json
+./static/research/overnight_brief_20260502_012237.json
+./static/research/rotation_engine_v3_20260502_014216.json
+./static/research/ponder_assistant_latest.json
+./static/research/rotation_engine_v3_20260502_012152.json
+./static/research/sell_intelligence_20260502_035718.json
+./static/research/shadow_capital_allocator_latest.json
+./static/research/sell_intelligence_20260502_011656.json
+./static/research/market_intelligence_20260502_012257.json
+./static/research/market_intelligence_20260502_005653.json
+./static/research/market_intelligence_20260502_012119.json
+./static/research/rotation_engine_v3_20260502_014604.json
+./static/research/market_intelligence_20260501_234310.json
+./static/research/rotation_engine_v3_20260502_012239.json
+./static/research/rotation_engine_v2_20260502_011636.json
+./static/research/market_intelligence_20260501_233958.json
+./static/research/sell_intelligence_latest.json
+./static/research/sell_intelligence_20260502_005513.json
+./static/research/overnight_brief_20260502_015744.json
+./static/research/rotation_performance_v2_history.jsonl
+./static/research/rotation_engine_v3_20260502_015400.json
+./static/research/sell_intelligence_20260502_014604.json
+./static/research/overnight_brief_20260502_004624.json
+./static/research/market_intelligence_20260502_024205.json
+./static/research/overnight_brief_20260502_014930.json
+./static/research/rotation_performance_latest.json
+./static/research/sell_intelligence_20260502_024156.json
+./static/ponder_ui.js.bak_research_hub
+./static/ponder_ui.js.bak_main_history_hover_v1
+./static/ponder_ui.js.bak_ponder_moods_v1
+./static/ponder_ui.js.bak_ponder_avatar_fix
+./static/ponder_ui.js.BASELINE_COHESIVE_20260501_191207
+./static/ponder_ui.js.bak_regime_ui_patch
+./static/ponder_ui.js.bak_market_intel_v1
+./static/ponder_ui.js.bak_calm_alive_v1
+./static/ponder_ui.js.bak_rotation_ui_v1
+./static/ponder_ui.js.bak_v4
+./static/ponder_ui.js.bak_priority
+./static/ponder_ui.js.bak_sell_intel_ui_v1
+./static/ponder_ui.js.bak_calm_hover_v1
+./static/ponder_ui.js.bak_ponder_interactive_v1
+./static/ponder_ui.js.bak_hub_polish
+./static/ponder_ui.js.bak_safe_fix
+./static/ponder_ui.js.bak_panel_refresh_hover_v1
+./static/ponder_ui.js.bak_settings_fix_v1
+./static/ponder_ui.js.bak_premium_v1
+./static/ponder_ui.js.bak_v5
+./static/ponder_ui.js.bak_ponder_assistant_ui
+./static/ponder_ui.js.bak_notifications_ui
+./static/ponder_ui.js.bak_popups_ponder_safe_v1
+./static/ponder/achievements.js
+./static/ponder/core.js
+./static/ponder/theme.css
+./static/ponder/assistant.js
+./static/ponder/hub.js
+./static/ponder/config.json
+./static/ponder/alerts.js
+./static/ponder_ui.js.bak_shadow_dashboard
+./static/ponder_ui.js.bak_fix_render_notifications
+./static/ponder_ui.js.bak_full_reset
+./static/ponder_ui.js.bak_ponder_avatar
+./static/ponder_ui.js.bak_motion_selectors_v3
+./static/ponder_ui.js.bak_ai_summary_hub
+./fix_backtest_close_v1.py
+./backtest_threshold_test_v1.py
+./bot.py.save
+./web_dashboard.py.bak_runtime_ui_loader_v1
+./inject_ponder_ui_loader_v1.py
+./bot.py.bak_fix_learning_indent_20260501_045307
+./rollback_ponder_site_v4.sh
+./equity_history.csv
+./inject_replay_spy_session_v1.py
+./web_dashboard_backup_learning_v2_20260430_233736.py
+./web_dashboard_backup_mobile_login_20260430_212949.py
+./web_dashboard_backup_intelligence_20260430_210131.py
+./inject_trade_logic_v1.py
+./profit_ops_analytics.py
+./ponder_json_handoff.txt
+./fix_learning_shadow_indent_v1.py
+./web_dashboard.py.bak_force_ui_restore_v1
+./overnight_brief_v1.py
+./profit_lab_routes.py.bak_layout_fix_20260501_033326
+./inject_ponder_pro_v2_all_pages.py
+./profit_lab_routes.py.bak_rotation_confidence_v2_20260501_035814
+./web_dashboard.py.bak_login_fix_final
+./inject_ponder_brain_panel_v1.py
+./web_dashboard.py.bak_ai_health_v3
+./inject_dashboard_clean_ui.py
+./profit_lab_routes.py.bak_cleanup_labels_20260501_041157
+./inject_overnight_into_pipeline_v1.py
+./inject_trade_frequency.py
+./web_dashboard.py.bak_command_bar_v1
+./backtests/backtest_threshold75_20260501_231547.csv
+./install_soft_refresh_v1.py
+./web_dashboard_backup.py
+./market_scanner_results_v2.csv
+./fix_dotenv_path_v1.py
+./inject_profit_lab_decision_feed_v1.py
+./install_overnight_ui_v1.py
+./inject_unified_command_bar_v1.py
+./clean_site/templates/research.html
+./clean_site/templates/settings.html
+./clean_site/templates/base.html
+./clean_site/templates/assistant.html
+./clean_site/templates/learning.html
+./clean_site/templates/dashboard.html
+./clean_site/app.py
+./inject_ui_enhancer_v1.py
+./bot.py
+./bot.py.bak_learning_shadow_v1_20260501_045003
+./risk_manager_backup_trade_frequency_20260430_211050.py
+./research_pipeline_v1.py.bak_regime_filter_manual
+./web_dashboard.py.bak_cache_bust_restore_hub
+./fix_market_closed.py
+./inject_decay_verdict_v1.py
+./profit_ops_analytics.py.bak_profit_ops_v3_20260501_003012
+./fix_main_history_card_hover_v1.py
+./profit_lab_routes.py.bak_force_ui_restore_v1
+./new_ponder_site_backup_max_v3/templates/research.html
+./new_ponder_site_backup_max_v3/templates/settings.html
+./new_ponder_site_backup_max_v3/templates/base.html
+./new_ponder_site_backup_max_v3/templates/assistant.html
+./new_ponder_site_backup_max_v3/templates/learning.html
+./new_ponder_site_backup_max_v3/templates/dashboard.html
+./new_ponder_site_backup_max_v3/app.py
+./new_ponder_site_backup_max_v3/static/style.css
+./new_ponder_site_backup_max_v3/site_config.json
+./inject_restore_live_data_v1.py
+./web_dashboard.py.backup_ai_safe_20260430_070957
+./inject_qol_safety_history.py
+./fix_ui_loader_final.py
+./inject_profit_lab_clean_rebuild.py
+./push_alerts.py
+./fix_settings_panel_v1.py
+./profit_ops_routes.py.bak_profit_ops_v2_20260501_002341
+./inject_remove_floating_ai_health.py
+./inject_mobile_alerts_login.py
+./profit_lab_routes.py.bak_rotation_fix_v3_20260501_043402
+./inject_profit_ops_v3.py
+./inject_profit_lab_js_guard_v1.py
+./web_dashboard.py.BASELINE_COHESIVE_20260501_191109
+./inject_profit_lab_app_ui_v1.py
+./profit_ops_routes.py.bak_dashboard_safety_ui_v1_20260501_003933
+./fix_profit_lab_stray_text_v1.py
+./achievements_engine_v1.py
+./inject_adaptive_learning.py
+./profit_ops_analytics.py.bak_profit_ops_v2_20260501_002341
+./install_intelligence_ui_v2.py
+./fix_ui_motion_v4.py
+./inject_profit_ops_v2.py
+./dashboard_safety_ui.py
+./web_dashboard.py.bak_profit_ops_v2_20260501_002341
+./inject_profit_ops_lite.py
+./profit_lab_routes.py.BASELINE_COHESIVE_20260501_191109
+./add_calm_motion_v2.py
+./health_check.sh
+./profit_lab_routes.py.bak_visual_cleanup_css_v1
+./backtest_sim_v1_tmp.py
+./fix_panel_refresh_hover_v1.py
+./bot.py.backup_scanloop_20260430_044413
+./pnl_dashboard.py
+./.gitignore
+./inject_performance_intelligence.py
+./profit_lab_routes.py.bak_full_ponder_pro_v3_20260501_175409
+./market_scanner_v1.py
+./strategy_config.json
+./profit_lab_routes.py.bak_ponder_brain_upgrade_v2_20260501_034559
+./bot.py.backup_fix
+./web_dashboard.py.backup_ai_safe_20260430_070940
+./profit_lab_routes.py.bak_full_fix_20260501_030507
+./inject_structured_logs.py
+./.git/description
+./.git/hooks/pre-applypatch.sample
+./.git/hooks/pre-push.sample
+./.git/hooks/fsmonitor-watchman.sample
+./.git/hooks/update.sample
+./.git/hooks/applypatch-msg.sample
+./.git/hooks/pre-merge-commit.sample
+./.git/hooks/pre-rebase.sample
+./.git/hooks/prepare-commit-msg.sample
+./.git/hooks/post-update.sample
+./.git/hooks/pre-commit.sample
+./.git/hooks/push-to-checkout.sample
+./.git/hooks/commit-msg.sample
+./.git/hooks/pre-receive.sample
+./.git/FETCH_HEAD
+./.git/index
+./.git/info/exclude
+./.git/HEAD
+./.git/config
+./.git/ORIG_HEAD
+./.git/packed-refs
+./.git/logs/HEAD
+./profit_lab_routes.py.bak_ponder_brain_v1_20260501_042715
+./ai_summary_layer_v1.py
+./profit_lab_routes.py.bak_profit_lab_js_guard_v1_20260501_025848
+./web_dashboard.py.backup_hardpatch_20260430_070307
+./web_dashboard.py.bak_modular_ui_v2_patch
+./profit_ops_routes.py.bak_visual_cleanup_css_v1
+./strategy_research_results_v2.csv
+./safe_add_ai_summary.py
+./bot_backup_trade_frequency_20260430_211050.py
+./profit_lab_routes.py.bak_visual_artifacts_v3_20260501_041600
+./inject_ponder_brain_v3.py
+./inject_ponder_pro_v1_ui.py
+./sell_intelligence_v1.py
+./upgrade_new_ponder_site_max_v3.py
+./upgrade_new_ponder_site_pro_v2.py
+./profit_lab_routes.py.bak_stray_fix_v2_20260501_041439
+./inject_rotation_confidence_v2.py
+./research_pipeline_v1.py.bak_rotation_v3
+./inject_profit_lab_live_v2.py
+./inject_rotation_system.py
+./force_ui_restore.py
+./web_dashboard.py.backup_ai_summary_20260430_065041
+./rotation_engine_v3.py.bak_sample_guard
+./profit_lab_routes.py.bak_safe_visual_cleanup_v2
+./inject_visual_cleanup_css_v1.py
+./rotation_performance_tracker_v1.py.bak_before_v2
+./rotation_manager.py
+./new_ponder_site_backup_pro_v2/templates/research.html
+./new_ponder_site_backup_pro_v2/templates/settings.html
+./new_ponder_site_backup_pro_v2/templates/base.html
+./new_ponder_site_backup_pro_v2/templates/assistant.html
+./new_ponder_site_backup_pro_v2/templates/learning.html
+./new_ponder_site_backup_pro_v2/templates/dashboard.html
+./new_ponder_site_backup_pro_v2/app.py
+./new_ponder_site_backup_pro_v2/static/style.css
+./new_ponder_site_backup_pro_v2/site_config.json
+./new_ponder_site_backup_pro_v2/new_ponder_site/app.py
+./new_ponder_site_backup_pro_v2/new_ponder_site/site_config.json
+./strategy_engine.py
+./inject_cleanup_stray_labels_v1.py
+./bot_backup_before_rotation_2026-04-30_2038.py
+./rotation_engine_v3.py.bak_regime_aware
+./fix_global_ui_loader_and_calm_hover_v1.py
+./profit_lab_routes.py.bak_app_ui_v1_20260501_040330
+./web_dashboard_backup_clean_ui_20260430_205742.py
+./profit_ops_routes.py.bak_trade_logic_v1_20260501_003428
+./web_dashboard_broken_backup_20260430_213858.py
+./rotation_manager.py.bak_trade_logic_v1_20260501_003428
+./profit_ops_routes.py.bak_force_ui_restore_v1
+./inject_smart_push_alerts.py
+./rollback_ponder_v3_ui.sh
+./inject_force_rotation_engine_json_v4.py
+./profit_lab_routes.py.bak_ui_fix_routes_20260501_042315
+./profit_lab_routes.py.bak_clean_v3_20260501_033617
+./backtest_sim_v1.py.bak_close_fix_v1
+./bot_status.json
+./inject_sell_intel_pipeline_v1.py
+./profit_lab_routes.py.bak_learning_shadow_v1_20260501_045003
+./profit_ops_routes.py.bak_replay_spy_session_v1_20260501_004156
+./install_market_intel_dashboard_v1.py
+./backtest.py
+./new_ponder_site/templates/research.html
+./new_ponder_site/templates/settings.html
+./new_ponder_site/templates/base.html
+./new_ponder_site/templates/assistant.html
+./new_ponder_site/templates/learning.html
+./new_ponder_site/templates/dashboard.html
+./new_ponder_site/app.py
+./new_ponder_site/static/style.css
+./new_ponder_site/site_config.json
+./inject_push_alerts.py
+
+===== BOT CORE =====
+from learning_shadow import log_learning_event
+import time
+from datetime import datetime
+import requests
+import alpaca_trade_api as tradeapi
+import yfinance as yf
+import os
+import json
+
+def update_status(data):
+    try:
+        with open("bot_status.json", "w") as f:
+            json.dump(data, f, indent=4)
+    except Exception as e:
+        print("Status write error:", e)
+
+from dotenv import load_dotenv
+from scoring_engine import calculate_weighted_score
+from volatility import get_atr, calculate_position_size
+from small_cap_scanner import get_small_cap_candidates
+from rotation_manager import find_weakest_position, should_rotate
+from trade_guard_v1 import should_force_exit
+from rotation_tuner_v1 import approve_rotation
+from exit_manager import should_exit
+from enhanced_scanner import get_enhanced_candidates
+
+from alpaca.data.historical.news import NewsClient
+from alpaca.data.requests import NewsRequest
+
+from backtest import run_backtest
+from risk_manager import can_trade
+from trade_memory import record_trade
+from adaptive_learning import apply_adaptive_score, get_performance_summary, get_win_loss_summary
+from metrics_tracker import record_equity_snapshot
+from push_alerts import important_alert
+
+# ===== SETTINGS =====
+MAX_DAILY_LOSS_PERCENT = 0.02
+START_OF_DAY_EQUITY = None
+TRADING_HALTED = False
+
+load_dotenv()
+
+API_KEY = os.getenv("APCA_API_KEY_ID")
+SECRET_KEY = os.getenv("APCA_API_SECRET_KEY")
+BASE_URL = os.getenv("BASE_URL")
+
+strategy = run_backtest()
+print(f"Using strategy: {strategy}")
+
+FINNHUB_API_KEY = "d7ntn5hr01qs975tf2r0d7ntn5hr01qs975tf2rg"
+
+WATCHLIST = [
+    "AAPL", "AMZN", "NVDA", "MSFT", "GOOGL",
+    "META", "TSLA", "AMD", "PLTR", "SOFI",
+    "COIN", "RBLX", "U",
+    "NFLX", "ORCL", "UBER", "SHOP", "PYPL",
+    "SQ", "HOOD", "AFRM",
+    "NET", "DDOG", "CRWD", "PANW", "ZS",
+    "MDB", "APP", "UPST",
+    "DKNG", "ROKU",
+    "F", "GM", "T", "DIS"
+]
+
+PAPER_ACCOUNT_SIZE = 200000
+
+MAX_TOTAL_DEPLOYED_PERCENT = 0.30
+MAX_SINGLE_TRADE_PERCENT = 0.08
+MIN_TRADE_DOLLARS = 500
+
+STOP_LOSS_PERCENT = 0.06
+TAKE_PROFIT_PERCENT = 0.12
+MAX_POSITIONS = 3
+
+api = tradeapi.REST(API_KEY, SECRET_KEY, BASE_URL)
+news_client = NewsClient(api_key=API_KEY, secret_key=SECRET_KEY)
+
+last_buy_day = None
+
+ALERT_CACHE = {}
+
+
+def log(message):
+    with open("log.txt", "a") as f:
+        f.write(f"{datetime.now()} | {message}\n")
+def notify_discord(message):
+    url = os.getenv("DISCORD_WEBHOOK_URL")
+
+    try:
+        priority = "default"
+        tags = "chart_with_upwards_trend"
+
+        upper_msg = str(message).upper()
+
+        if "BOT ERROR" in upper_msg or "STOP_TRADING" in upper_msg or "EMERGENCY" in upper_msg:
+            priority = "urgent"
+            tags = "rotating_light"
+        elif "BUY" in upper_msg:
+            priority = "high"
+            tags = "moneybag"
+        elif "SELL" in upper_msg:
+            priority = "high"
+            tags = "warning"
+        elif "ROTATION" in upper_msg:
+            priority = "high"
+            tags = "twisted_rightwards_arrows"
+        elif "WEAK POSITION" in upper_msg:
+            priority = "high"
+            tags = "warning"
+        elif "SCANNER" in upper_msg:
+            priority = "default"
+            tags = "mag"
+
+        important_alert("Ponder Invest AI", message, priority, tags)
+
+    except Exception as e:
+        try:
+            log(f"PUSH | failed | {e}")
+        except Exception:
+            pass
+
+    if not url:
+        log("DISCORD | missing webhook url")
+        return
+
+    try:
+        requests.post(url, json={"content": message}, timeout=5)
+    except Exception as e:
+        log(f"DISCORD | failed | {e}")
+
+
+def alert_once(key, message, cooldown_seconds=1800):
+    now = time.time()
+    last = ALERT_CACHE.get(key, 0)
+
+    if now - last >= cooldown_seconds:
+        ALERT_CACHE[key] = now
+        notify_discord(message)
+
+
+def market_is_open():
+    try:
+        clock = api.get_clock()
+        return clock.is_open
+    except Exception as e:
+        print(f"ERROR | market clock | {e}")
+        return False
+
+
+def get_positions():
+    return api.list_positions()
+
+
+def already_holding(symbol):
+    return any(p.symbol == symbol for p in get_positions())
+
+
+def calculate_trade_dollars(score):
+    account = api.get_account()
+    buying_power = float(account.buying_power)
+
+    if score >= 50:
+        dollars = buying_power * 0.08
+    elif score >= 35:
+        dollars = buying_power * 0.06
+    elif score >= 20:
+        dollars = buying_power * 0.04
+    elif score >= 10:
+        dollars = buying_power * 0.025
+    else:
+        dollars = MIN_TRADE_DOLLARS
+
+    max_single_trade = buying_power * MAX_SINGLE_TRADE_PERCENT
+
+    dollars = min(dollars, max_single_trade)
+    dollars = max(dollars, MIN_TRADE_DOLLARS)
+
+    return round(dollars, 2)
+
+def get_deployed_value():
+    total = 0
+
+    for p in get_positions():
+        total += float(p.market_value)
+
+    return total
+
+
+def get_trend(symbol):
+    data = yf.download(symbol, period="6mo", interval="1d", auto_adjust=True, progress=False)
+
+    if data.empty:
+        return "bad_data"
+
+    data["SMA20"] = data["Close"].rolling(20).mean()
+    data["SMA50"] = data["Close"].rolling(50).mean()
+
+    latest = data.iloc[-1]
+
+    close = float(latest["Close"].iloc[0])
+    sma20 = float(latest["SMA20"].iloc[0])
+    sma50 = float(latest["SMA50"].iloc[0])
+
+    if close > sma20 > sma50:
+        return "bullish"
+    elif close < sma20 < sma50:
+        return "bearish"
+    else:
+        return "neutral"
+
+
+def finnhub_analyst_score(symbol):
+    try:
+        url = "https://finnhub.io/api/v1/stock/recommendation"
+        params = {"symbol": symbol, "token": FINNHUB_API_KEY}
+
+        response = requests.get(url, params=params, timeout=10)
+        data = response.json()
+
+        if not data:
+            log(f"{symbol} | analyst_score=0 | no Finnhub data")
+            return 0
+
+        latest = data[-1]
+
+        strong_buy = latest.get("strongBuy", 0)
+        buy = latest.get("buy", 0)
+        sell = latest.get("sell", 0)
+        strong_sell = latest.get("strongSell", 0)
+
+        score = (strong_buy * 2) + buy - sell - (strong_sell * 2)
+
+        log(f"{symbol} | analyst_score={score}")
+        return score
+
+    except Exception as e:
+        log(f"ERROR | finnhub {symbol} | {e}")
+        return 0
+
+
+def news_score(symbol):
+    try:
+        request = NewsRequest(symbols=symbol, limit=10)
+        news = news_client.get_news(request)
+
+        if not news:
+            log(f"{symbol} | news_score=0 | no news")
+            return 0
+
+        bullish_words = [
+            "beat", "growth", "surge", "rally", "upgrade",
+            "raises", "record", "profit", "strong", "ai"
+        ]
+
+        bearish_words = [
+            "miss", "lawsuit", "downgrade", "falls",
+            "drop", "weak", "loss", "cuts"
+        ]
+
+        score = 0
+
+        for article in news:
+            headline = safe_headline_text(article).lower()
+
+            for word in bullish_words:
+                if word in headline:
+                    score += 1
+
+            for word in bearish_words:
+                if word in headline:
+                    score -= 1
+
+        log(f"{symbol} | news_score={score}")
+        return score
+
+    except Exception as e:
+        log(f"ERROR | news {symbol} | {e}")
+        return 0
+
+
+
+
+
+def safe_headline_text(item):
+    """
+    Handles news items that may be objects, dicts, tuples, or strings.
+    Prevents: tuple object has no attribute headline.
+    """
+    try:
+        if item is None:
+            return ""
+        if isinstance(item, str):
+            return item
+        if isinstance(item, dict):
+            return str(item.get("headline") or item.get("title") or item.get("summary") or "")
+        if isinstance(item, (tuple, list)):
+            return " ".join(str(x) for x in item if x is not None)
+        return str(
+            getattr(item, "headline", None)
+            or getattr(item, "title", None)
+            or getattr(item, "summary", None)
+            or item
+        )
+    except Exception:
+        return ""
+
+
+def get_momentum_score(symbol):
+    """
+    Safe momentum score fallback.
+    Returns bounded -10 to +10 score.
+    Never breaks bot if data fails.
+    """
+    try:
+        import yfinance as yf
+        data = yf.download(symbol, period="5d", interval="5m", progress=False)
+
+        if data is None or len(data) < 10:
+            return 0
+
+        close = data["Close"].dropna()
+        if len(close) < 10:
+            return 0
+
+        first = float(close.iloc[0])
+        last = float(close.iloc[-1])
+
+        if first <= 0:
+            return 0
+
+        pct_change = ((last - first) / first) * 100
+        score = max(-10, min(10, pct_change * 2))
+        return round(score, 2)
+
+    except Exception as e:
+        try:
+            log(f"ERROR | momentum {symbol} | {e}")
+        except Exception:
+            pass
+        return 0
+
+
+def buy(symbol, score):
+    price = float(api.get_latest_trade(symbol).price)
+
+    atr = get_atr(symbol)
+
+    shares = calculate_position_size(
+        account_equity=float(api.get_account().equity),
+        risk_percent=0.01,
+        entry_price=price,
+        atr=atr,
+        atr_multiplier=2
+    )
+
+    if shares <= 0:
+        log_learning_event("LEARNING_SHADOW_SKIP_BUY", symbol=symbol, score=score, reason="invalid position size")
+        # LEARNING_SHADOW_SKIP_BUY
+        log(f"SKIP BUY | {symbol} | invalid position size")
+        return
+
+    dollars = shares * price
+
+    deployed = get_deployed_value()
+    account = api.get_account()
+    equity = float(account.equity)
+
+    max_deployed = equity * MAX_TOTAL_DEPLOYED_PERCENT
+
+    if deployed + dollars > max_deployed:
+        log_learning_event("LEARNING_SHADOW_SKIP_BUY", symbol=symbol, score=score, reason="would exceed max deployed")
+        # LEARNING_SHADOW_SKIP_BUY
+        log(f"SKIP BUY | {symbol} | would exceed max deployed")
+        return
+
+    log(f"BUY {symbol} | price={price:.2f} | ATR={atr} | shares={shares} | dollars={dollars:.2f}")
+
+    api.submit_order(
+        symbol=symbol,
+        notional=dollars,
+        side="buy",
+        type="market",
+        time_in_force="day"
+    )
+
+    print(f"BUY placed: {symbol} | ${dollars}")
+    log(f"BUY | {symbol} | dollars={dollars:.2f} | score={score} | reason=order submitted")
+    notify_discord(f"🟢 BUY PLACED | {symbol} | ${dollars:.2f} | score={score}")
+
+    try:
+        record_trade(symbol, "buy", shares, price, reason="buy order submitted", score=score)
+    except Exception as e:
+        log(f"TRADE MEMORY ERROR | buy {symbol} | {e}")
+
+def sell(symbol, qty, reason):
+    sell_price = None
+    pnl = None
+    pnl_pct = None
+
+    try:
+        sell_price = float(api.get_latest_trade(symbol).price)
+        for pos in get_positions():
+            if pos.symbol == symbol:
+                entry = float(pos.avg_entry_price)
+                pnl = (sell_price - entry) * float(qty)
+                pnl_pct = (sell_price - entry) / entry
+                break
+    except Exception as e:
+        log(f"TRADE MEMORY ERROR | pre-sell calc {symbol} | {e}")
+
+    api.submit_order(
+        symbol=symbol,
+        qty=qty,
+        side="sell",
+        type="market",
+        time_in_force="day"
+    )
+
+    print(f"SELL placed: {symbol} | {reason}")
+    log_learning_event("LEARNING_SHADOW_SELL", symbol=symbol, qty=qty, reason=reason, open_pl=pnl)
+    # LEARNING_SHADOW_SELL
+    log(f"SELL | {symbol} | reason={reason} | pnl={pnl} | pnl_pct={pnl_pct}")
+    notify_discord(f"🔴 SELL PLACED | {symbol} | qty={qty} | reason={reason}")
+
+    try:
+        record_trade(symbol, "sell", qty, sell_price, reason=reason, score=None, pnl=pnl, pnl_pct=pnl_pct)
+    except Exception as e:
+        log(f"TRADE MEMORY ERROR | sell {symbol} | {e}")
+
+
+def manage_existing_positions():
+    positions = get_positions()
+
+    for p in positions:
+        symbol = p.symbol
+        # TRADE GUARD V1: conservative fast loser protection
+        try:
+            qty = float(p.qty)
+            pnl_pct = float(p.unrealized_plpc) * 100
+            guard_exit, guard_reason = should_force_exit(symbol, pnl_pct)
+            if guard_exit:
+                log(f"TRADE GUARD | FORCE EXIT | {symbol} | pnl_pct={pnl_pct:.2f}% | reason={guard_reason}")
+                sell(symbol, qty, guard_reason)
+                continue
+        except Exception as e:
+            log(f"TRADE GUARD | error | {symbol} | {e}")
+
+        qty = abs(float(p.qty))
+        entry = float(p.avg_entry_price)
+        current = float(p.current_price)
+
+        change = (current - entry) / entry
+
+        log(f"P/L | {symbol} | {change:.2%}")
+
+        if change <= -0.04:
+            alert_once(f"weak_position_{symbol}", f"⚠️ WEAK POSITION | {symbol} | P/L {change:.2%}", 3600)
+
+        if change <= -STOP_LOSS_PERCENT:
+            sell(symbol, qty, "stop loss")
+
+        elif change >= TAKE_PROFIT_PERCENT:
+            sell(symbol, qty, "take profit")
+
+        elif get_trend(symbol) == "bearish":
+            sell(symbol, qty, "trend bearish")
+
+        else:
+            exit_now, reason = should_exit(p, get_trend)
+            if exit_now:
+                sell(symbol, qty, reason)
+
+def daily_loss_check():
+    global START_OF_DAY_EQUITY, TRADING_HALTED
+
+    account = api.get_account()
+    current_equity = float(account.equity)
+
+    # Set start of day equity once
+    if START_OF_DAY_EQUITY is None:
+        START_OF_DAY_EQUITY = current_equity
+        log(f"START DAY EQUITY | ${START_OF_DAY_EQUITY:.2f}")
+        return True
+
+    if START_OF_DAY_EQUITY == 0:
+        return True
+
+    loss_percent = (START_OF_DAY_EQUITY - current_equity) / START_OF_DAY_EQUITY
+
+    log(f"DAILY LOSS CHECK | start=${START_OF_DAY_EQUITY:.2f} | current=${current_equity:.2f} | loss={loss_percent:.2%}")
+
+    if loss_percent >= MAX_DAILY_LOSS_PERCENT:
+        TRADING_HALTED = True
+        log("TRADING HALTED | Max daily loss reached")
+        print("🚨 TRADING HALTED: Max daily loss reached")
+        return False
+
+    return True
+
+def run_bot():
+    global last_buy_day
+
+    print("\n--- Bot cycle ---")
+    log("NEW CYCLE")
+
+    if os.path.exists("STOP_TRADING"):
+        log("EMERGENCY STOP ACTIVE | STOP_TRADING file exists")
+        notify_discord("🚨 STOP_TRADING active | bot will not place new trades")
+        important_alert("Ponder Invest AI Stop", "STOP_TRADING is active. Bot will not place trades.", "urgent")
+        return
+
+    try:
+        account_snapshot = api.get_account()
+        open_pl_snapshot = 0
+        for p in get_positions():
+            open_pl_snapshot += float(p.unrealized_pl)
+
+        record_equity_snapshot(
+            portfolio_value=float(account_snapshot.portfolio_value),
+            buying_power=float(account_snapshot.buying_power),
+            open_pl=open_pl_snapshot
+        )
+    except Exception as e:
+        log(f"METRICS ERROR | equity snapshot | {e}")
+
+    if not market_is_open():
+        log("SKIP BUY | market closed")
+        alert_once("market_closed_status", "📴 Ponder Invest AI | Market closed | bot online and waiting", 21600)
+
+        update_status({
+            "market_trend": "closed",
+            "watchlist": [],
+            "top_candidates": [],
+            "positions": len(get_positions()),
+            "slots_available": 0,
+            "summary": {
+                "market_summary": "Market is currently closed.",
+                "opportunity_summary": "No trading opportunities while market is closed.",
+                "risk_summary": "No new trade risk while bot is idle.",
+                "watchlist_summary": "Scanner will resume when the market opens.",
+                "full_summary": "Market closed. Bot is online, idle, and waiting for the next trading session."
+            }
+        })
+
+        return
+
+    # Manage open positions first
+    manage_existing_positions()
+
+    if TRADING_HALTED:
+        log("SKIP BUY | trading halted for today")
+        return
+
+    if not daily_loss_check():
+        return
+
+    today = datetime.now().date()
+    log("TRADE FREQUENCY | multi-trade mode active | daily cap controlled by risk manager")
+
+    # Buy logic can run multiple times per day.
+    # Daily trade count is controlled by risk_manager.py.
+
+    market_trend = get_trend("SPY")
+    log(f"SPY trend={market_trend}")
+
+    if market_trend != "bullish":
+        log("SKIP BUY | SPY not bullish")
+        return
+
+    positions = get_positions()
+    current_positions = len(positions)
+    slots_available = MAX_POSITIONS - current_positions
+    rotation_mode = False
+    weakest_position = None
+
+    if slots_available <= 0:
+        weakest_position = find_weakest_position(positions)
+        rotation_mode = True
+        log(f"ROTATION CHECK | max positions reached | weakest={weakest_position}")
+        slots_available = 1
+
+    candidates = []
+
+    try:
+        small_caps = get_small_cap_candidates()
+        enhanced = get_enhanced_candidates()
+        small_caps = list(set(small_caps + enhanced))
+    except Exception as e:
+        log(f"Small-cap scanner error: {e}")
+        small_caps = []
+
+    dynamic_watchlist = list(dict.fromkeys(WATCHLIST + small_caps + enhanced))
+    log(f"Dynamic watchlist: {dynamic_watchlist}")
+    log(f"SCANNER | enhanced candidates={enhanced}")
+    if enhanced:
+        alert_once("scanner_candidates", f"🔎 SCANNER | Enhanced candidates found: {enhanced}", 1800)
+
+    for symbol in dynamic_watchlist:
+        if symbol == "SPY":
+            continue
+
+        if already_holding(symbol):
+            continue
+
+        trend = get_trend(symbol)
+        analyst = finnhub_analyst_score(symbol)
+        news = news_score(symbol)
+
+        trend_score = 100 if trend == "bullish" else 0
+
+        total = calculate_weighted_score(
+            trend_score=trend_score,
+            analyst_score=analyst * 10,
+            news_score=max(0, min(100, news * 10)),
+            momentum_score=get_momentum_score(symbol),
+            volatility_score=50,
+        )
+
+        log(f"{symbol} | trend={trend} | analyst={analyst} | news={news} | total={total}")
+
+        if trend == "bullish" and analyst >= 3 and news >= 0:
+            candidates.append((symbol, total))
+
+    candidates.sort(key=lambda x: x[1], reverse=True)
+
+    if len(candidates) == 0 and enhanced:
+        log(f"LEARNING MODE | no scored candidates | using enhanced fallback={enhanced[:2]}")
+        for fallback_symbol in enhanced[:2]:
+            candidates.append((fallback_symbol, 65))
+
+    for symbol, score in candidates[:slots_available]:
+        final_score, adaptive_reason = apply_adaptive_score(symbol, score)
+        log(f"ADAPTIVE | {symbol} | {adaptive_reason}")
+        log(f"CONFIDENCE | {symbol} | base_score={score} | final_score={final_score}")
+
+        if final_score >= 75:
+            alert_once(
+                f"high_confidence_{symbol}",
+                f"🔥 HIGH CONFIDENCE | {symbol} | score={final_score}",
+                1800
+            )
+
+        if rotation_mode:
+            rotate_ok, rotate_reason = should_rotate(weakest_position, final_score)
+            if not rotate_ok:
+                log(f"NO ROTATION | candidate={symbol} | reason={rotate_reason}")
+                continue
+
+            log(f"ROTATION APPROVED | replacing={weakest_position['symbol']} | new={symbol} | score={final_score} | reason={rotate_reason}")
+            sell(weakest_position["symbol"], weakest_position["qty"], f"rotation into {symbol}")
+            notify_discord(f"🔁 ROTATION | Sold {weakest_position['symbol']} to buy {symbol} | score={final_score}")
+            return
+
+        allowed, reason = can_trade(symbol, final_score)
+        if not allowed:
+            log_learning_event("LEARNING_SHADOW_SKIP_BUY", symbol=symbol, score=final_score if "final_score" in locals() else "", reason="skip buy")
+            # LEARNING_SHADOW_SKIP_BUY
+            log(f"SKIP BUY | {symbol} | {reason}")
+            notify_discord(f"⏩ SKIP BUY | {symbol} | {reason}")
+            continue
+
+        log_learning_event("LEARNING_SHADOW_BUY_DECISION", symbol=symbol, score=final_score, reason="candidate selected")
+        # LEARNING_SHADOW_BUY_DECISION
+        log(f"BUY DECISION | {symbol} | score={final_score} | reason=qualified candidate passed risk checks")
+        buy(symbol, final_score)
+        update_status({
+             "last_action": f"BUY {symbol}",
+             "last_score": final_score
+})
+
+    last_buy_day = today
+
+
+print("AI trading bot running every 5 minutes...")
+notify_discord("✅ AI trading bot started/restarted and is running.")
+
+while True:
+    try:
+        run_bot()
+    except Exception as e:
+        print("Bot error:", e)
+        log(f"ERROR | {e}")
+        notify_discord(f"🚨 BOT ERROR | {e}")
+
+    time.sleep(300)
+
+===== RISK MANAGER =====
+from trade_memory import recent_trade_count_today, symbol_traded_today
+
+MAX_TRADES_PER_DAY = 5
+MAX_POSITION_PCT = 0.12
+RISK_PER_TRADE_PCT = 0.005
+MIN_SCORE_TO_TRADE = 70
+
+
+def can_trade(symbol, score):
+    if score < MIN_SCORE_TO_TRADE:
+        return False, f"score too low: {score}"
+
+    if recent_trade_count_today() >= MAX_TRADES_PER_DAY:
+        return False, "max trades per day reached"
+
+    if symbol_traded_today(symbol):
+        return False, f"{symbol} already traded today"
+
+    return True, "approved"
+
+
+def calculate_position_size(equity, price, volatility_pct):
+    risk_amount = equity * RISK_PER_TRADE_PCT
+    stop_distance = price * max(volatility_pct, 0.03)
+    qty = int(risk_amount / stop_distance)
+
+    max_position_value = equity * MAX_POSITION_PCT
+    max_qty = int(max_position_value / price)
+
+    return max(0, min(qty, max_qty))
+
+===== TRADE MEMORY =====
+import csv
+import os
+from datetime import datetime
+
+TRADE_LOG_FILE = "trade_history.csv"
+
+FIELDS = [
+    "timestamp",
+    "symbol",
+    "side",
+    "qty",
+    "price",
+    "reason",
+    "score",
+    "pnl",
+    "pnl_pct",
+]
+
+def record_trade(symbol, side, qty, price, reason="", score=None, pnl=None, pnl_pct=None):
+    file_exists = os.path.exists(TRADE_LOG_FILE)
+
+    with open(TRADE_LOG_FILE, "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=FIELDS)
+
+        if not file_exists:
+            writer.writeheader()
+
+        writer.writerow({
+            "timestamp": datetime.now().isoformat(),
+            "symbol": symbol,
+            "side": side,
+            "qty": qty,
+            "price": price,
+            "reason": reason,
+            "score": score,
+            "pnl": pnl,
+            "pnl_pct": pnl_pct,
+        })
+
+
+def recent_trade_count_today():
+    if not os.path.exists(TRADE_LOG_FILE):
+        return 0
+
+    today = datetime.now().date().isoformat()
+    count = 0
+
+    with open(TRADE_LOG_FILE, "r") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row["timestamp"].startswith(today):
+                count += 1
+
+    return count
+
+
+def symbol_traded_today(symbol):
+    if not os.path.exists(TRADE_LOG_FILE):
+        return False
+
+    today = datetime.now().date().isoformat()
+
+    with open(TRADE_LOG_FILE, "r") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row["timestamp"].startswith(today) and row["symbol"] == symbol:
+                return True
+
+    return False
+
+===== SCANNER / STRATEGY =====
+
+===== DASHBOARD (OLD) =====
+from profit_lab_routes import profit_lab_bp
+from dashboard_safety_ui import security_headers, rate_limit
+from profit_ops_routes import bp as profit_ops_bp
+
+import os
+import json
+import secrets
+from functools import wraps
+from flask import Flask, request, redirect, url_for, session, render_template_string
+from dotenv import load_dotenv
+import alpaca_trade_api as tradeapi
+
+load_dotenv()
+
+app = Flask(__name__)
+app.register_blueprint(profit_lab_bp)
+app.register_blueprint(profit_ops_bp)
+app.secret_key = os.getenv("DASHBOARD_SECRET_KEY", secrets.token_hex(32))
+
+API_KEY = os.getenv("APCA_API_KEY_ID")
+SECRET_KEY = os.getenv("APCA_API_SECRET_KEY")
+BASE_URL = os.getenv("BASE_URL")
+
+DASHBOARD_USER = os.getenv("DASHBOARD_USER")
+DASHBOARD_PASS = os.getenv("DASHBOARD_PASS")
+
+api = tradeapi.REST(API_KEY, SECRET_KEY, BASE_URL, api_version="v2")
+
+
+def money(value):
+    try:
+        return f"${float(value):,.2f}"
+    except Exception:
+        return "$0.00"
+
+
+def check_auth(username, password):
+    if not DASHBOARD_USER or not DASHBOARD_PASS:
+        return True
+    return username == DASHBOARD_USER and password == DASHBOARD_PASS
+
+
+def requires_auth(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if session.get("logged_in"):
+            return func(*args, **kwargs)
+        return redirect(url_for("login"))
+    return wrapper
+
+
+def load_bot_status():
+    try:
+        with open("bot_status.json", "r") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def read_logs():
+    try:
+        with open("log.txt", "r") as f:
+            return f.readlines()[-80:]
+    except Exception:
+        return ["No logs yet."]
+
+
+LOGIN_TEMPLATE = """
+<!doctype html>
+<html>
+<head>
+<title>Ponder Invest AI Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{margin:0;font-family:Arial;background:radial-gradient(circle at top,rgba(0,255,136,.18),transparent 35%),#030712;color:white;display:flex;min-height:100vh;align-items:center;justify-content:center}
+.box{width:92%;max-width:420px;background:#0f172a;border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:28px;box-shadow:0 25px 60px rgba(0,0,0,.45)}
+h1{font-size:32px;margin-top:0} span{color:#00ff88}
+input{width:100%;padding:14px;margin:10px 0;border-radius:14px;border:1px solid rgba(255,255,255,.15);background:#020617;color:white;font-size:16px}
+button{width:100%;padding:14px;border-radius:14px;border:0;background:#00ff88;color:#02120a;font-weight:900;font-size:16px;margin-top:10px}
+.error{color:#ff5c7a}.muted{color:#94a3b8}
+
+/* =========================
+   PONDER PRO V1 UI SYSTEM
+   UI-only. No trading logic.
+========================= */
+:root{
+  --pp-bg:#050914;
+  --pp-panel:#111a30;
+  --pp-panel2:#0d1528;
+  --pp-border:#263a63;
+  --pp-text:#f4f7ff;
+  --pp-muted:#aab6d3;
+  --pp-accent:#8ab4ff;
+  --pp-good:#7dff9b;
+  --pp-warn:#ffe66d;
+  --pp-bad:#ff6b8a;
+  --pp-radius:22px;
+  --pp-speed:220ms;
+}
+
+html{scroll-behavior:smooth}
+body{
+  background:
+    radial-gradient(circle at top left, rgba(51,255,153,.12), transparent 32%),
+    radial-gradient(circle at top right, rgba(138,180,255,.10), transparent 30%),
+    var(--pp-bg)!important;
+  color:var(--pp-text)!important;
+  transition:background var(--pp-speed), color var(--pp-speed);
+}
+
+.card, .panel, .metric, .box, .tile{
+  border-radius:var(--pp-radius)!important;
+  border:1px solid var(--pp-border)!important;
+  background:linear-gradient(180deg, rgba(17,26,48,.96), rgba(10,16,31,.96))!important;
+  box-shadow:0 18px 45px rgba(0,0,0,.28)!important;
+  transition:transform var(--pp-speed), border-color var(--pp-speed), box-shadow var(--pp-speed);
+}
+
+.card:hover, .panel:hover, .metric:hover, .box:hover, .tile:hover{
+  transform:translateY(-2px);
+  border-color:rgba(138,180,255,.65)!important;
+  box-shadow:0 22px 55px rgba(0,0,0,.36)!important;
+}
+
+.value{
+  letter-spacing:.02em;
+  transition:color var(--pp-speed), transform var(--pp-speed);
+}
+
+.good{color:var(--pp-good)!important}
+.bad{color:var(--pp-bad)!important}
+.warn{color:var(--pp-warn)!important}
+.muted,.label{color:var(--pp-muted)!important}
+
+a, button{
+  transition:transform var(--pp-speed), opacity var(--pp-speed), background var(--pp-speed), border-color var(--pp-speed);
+}
+button:hover, a:hover{transform:translateY(-1px)}
+
+.pp-live-pill{
+  position:fixed;
+  top:14px;
+  right:18px;
+  z-index:9999;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 14px;
+  border-radius:999px;
+  background:rgba(12,20,38,.88);
+  border:1px solid var(--pp-border);
+  backdrop-filter:blur(14px);
+  font-weight:900;
+  color:var(--pp-text);
+  box-shadow:0 16px 40px rgba(0,0,0,.35);
+}
+
+.pp-dot{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:var(--pp-good);
+  box-shadow:0 0 0 0 rgba(125,255,155,.65);
+  animation:ppPulse 1.8s infinite;
+}
+
+@keyframes ppPulse{
+  0%{box-shadow:0 0 0 0 rgba(125,255,155,.55)}
+  70%{box-shadow:0 0 0 12px rgba(125,255,155,0)}
+  100%{box-shadow:0 0 0 0 rgba(125,255,155,0)}
+}
+
+.pp-settings{
+  position:fixed;
+  right:18px;
+  bottom:92px;
+  z-index:9999;
+  width:320px;
+  max-width:calc(100vw - 30px);
+  border-radius:22px;
+  border:1px solid var(--pp-border);
+  background:rgba(8,14,28,.95);
+  backdrop-filter:blur(18px);
+  box-shadow:0 24px 65px rgba(0,0,0,.42);
+  padding:16px;
+  display:none;
+}
+
+.pp-settings.open{display:block; animation:ppFadeIn .22s ease}
+@keyframes ppFadeIn{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)}}
+
+.pp-settings h3{
+  margin:0 0 10px 0;
+  font-size:18px;
+}
+
+.pp-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:9px 0;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+
+.pp-row label{font-weight:800;color:var(--pp-text)}
+.pp-row small{display:block;color:var(--pp-muted);font-size:11px;margin-top:2px}
+
+.pp-toggle{
+  cursor:pointer;
+  border:1px solid var(--pp-border);
+  border-radius:999px;
+  padding:7px 10px;
+  background:#101a31;
+  color:var(--pp-text);
+  font-weight:900;
+  min-width:72px;
+}
+
+.pp-gear{
+  position:fixed;
+  right:18px;
+  bottom:34px;
+  z-index:9999;
+  border:1px solid var(--pp-border);
+  background:linear-gradient(180deg,#172542,#10182d);
+  color:white;
+  border-radius:999px;
+  width:48px;
+  height:48px;
+  font-size:22px;
+  box-shadow:0 18px 45px rgba(0,0,0,.38);
+  cursor:pointer;
+}
+
+.pp-focus .muted,
+.pp-focus table,
+.pp-focus .decisionReplay,
+.pp-focus #decisionReplay{
+  font-size:.92em;
+}
+
+.pp-focus .card:not(:has(#rotScore)):not(:has(#ponderQuestion)):not(:has(#perfStatus)):not(:has(#positions)){
+  opacity:.82;
+}
+
+.pp-colorblind .good::before{content:"▲ "; color:currentColor}
+.pp-colorblind .bad::before{content:"▼ "; color:currentColor}
+.pp-colorblind .warn::before{content:"⚠ "; color:currentColor}
+
+.pp-highcontrast{
+  --pp-bg:#000;
+  --pp-panel:#07111f;
+  --pp-panel2:#020817;
+  --pp-border:#7aa2ff;
+  --pp-text:#ffffff;
+  --pp-muted:#d7e1ff;
+  --pp-accent:#ffffff;
+  --pp-good:#b7ffce;
+  --pp-warn:#fff176;
+  --pp-bad:#ff9cb0;
+}
+
+.pp-theme-ponder{
+  --pp-bg:#070711;
+  --pp-panel:#151226;
+  --pp-panel2:#100e1d;
+  --pp-border:#5d4a7e;
+  --pp-accent:#d9b8ff;
+  --pp-good:#9cffb5;
+  --pp-warn:#ffe082;
+  --pp-bad:#ff7fa3;
+}
+
+.pp-theme-terminal{
+  --pp-bg:#020703;
+  --pp-panel:#07140b;
+  --pp-panel2:#051007;
+  --pp-border:#1d7b3a;
+  --pp-accent:#72ff9d;
+  --pp-good:#72ff9d;
+  --pp-warn:#fff176;
+  --pp-bad:#ff6b6b;
+}
+
+.pp-reduced-motion *,
+.pp-reduced-motion *::before,
+.pp-reduced-motion *::after{
+  animation:none!important;
+  transition:none!important;
+  scroll-behavior:auto!important;
+}
+
+@media(max-width:800px){
+  .pp-live-pill{top:auto;bottom:88px;right:14px;font-size:12px}
+  .pp-settings{right:12px;bottom:86px}
+}
+
+
+/* =========================
+   PONDER PRO V2 ALL PAGES
+   UI-only. No trading logic.
+========================= */
+
+/* Move live badge below nav so it does not cover page links */
+.pp-live-pill{
+  top:86px!important;
+  right:22px!important;
+}
+
+/* Better spacing for top right nav/links */
+nav, .nav, .topnav, .links{
+  padding-right:180px!important;
+}
+
+/* App polish */
+body{
+  overflow-x:hidden!important;
+}
+
+.card, .panel, .metric, .box, .tile{
+  position:relative;
+  overflow:hidden;
+}
+
+.card::after, .panel::after, .metric::after, .box::after, .tile::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  border-radius:inherit;
+  background:linear-gradient(135deg,rgba(255,255,255,.045),transparent 35%);
+  opacity:.55;
+}
+
+/* Fix giant overflow text in learning/event panels */
+#learnTop,
+#learnStatus,
+#perfStatus,
+#perfBest,
+#perfWorst{
+  font-size:clamp(18px,2vw,28px)!important;
+  line-height:1.15!important;
+  word-break:break-word!important;
+  overflow-wrap:anywhere!important;
+  max-width:100%!important;
+}
+
+/* Tables become app-like */
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+tr{
+  transition:background .18s ease, transform .18s ease;
+}
+
+tbody tr:hover{
+  background:rgba(138,180,255,.08)!important;
+}
+
+/* Better scrollbar */
+::-webkit-scrollbar{
+  width:10px;
+  height:10px;
+}
+::-webkit-scrollbar-track{
+  background:#050914;
+}
+::-webkit-scrollbar-thumb{
+  background:#2a3f69;
+  border-radius:999px;
+}
+::-webkit-scrollbar-thumb:hover{
+  background:#45629e;
+}
+
+/* Floating app tool dock */
+.pp-tool-dock{
+  position:fixed;
+  right:22px;
+  top:136px;
+  z-index:9998;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.pp-mini-btn{
+  border:1px solid var(--pp-border,#263a63);
+  background:rgba(12,20,38,.9);
+  color:white;
+  border-radius:14px;
+  width:42px;
+  height:42px;
+  cursor:pointer;
+  box-shadow:0 14px 35px rgba(0,0,0,.32);
+  backdrop-filter:blur(12px);
+}
+
+.pp-mini-btn:hover{
+  transform:translateY(-2px) scale(1.03);
+}
+
+/* Cleaner mobile */
+@media(max-width:900px){
+  .pp-live-pill{
+    top:auto!important;
+    bottom:88px!important;
+    right:14px!important;
+  }
+
+  .pp-tool-dock{
+    top:auto!important;
+    right:14px!important;
+    bottom:150px!important;
+  }
+
+  nav, .nav, .topnav, .links{
+    padding-right:0!important;
+  }
+
+  .card, .panel, .metric, .box, .tile{
+    border-radius:18px!important;
+  }
+}
+
+/* Focus mode: hide secondary clutter more safely */
+.pp-focus .muted{
+  opacity:.82;
+}
+
+.pp-focus table tbody tr:nth-child(n+8){
+  display:none;
+}
+
+/* Colorblind mode stronger labels */
+.pp-colorblind .good,
+.pp-colorblind .bad,
+.pp-colorblind .warn{
+  font-weight:900!important;
+}
+
+</style>
+</head>
+<body>
+<form class="box" method="POST">
+<h1>Ponder Invest <span>AI</span></h1>
+<p class="muted">Secure dashboard login</p>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+<input name="username" placeholder="Username" autocomplete="username">
+<input name="password" placeholder="Password" type="password" autocomplete="current-password">
+<button type="submit">Sign In</button>
+</form>
+
+<script id="ponderProV1">
+(function(){
+  if(window.__ponderProV1Loaded) return;
+  window.__ponderProV1Loaded = true;
+
+  const root = document.documentElement;
+  const body = document.body;
+
+  function get(k,d){return localStorage.getItem("ponderPro_"+k) ?? d}
+  function set(k,v){localStorage.setItem("ponderPro_"+k,v)}
+
+  function apply(){
+    body.classList.toggle("pp-focus", get("focus","off")==="on");
+    body.classList.toggle("pp-colorblind", get("colorblind","on")==="on");
+    body.classList.toggle("pp-highcontrast", get("contrast","off")==="on");
+    body.classList.toggle("pp-reduced-motion", get("motion","on")==="off");
+
+    body.classList.remove("pp-theme-ponder","pp-theme-terminal");
+    const theme=get("theme","default");
+    if(theme==="ponder") body.classList.add("pp-theme-ponder");
+    if(theme==="terminal") body.classList.add("pp-theme-terminal");
+
+    const accent=get("accent","");
+    if(accent) root.style.setProperty("--pp-accent", accent);
+  }
+
+  function makeUI(){
+    if(document.getElementById("ppLivePill")) return;
+
+    const live=document.createElement("div");
+    live.id="ppLivePill";
+    live.className="pp-live-pill";
+    live.innerHTML='<span class="pp-dot"></span><span id="ppLiveText">LIVE · Ponder Pro</span>';
+    document.body.appendChild(live);
+
+    const gear=document.createElement("button");
+    gear.className="pp-gear";
+    gear.innerHTML="⚙️";
+    gear.title="Ponder Pro settings";
+    gear.onclick=()=>document.getElementById("ppSettings").classList.toggle("open");
+    document.body.appendChild(gear);
+
+    const panel=document.createElement("div");
+    panel.id="ppSettings";
+    panel.className="pp-settings";
+    panel.innerHTML=`
+      <h3>🐾 Ponder Pro Settings</h3>
+
+      <div class="pp-row">
+        <div><label>Focus Mode</label><small>Reduce noise and emphasize key panels.</small></div>
+        <button class="pp-toggle" data-key="focus">OFF</button>
+      </div>
+
+      <div class="pp-row">
+        <div><label>Colorblind Mode</label><small>Uses labels/icons, not color alone.</small></div>
+        <button class="pp-toggle" data-key="colorblind">ON</button>
+      </div>
+
+      <div class="pp-row">
+        <div><label>High Contrast</label><small>Sharper borders and readable text.</small></div>
+        <button class="pp-toggle" data-key="contrast">OFF</button>
+      </div>
+
+      <div class="pp-row">
+        <div><label>Animations</label><small>Smooth app feel or reduced motion.</small></div>
+        <button class="pp-toggle" data-key="motion">ON</button>
+      </div>
+
+      <div class="pp-row">
+        <div><label>Theme</label><small>Default / Ponder / Terminal.</small></div>
+        <button class="pp-toggle" data-key="theme">DEFAULT</button>
+      </div>
+
+      <div class="pp-row">
+        <div><label>Refresh</label><small>Refresh page data manually.</small></div>
+        <button class="pp-toggle" id="ppRefreshNow">NOW</button>
+      </div>
+    `;
+    document.body.appendChild(panel);
+
+    panel.querySelectorAll("[data-key]").forEach(btn=>{
+      const key=btn.dataset.key;
+      function label(){
+        let v=get(key, key==="colorblind"||key==="motion" ? "on" : key==="theme" ? "default" : "off");
+        btn.textContent=String(v).toUpperCase();
+      }
+      label();
+
+      btn.onclick=()=>{
+        let v=get(key, key==="colorblind"||key==="motion" ? "on" : key==="theme" ? "default" : "off");
+
+        if(key==="theme"){
+          v = v==="default" ? "ponder" : v==="ponder" ? "terminal" : "default";
+        }else{
+          v = v==="on" ? "off" : "on";
+        }
+
+        set(key,v);
+        label();
+        apply();
+      };
+    });
+
+    document.getElementById("ppRefreshNow").onclick=()=>{
+      const text=document.getElementById("ppLiveText");
+      text.textContent="Refreshing...";
+      if(typeof load==="function"){ load(); }
+      setTimeout(()=>text.textContent="LIVE · Ponder Pro",900);
+    };
+  }
+
+  function enhance(){
+    const title = document.querySelector("h1");
+    if(title && !title.dataset.pp){
+      title.dataset.pp="1";
+      title.innerHTML = title.innerHTML.replace("Ponder", "🐾 Ponder");
+    }
+
+    document.querySelectorAll(".value").forEach(el=>{
+      if(!el.dataset.ppWatch){
+        el.dataset.ppWatch=el.textContent;
+      }else if(el.dataset.ppWatch !== el.textContent){
+        el.animate([{transform:"scale(1.02)",filter:"brightness(1.4)"},{transform:"scale(1)",filter:"brightness(1)"}],{duration:260});
+        el.dataset.ppWatch=el.textContent;
+      }
+    });
+  }
+
+  apply();
+  makeUI();
+  enhance();
+  setInterval(enhance,1500);
+})();
+</script>
+
+
+<script id="ponderProV2">
+(function(){
+  if(window.__ponderProV2Loaded) return;
+  window.__ponderProV2Loaded = true;
+
+  function qs(s){return document.querySelector(s)}
+  function qsa(s){return Array.from(document.querySelectorAll(s))}
+
+  function toast(msg){
+    let t=document.getElementById("ppToast");
+    if(!t){
+      t=document.createElement("div");
+      t.id="ppToast";
+      t.style.cssText="position:fixed;left:50%;bottom:34px;transform:translateX(-50%);z-index:10000;background:rgba(10,16,31,.95);border:1px solid var(--pp-border,#263a63);color:white;padding:12px 16px;border-radius:999px;font-weight:900;box-shadow:0 18px 45px rgba(0,0,0,.35);display:none";
+      document.body.appendChild(t);
+    }
+    t.textContent=msg;
+    t.style.display="block";
+    clearTimeout(window.__ppToastTimer);
+    window.__ppToastTimer=setTimeout(()=>t.style.display="none",1600);
+  }
+
+  function makeDock(){
+    if(document.getElementById("ppToolDock")) return;
+    const dock=document.createElement("div");
+    dock.id="ppToolDock";
+    dock.className="pp-tool-dock";
+    dock.innerHTML=`
+      <button class="pp-mini-btn" title="Top" id="ppGoTop">⬆️</button>
+      <button class="pp-mini-btn" title="Refresh" id="ppDockRefresh">🔄</button>
+      <button class="pp-mini-btn" title="Copy status" id="ppCopyStatus">📋</button>
+    `;
+    document.body.appendChild(dock);
+
+    document.getElementById("ppGoTop").onclick=()=>window.scrollTo({top:0,behavior:"smooth"});
+
+    document.getElementById("ppDockRefresh").onclick=()=>{
+      if(typeof load==="function"){ load(); toast("Ponder refreshed"); }
+      else { location.reload(); }
+    };
+
+    document.getElementById("ppCopyStatus").onclick=async()=>{
+      const health=(document.body.innerText.match(/AI Health[:\s]+[0-9.]+\/100/i)||["AI Health unknown"])[0];
+      const pl=(document.body.innerText.match(/Open P\/L[:\s$+\-.0-9,]+/i)||["Open P/L unknown"])[0];
+      const text=`Ponder Invest AI Status\n${health}\n${pl}\nPage: ${location.pathname}`;
+      try{
+        await navigator.clipboard.writeText(text);
+        toast("Status copied");
+      }catch(e){
+        toast("Copy unavailable");
+      }
+    };
+  }
+
+  function fixLiveBadge(){
+    const pill=document.getElementById("ppLivePill") || document.querySelector(".pp-live-pill");
+    if(pill){
+      pill.style.top="86px";
+      pill.style.right="22px";
+    }
+  }
+
+  function cleanLearningLabels(){
+    const top=document.getElementById("learnTop");
+    if(top && top.textContent.length > 22){
+      top.title=top.textContent;
+      top.textContent=top.textContent.replace("LEARNING_SHADOW_","").replace("_DECISION","");
+    }
+  }
+
+  function enhanceLinks(){
+    qsa("a").forEach(a=>{
+      if(!a.dataset.ppSmooth){
+        a.dataset.ppSmooth="1";
+        a.addEventListener("click",()=>document.body.style.opacity=".94");
+      }
+    });
+  }
+
+  makeDock();
+  fixLiveBadge();
+  cleanLearningLabels();
+  enhanceLinks();
+
+  setInterval(()=>{
+    fixLiveBadge();
+    cleanLearningLabels();
+    enhanceLinks();
+  },1500);
+})();
+</script>
+
+<script src="/static/ponder_ui.js?v=popupponder2"></script>
+</body>
+</html>
+"""
+
+
+DASHBOARD_TEMPLATE = """
+<!doctype html>
+<html>
+<head>
+<title>Ponder Invest AI</title>
+<!-- full page refresh disabled -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:radial-gradient(circle at top left,rgba(0,255,136,.14),transparent 28%),radial-gradient(circle at top right,rgba(59,130,246,.16),transparent 30%),#030712;color:#f8fafc}
+.container{max-width:1400px;margin:auto;padding:24px}
+.header{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:22px}
+.brand{font-size:38px;font-weight:900;letter-spacing:-1.2px}.brand span{color:#00ff88}
+.subtitle,.muted{color:#94a3b8}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-bottom:16px}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:16px;margin-bottom:16px}
+.card{background:rgba(15,23,42,.86);border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:20px;box-shadow:0 20px 45px rgba(0,0,0,.35);margin-bottom:16px}
+.big{font-size:30px;font-weight:900}.pill,.mini-pill{padding:9px 14px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);font-weight:900}
+.status-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.green{color:#00ff88}.red{color:#ff5c7a}.yellow{color:#ffd84d}.blue{color:#60a5fa}
+table{width:100%;border-collapse:collapse}th{color:#94a3b8;font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+th,td{padding:13px 10px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left}
+pre{background:#020617;padding:16px;border-radius:16px;overflow:auto;max-height:300px;color:#d1d5db;border:1px solid rgba(255,255,255,.08)}
+li{margin-bottom:8px;line-height:1.35}.footer{color:#64748b;text-align:center;padding:18px}
+.mobile-bar{display:none}
+@media(max-width:760px){
+.container{padding:12px;padding-bottom:80px}.header{position:sticky;top:0;z-index:20;background:rgba(3,7,18,.96);padding:12px;margin:-12px -12px 14px -12px;border-bottom:1px solid rgba(255,255,255,.08);flex-direction:column;align-items:flex-start}
+.brand{font-size:28px}.grid,.grid-2{grid-template-columns:1fr}.card{padding:16px;border-radius:18px}.big{font-size:25px}
+table{display:block;overflow-x:auto;white-space:nowrap}th,td{font-size:12px;padding:10px 8px}pre{font-size:12px;max-height:220px}
+.mobile-bar{display:flex;position:fixed;bottom:0;left:0;right:0;background:rgba(3,7,18,.96);border-top:1px solid rgba(255,255,255,.1);padding:10px;gap:8px;z-index:30;justify-content:space-around}
+.mobile-bar a{color:white;text-decoration:none;font-size:12px;background:rgba(255,255,255,.08);padding:9px 10px;border-radius:999px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<div>
+<div class="brand">Ponder Invest <span>AI</span> 🐾</div>
+<div class="subtitle">Ponder-powered autonomous trading command center · refreshes every 5 seconds</div>
+<div class="status-row">
+<span class="mini-pill {{ risk_color }}">Risk Mode: {{ risk_mode }}</span>
+<span class="mini-pill {{ slot_color }}">Slots: {{ slot_status }}</span>
+<span class="mini-pill blue">Weakest: {{ weakest_symbol }}</span>
+</div>
+</div>
+<div class="pill {{ status_class }}">{{ bot_status }}</div>
+</div>
+
+<div class="grid">
+<div class="card"><h3>Account Status</h3><div class="big">{{ account.status }}</div><p class="muted">Connected to Alpaca paper trading</p></div>
+<div class="card"><h3>Portfolio Value</h3><div class="big">{{ money(account.portfolio_value) }}</div><p class="muted">Total account value</p></div>
+<div class="card"><h3>Buying Power</h3><div class="big">{{ money(account.buying_power) }}</div><p class="muted">Available deployable capital</p></div>
+<div class="card"><h3>Open P/L</h3><div class="big {{ 'green' if total_pl >= 0 else 'red' }}">{{ money(total_pl) }}</div><p class="muted">Unrealized position P/L</p></div>
+</div>
+
+<div class="grid">
+<div class="card"><h3>Open Win Rate</h3><div class="big">{{ open_win_rate }}%</div><p class="muted">{{ open_winners }} winners · {{ open_losers }} losers</p></div>
+<div class="card"><h3>Capital Deployed</h3><div class="big">{{ deployed_pct }}%</div><p class="muted">{{ money(position_value) }} currently deployed</p></div>
+<div class="card"><h3>Bot Actions</h3><div class="big">{{ buy_count + sell_count + skip_count }}</div><p class="muted">Buys {{ buy_count }} · Sells {{ sell_count }} · Skips {{ skip_count }}</p></div>
+<div class="card"><h3>Rotations</h3><div class="big">{{ rotation_count }}</div><p class="muted">Approved rotation events</p></div>
+<div class="card"><h3>Scanner Events</h3><div class="big">{{ scanner_count }}</div><p class="muted">Recent candidate scans</p></div>
+<div class="card"><h3>Adaptive Events</h3><div class="big">{{ adaptive_count }}</div><p class="muted">Learning adjustments</p></div>
+<div class="card"><h3>Closed Win Rate</h3><div class="big">{{ learning_summary.get("win_rate", 0) }}%</div><p class="muted">{{ learning_summary.get("wins", 0) }} wins · {{ learning_summary.get("losses", 0) }} losses</p></div>
+<div class="card"><h3>Closed Net P/L</h3><div class="big {{ 'green' if learning_summary.get('net_pnl', 0) >= 0 else 'red' }}">{{ money(learning_summary.get("net_pnl", 0)) }}</div><p class="muted">{{ learning_summary.get("closed_trades", 0) }} closed trades tracked</p></div>
+</div>
+
+<div class="card">
+<h2>AI Market Summary</h2>
+<p><b>Market:</b> {{ summary.get("market_summary","No market summary yet.") }}</p>
+<p><b>Opportunities:</b> {{ summary.get("opportunity_summary","No opportunity summary yet.") }}</p>
+<p><b>Risk:</b> {{ summary.get("risk_summary","No risk summary yet.") }}</p>
+<p class="muted">{{ summary.get("full_summary","") }}</p>
+</div>
+
+<div class="grid-2">
+<div class="card"><h3 id="decisions">Live Decision Panel</h3><ul>{% for item in decision_lines %}<li>{{ item }}</li>{% else %}<li>No recent decisions yet.</li>{% endfor %}</ul></div>
+<div class="card"><h3>AI Reasoning Feed</h3><ul>{% for item in ai_feed %}<li>{{ item }}</li>{% endfor %}</ul></div>
+</div>
+
+<div class="grid-2">
+<div class="card"><h3>Scanner Intelligence</h3><ul>{% for item in scanner_lines %}<li>{{ item }}</li>{% else %}<li>No scanner output yet.</li>{% endfor %}</ul></div>
+<div class="card"><h3>Adaptive Learning Feed</h3><ul>{% for item in adaptive_lines %}<li>{{ item }}</li>{% else %}<li>Adaptive learning is in safe neutral mode.</li>{% endfor %}</ul></div>
+</div>
+
+<div class="card">
+<h2>Performance Intelligence</h2>
+<div class="grid">
+<div><h3>System Health</h3><div class="big {{ health_class }}">{{ health_score }}/100</div><p class="muted">{{ health_label }}</p></div>
+<div><h3>Detected Issues</h3><ul>{% for item in health_notes %}<li>{{ item }}</li>{% endfor %}</ul></div>
+<div><h3>Suggested Actions</h3><ul>{% for item in health_suggestions %}<li>{{ item }}</li>{% endfor %}</ul></div>
+</div>
+</div>
+
+<div class="grid-2">
+<div class="card"><h3>Top Candidates</h3><ul>{% for c in candidates %}<li>{{ c }}</li>{% else %}<li>No candidates yet.</li>{% endfor %}</ul></div>
+<div class="card"><h3>Bot Intelligence</h3>
+<p><b>Market Trend:</b> {{ status_data.get("market_trend","N/A") }}</p>
+<p><b>Positions:</b> {{ status_data.get("positions","N/A") }}</p>
+<p><b>Slots Available:</b> {{ status_data.get("slots_available","N/A") }}</p>
+<p><b>Watchlist Size:</b> {{ watchlist|length }}</p>
+<p><b>Last Action:</b> {{ status_data.get("last_action","None") }}</p>
+</div>
+</div>
+
+<div class="card">
+<h2 id="positions">Position Ranking</h2>
+<p class="muted">Weakest position is marked with ⚠️. Lower score means weaker holding.</p>
+<table>
+<tr><th>Symbol</th><th>Qty</th><th>Entry</th><th>Current</th><th>P/L $</th><th>P/L %</th><th>Score</th></tr>
+{% for r in position_rows %}
+<tr>
+<td>{{ r.symbol }} {{ "⚠️" if r.symbol == weakest_symbol else "" }}</td>
+<td>{{ r.qty }}</td>
+<td>{{ money(r.entry) }}</td>
+<td>{{ money(r.current) }}</td>
+<td class="{{ 'green' if r.pl >= 0 else 'red' }}">{{ money(r.pl) }}</td>
+<td class="{{ 'green' if r.pl >= 0 else 'red' }}">{{ r.plpc }}%</td>
+<td>{{ r.score }}</td>
+</tr>
+{% else %}
+<tr><td colspan="7">No open positions</td></tr>
+{% endfor %}
+</table>
+</div>
+
+<div class="card"><h2 id="logs">Recent Bot Logs</h2><pre>{{ escaped_logs }}</pre></div>
+<div class="footer">Ponder Invest AI · Adaptive cloud trading dashboard · <a href="/history" style="color:#94a3b8;">History</a> · <a href="/logout" style="color:#94a3b8;">Logout</a></div>
+</div>
+
+<div class="mobile-bar"><a href="#">Top</a><a href="#decisions">Decisions</a><a href="#positions">Positions</a><a href="#logs">Logs</a></div>
+</body>
+</html>
+"""
+
+
+
+# === PONDER_GLOBAL_LOGIN_GUARD_V2 ===
+@app.before_request
+def ponder_global_login_guard_v2():
+    path = request.path or ""
+
+    # ✅ Public routes
+    if path.startswith("/login") or path.startswith("/favicon.ico") or path.startswith("/health"):
+        return None
+
+    # ✅ Static assets (JS/CSS allowed, but NOT research data)
+    if path.startswith("/static/"):
+        if "/static/research/" in path and not session.get("logged_in"):
+            return {"error": "login required"}, 401
+        return None
+
+    # 🔒 EVERYTHING ELSE requires login
+    if not session.get("logged_in"):
+        return redirect(url_for("login"))
+
+    return None
+# === END PONDER_GLOBAL_LOGIN_GUARD_V2 ===
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    error = ""
+    if request.method == "POST":
+        if check_auth(request.form.get("username", ""), request.form.get("password", "")):
+            session["logged_in"] = True
+            return redirect(url_for("dashboard"))
+        error = "Invalid login."
+    return render_template_string(LOGIN_TEMPLATE, error=error)
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
+@app.route("/")
+@requires_auth
+def dashboard():
+    account = api.get_account()
+    clock = api.get_clock()
+    positions = api.list_positions()
+    logs = read_logs()
+    status_data = load_bot_status()
+    summary = status_data.get("summary", {})
+    learning_summary = status_data.get("learning_summary", {"closed_trades": 0, "wins": 0, "losses": 0, "win_rate": 0, "net_pnl": 0})
+
+    total_pl = 0
+    position_value = 0
+    position_rows = []
+
+    for p in positions:
+        pl = float(p.unrealized_pl)
+        plpc = float(p.unrealized_plpc) * 100
+        position_value += abs(float(p.market_value))
+        total_pl += pl
+
+        score = 50 + (float(p.unrealized_plpc) * 120)
+        if float(p.unrealized_plpc) <= -0.04:
+            score -= 30
+        elif float(p.unrealized_plpc) <= -0.02:
+            score -= 20
+        if float(p.unrealized_plpc) >= 0.03:
+            score += 15
+
+        position_rows.append({
+            "symbol": p.symbol,
+            "qty": p.qty,
+            "entry": p.avg_entry_price,
+            "current": p.current_price,
+            "pl": pl,
+            "plpc": round(plpc, 2),
+            "score": round(score, 1),
+        })
+
+    position_rows.sort(key=lambda x: x["score"])
+    weakest_symbol = position_rows[0]["symbol"] if position_rows else "None"
+
+    bot_status = "MARKET OPEN" if clock.is_open else "MARKET CLOSED"
+    status_class = "green" if clock.is_open else "yellow"
+
+    buy_count = len([l for l in logs if "BUY |" in l or "BUY DECISION" in l])
+    sell_count = len([l for l in logs if "SELL |" in l])
+    skip_count = len([l for l in logs if "SKIP BUY" in l])
+    rotation_count = len([l for l in logs if "ROTATION APPROVED" in l])
+    scanner_count = len([l for l in logs if "SCANNER" in l])
+    adaptive_count = len([l for l in logs if "ADAPTIVE" in l])
+
+    open_winners = len([r for r in position_rows if r["pl"] >= 0])
+    open_losers = len([r for r in position_rows if r["pl"] < 0])
+    open_total = open_winners + open_losers
+    open_win_rate = round((open_winners / open_total) * 100, 1) if open_total else 0
+
+    portfolio_value = float(account.portfolio_value)
+    deployed_pct = round((position_value / portfolio_value) * 100, 1) if portfolio_value else 0
+
+    risk_mode = "Defensive" if total_pl < 0 else "Normal"
+    risk_color = "red" if total_pl < 0 else "green"
+    slot_status = "Full" if status_data.get("slots_available", 0) == 0 else "Available"
+    slot_color = "yellow" if slot_status == "Full" else "green"
+
+    decision_keywords = ["BUY", "SELL", "SKIP BUY", "ROTATION", "NO ROTATION", "BUY DECISION", "ADAPTIVE", "SCANNER"]
+    decision_lines = [l.strip() for l in logs if any(k in l for k in decision_keywords)][-12:][::-1]
+    scanner_lines = [l.strip() for l in logs if "SCANNER" in l][-6:][::-1]
+    adaptive_lines = [l.strip() for l in logs if "ADAPTIVE" in l][-6:][::-1]
+
+    ai_feed = [
+        "Market is open. Scanner and execution logic are active." if clock.is_open else "Market is closed. Bot is online and waiting for the next session.",
+        f"Weakest position: {weakest_symbol}. This is the first rotation candidate.",
+        f"Risk mode: {risk_mode}. Open P/L is {money(total_pl)}.",
+        f"Capital deployed: {deployed_pct}% across {len(positions)} positions.",
+        f"Recent engine activity: {buy_count} buys, {sell_count} sells, {skip_count} skips, {rotation_count} rotations.",
+    ]
+
+    health_score = 100
+    health_notes = []
+    health_suggestions = []
+
+    if open_win_rate < 45 and len(positions) > 0:
+        health_score -= 20
+        health_notes.append("Open win rate is weak.")
+        health_suggestions.append("Tighten candidate quality or improve exits before increasing size.")
+    if total_pl < 0:
+        health_score -= 20
+        health_notes.append("Open P/L is negative.")
+        health_suggestions.append("Keep rotation defensive and avoid adding weak setups.")
+    if scanner_count == 0:
+        health_score -= 15
+        health_notes.append("Scanner has not produced recent events.")
+        health_suggestions.append("Watch scanner logs; if still quiet, lower scanner threshold or expand universe.")
+    if rotation_count == 0 and status_data.get("slots_available", 0) == 0:
+        health_score -= 10
+        health_notes.append("No rotations while slots are full.")
+        health_suggestions.append("Rotation may need stronger candidate flow before it activates.")
+    if adaptive_count == 0:
+        health_score -= 5
+        health_notes.append("Adaptive learning has not activated yet.")
+        health_suggestions.append("Collect more closed trades before enabling factor-level learning.")
+
+    health_score = max(0, min(100, health_score))
+    if health_score >= 80:
+        health_label, health_class = "Strong", "green"
+    elif health_score >= 60:
+        health_label, health_class = "Stable", "yellow"
+    else:
+        health_label, health_class = "Needs Attention", "red"
+
+    if not health_notes:
+        health_notes.append("System health looks stable.")
+    if not health_suggestions:
+        health_suggestions.append("Let the system collect more data before making aggressive changes.")
+
+    return render_template_string(
+        DASHBOARD_TEMPLATE,
+        account=account,
+        bot_status=bot_status,
+        status_class=status_class,
+        total_pl=total_pl,
+        position_value=position_value,
+        deployed_pct=deployed_pct,
+        open_win_rate=open_win_rate,
+        open_winners=open_winners,
+        open_losers=open_losers,
+        buy_count=buy_count,
+        sell_count=sell_count,
+        skip_count=skip_count,
+        rotation_count=rotation_count,
+        scanner_count=scanner_count,
+        adaptive_count=adaptive_count,
+        summary=summary,
+        decision_lines=decision_lines,
+        ai_feed=ai_feed,
+        scanner_lines=scanner_lines,
+        adaptive_lines=adaptive_lines,
+        health_score=health_score,
+        health_class=health_class,
+        health_label=health_label,
+        health_notes=health_notes,
+        health_suggestions=health_suggestions,
+        candidates=status_data.get("top_candidates", []),
+        status_data=status_data,
+        watchlist=status_data.get("watchlist", []),
+        position_rows=position_rows,
+        weakest_symbol=weakest_symbol,
+        risk_mode=risk_mode,
+        risk_color=risk_color,
+        slot_status=slot_status,
+        slot_color=slot_color,
+        escaped_logs="".join(logs),
+        learning_summary=learning_summary,
+        money=money,
+    )
+
+
+
+
+# === GLOBAL PONDER UI LOADER V1 ===
+@app.after_request
+def inject_ponder_ui_global(response):
+    try:
+        if response.mimetype == "text/html":
+            html = response.get_data(as_text=True)
+            script = '<script src="/static/ponder_ui.js?v=popupponder2"></script>'
+            if "/static/ponder_ui.js" not in html:
+                if "</body>" in html:
+                    html = html.replace("</body>", script + "\n</body>")
+                elif "</html>" in html:
+                    html = html.replace("</html>", script + "\n</html>")
+                else:
+                    html += script
+                response.set_data(html)
+    except Exception:
+        pass
+    return response
+
+if __name__ == "__main__":
+    app.run(host="127.0.0.1", port=5000)
+
+
+@app.route("/history")
+@requires_auth
+def history():
+    import csv
+    import os
+
+    rows = []
+    if os.path.exists("equity_history.csv"):
+        with open("equity_history.csv", "r") as f:
+            rows = list(csv.DictReader(f))[-100:]
+
+    values = []
+    labels = []
+
+    for row in rows:
+        try:
+            values.append(float(row["portfolio_value"]))
+            labels.append(row["timestamp"][5:16].replace("T", " "))
+        except Exception:
+            pass
+
+    points = ""
+    if values:
+        min_v = min(values)
+        max_v = max(values)
+        span = max(max_v - min_v, 1)
+        width = 900
+        height = 260
+
+        coords = []
+        for i, value in enumerate(values):
+            x = int((i / max(len(values) - 1, 1)) * width)
+            y = int(height - ((value - min_v) / span) * height)
+            coords.append(f"{x},{y}")
+
+        points = " ".join(coords)
+
+    table_rows = ""
+    for row in reversed(rows[-25:]):
+        table_rows += f"""
+        <tr>
+            <td>{row.get('timestamp','')}</td>
+            <td>${float(row.get('portfolio_value',0)):,.2f}</td>
+            <td>${float(row.get('buying_power',0)):,.2f}</td>
+            <td>${float(row.get('open_pl',0)):,.2f}</td>
+        </tr>
+        """
+
+    if not table_rows:
+        table_rows = "<tr><td colspan='4'>No history yet. Let the bot run for a few cycles.</td></tr>"
+
+    return f"""
+    <html>
+    <head>
+        <title>Ponder Invest AI History</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- history full page refresh disabled -->
+        <style>
+            body {{
+                margin:0;
+                font-family:Arial;
+                background:#030712;
+                color:white;
+            }}
+            .container {{
+                max-width:1100px;
+                margin:auto;
+                padding:24px;
+            }}
+            .card {{
+                background:#0f172a;
+                border:1px solid rgba(255,255,255,.1);
+                border-radius:22px;
+                padding:20px;
+                margin-bottom:18px;
+            }}
+            a {{ color:#00ff88; }}
+            table {{
+                width:100%;
+                border-collapse:collapse;
+            }}
+            th,td {{
+                padding:12px;
+                border-bottom:1px solid rgba(255,255,255,.08);
+                text-align:left;
+            }}
+            .muted {{ color:#94a3b8; }}
+            svg {{
+                width:100%;
+                background:#020617;
+                border-radius:16px;
+                border:1px solid rgba(255,255,255,.08);
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Ponder Invest AI · History</h1>
+            <p><a href="/">← Back to Dashboard</a></p>
+
+            <div class="card">
+                <h2>Equity Curve</h2>
+                <p class="muted">Tracks portfolio value snapshots collected each bot cycle.</p>
+                <svg viewBox="0 0 900 300">
+                    <polyline fill="none" stroke="#00ff88" stroke-width="4" points="{points}" transform="translate(0,20)" />
+                </svg>
+            </div>
+
+            <div class="card">
+                <h2>Recent Equity Snapshots</h2>
+                <table>
+                    <tr>
+                        <th>Time</th>
+                        <th>Portfolio Value</th>
+                        <th>Buying Power</th>
+                        <th>Open P/L</th>
+                    </tr>
+                    {table_rows}
+                </table>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+
+@app.after_request
+def ponder_ai_health_badge(response):
+    try:
+        if not response.content_type.startswith("text/html"):
+            return response
+        body=response.get_data(as_text=True)
+        if "</body>" not in body:
+            return response
+        from profit_ops_analytics import snapshot
+        s=snapshot()
+        h=s.get("health",{}).get("score","--")
+        open_pl=s.get("latest",{}).get("open_pl",0)
+        color="#7cff9b" if float(open_pl or 0)>=0 else "#ff6f91"
+        badge=f"""
+        <div id='ponder_ai_health_badge' style='position:fixed;right:18px;bottom:18px;z-index:9999;background:#111827;border:1px solid #26334f;border-radius:18px;padding:12px 14px;color:white;font-family:Arial;box-shadow:0 10px 30px rgba(0,0,0,.35)'>
+          <div style='font-weight:900'>AI Health: {h}/100</div>
+          <div style='font-size:12px;color:#a8b3c7'>Open P/L: <span style='color:{color}'>${float(open_pl or 0):,.2f}</span></div>
+          <div style='font-size:12px;margin-top:6px'><a href='/' style='color:#8ab4ff'>Dashboard</a> · <a href='/profit' style='color:#8ab4ff'>Profit Ops</a></div>
+        </div>
+        """
+        body=body.replace("</body>",badge+"</body>")
+        response.set_data(body)
+    except Exception:
+        pass
+    return response
+
+
+@app.after_request
+def dashboard_security_headers_v1(response):
+    return security_headers(response)
+
+
+# GLOBAL_APP_SHELL_V1
+@app.after_request
+def global_app_shell_v1(response):
+    try:
+        ctype = response.headers.get("Content-Type", "")
+        if "text/html" not in ctype:
+            return response
+
+        html = response.get_data(as_text=True)
+
+        # Do not double-inject pages that already have app shell
+        if "class=\"sidebar\"" in html or "APP_UI_V1" in html:
+            return response
+
+        style = """
+<style id="globalAppShellStyle">
+:root{--border:#26334f;--green:#7cff9b;--blue:#8ab4ff;--muted:#a8b3c7}
+body{background:radial-gradient(circle at top left,#123322 0,#0b1024 35%,#050816 100%)!important}
+.globalSidebar{
+ position:fixed;left:0;top:0;bottom:0;width:230px;background:rgba(5,10,24,.94);
+ border-right:1px solid var(--border);padding:22px 16px;z-index:9999;backdrop-filter:blur(12px);
+ font-family:Arial,sans-serif;color:white
+}
+.globalBrand{font-size:24px;font-weight:900;margin-bottom:24px}
+.globalBrand span{color:var(--green)}
+.globalNavItem{
+ display:block;padding:12px 14px;border-radius:14px;color:#dbe7ff;text-decoration:none;
+ margin:8px 0;background:rgba(255,255,255,.03)
+}
+.globalNavItem:hover{background:rgba(138,180,255,.14);color:white}
+.globalSideNote{position:absolute;bottom:20px;color:var(--muted);font-size:12px;line-height:1.4}
+body{padding-left:230px!important}
+@media(max-width:950px){
+ body{padding-left:0!important}
+ .globalSidebar{position:static;width:auto;border-right:0;border-bottom:1px solid var(--border)}
+ .globalSideNote{position:static;margin-top:12px}
+ .globalNavItem{display:inline-block;margin:4px}
+}
+</style>
+"""
+
+        sidebar = """
+<div class="globalSidebar">
+  <div class="globalBrand">🐾 Ponder<span>AI</span></div>
+  <a href="/" class="globalNavItem">🏠 Main</a>
+  <a href="/profit" class="globalNavItem">📈 Profit Ops</a>
+  <a href="/profit-lab" class="globalNavItem">🧠 Profit Lab</a>
+  <a href="/history" class="globalNavItem">📜 History</a>
+  <a href="/logout" class="globalNavItem">🔐 Logout</a>
+  <div class="globalSideNote">Paper trading dashboard<br>Read-only UI layer</div>
+</div>
+"""
+
+        html = html.replace("</head>", style + "</head>")
+        html = html.replace("<body>", "<body>" + sidebar, 1)
+
+        response.set_data(html)
+        response.headers["Content-Length"] = str(len(html.encode("utf-8")))
+        return response
+    except Exception:
+        return response
+
+===== NEW SITE APP =====
+
+from flask import Flask, render_template
+import json
+from pathlib import Path
+
+app = Flask(__name__)
+ROOT = Path(__file__).resolve().parent.parent
+RESEARCH = ROOT / "static" / "research"
+
+def load_json(name):
+    p = RESEARCH / name
+    if not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text())
+    except Exception:
+        return {}
+
+@app.route("/")
+def dashboard():
+    ai = load_json("ai_summary_latest.json")
+    alerts = load_json("notifications_latest.json")
+    return render_template("dashboard.html", ai=ai, alerts=alerts)
+
+@app.route("/research")
+def research():
+    data = {
+        "ai": load_json("ai_summary_latest.json"),
+        "alerts": load_json("notifications_latest.json"),
+        "market": load_json("market_intelligence_latest.json"),
+        "overnight": load_json("overnight_brief_latest.json"),
+        "sell": load_json("sell_intelligence_latest.json"),
+        "rotation": load_json("rotation_engine_latest.json"),
+        "performance": load_json("rotation_performance_latest.json"),
+        "shadow": load_json("shadow_capital_allocator_latest.json"),
+        "regime": load_json("market_regime_filter_latest.json"),
+    }
+    return render_template("research.html", data=data)
+
+@app.route("/assistant")
+def assistant():
+    ai = load_json("ai_summary_latest.json")
+    assistant = load_json("ponder_assistant_latest.json")
+    return render_template("assistant.html", ai=ai, assistant=assistant)
+
+@app.route("/learning")
+def learning():
+    achievements = load_json("achievements_latest.json")
+    performance = load_json("rotation_performance_latest.json")
+    return render_template("learning.html", achievements=achievements, performance=performance)
+
+@app.route("/settings")
+def settings():
+    return render_template("settings.html")
+
+@app.route("/health")
+def health():
+    return {"status": "ok", "site": "new_ponder_site"}
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5050)

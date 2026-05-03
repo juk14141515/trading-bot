@@ -1,0 +1,416 @@
+
+window.addEventListener("load", function () {
+  console.log("Ponder clean UI v2 loaded");
+
+  const style = document.createElement("style");
+  style.innerHTML = `
+    .pp-card-hover {
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease !important;
+      will-change: transform;
+    }
+    .pp-card-hover:hover {
+      transform: translateY(-5px) scale(1.01) !important;
+      box-shadow: 0 22px 60px rgba(0,0,0,.45), 0 0 28px rgba(124,255,178,.22) !important;
+      border-color: rgba(124,255,178,.38) !important;
+    }
+    .pp-card-enter {
+      animation: ppCardEnter .35s ease both;
+    }
+    @keyframes ppCardEnter {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  `;
+  document.head.appendChild(style);
+
+  const labels = [
+    "Account Status", "Portfolio Value", "Buying Power", "Open P/L",
+    "Open Win Rate", "Capital Deployed", "Bot Actions", "Rotations",
+    "Scanner Events", "Adaptive Events", "Closed Win Rate", "Closed Net P/L",
+    "Equity Curve", "Recent Equity Snapshots"
+  ];
+
+  function tagCards() {
+    const divs = Array.from(document.querySelectorAll("div"));
+
+    divs.forEach(el => {
+      if (el.closest(".globalSidebar")) return;
+      if (el.id === "ppToolDock" || el.id === "ppSettingsPanel") return;
+
+      const txt = (el.innerText || "").trim();
+      if (!labels.some(label => txt.includes(label))) return;
+
+      const r = el.getBoundingClientRect();
+      if (r.width < 180 || r.height < 80) return;
+      if (r.width > window.innerWidth * 0.75) return;
+
+      el.classList.add("pp-card-hover");
+
+      if (!el.dataset.ppEntered) {
+        el.dataset.ppEntered = "1";
+        el.classList.add("pp-card-enter");
+      }
+    });
+  }
+
+  tagCards();
+  setInterval(tagCards, 2000);
+
+  if (!document.getElementById("ppToolDock")) {
+    const dock = document.createElement("div");
+    dock.id = "ppToolDock";
+    dock.style.cssText = "position:fixed;right:22px;top:260px;z-index:99999;display:flex;flex-direction:column;gap:12px;";
+    dock.innerHTML = "<button>⬆️</button><button>🔄</button><button>📋</button>";
+    const buttons = dock.querySelectorAll("button");
+    buttons[0].onclick = () => window.scrollTo({top:0, behavior:"smooth"});
+    buttons[1].onclick = () => location.reload();
+    buttons[2].onclick = () => navigator.clipboard.writeText(location.href);
+    buttons.forEach(btn => {
+      btn.style.cssText = "width:44px;height:44px;border-radius:14px;border:1px solid rgba(140,160,255,.35);background:rgba(18,24,45,.9);color:white;cursor:pointer;font-size:18px;";
+    });
+    document.body.appendChild(dock);
+  }
+
+  if (!document.getElementById("ppSettingsButton")) {
+    const gear = document.createElement("button");
+    gear.id = "ppSettingsButton";
+    gear.innerHTML = "⚙️";
+    gear.style.cssText = "position:fixed;right:22px;bottom:24px;z-index:100000;width:52px;height:52px;border-radius:50%;border:1px solid rgba(140,160,255,.4);background:rgba(18,24,45,.95);color:white;cursor:pointer;font-size:22px;";
+
+    const panel = document.createElement("div");
+    panel.id = "ppSettingsPanel";
+    panel.style.cssText = "display:none;position:fixed;right:22px;bottom:88px;z-index:100000;width:290px;padding:18px;border-radius:18px;border:1px solid rgba(140,160,255,.35);background:rgba(18,24,45,.96);color:white;box-shadow:0 18px 45px rgba(0,0,0,.35);font-family:Arial,sans-serif;";
+    panel.innerHTML = "<h3>🐾 Ponder Pro Settings</h3><p>Focus Mode: Ready</p><p>Colorblind Mode: Icons + labels</p><p>Theme: Default</p>";
+
+    gear.onclick = () => panel.style.display = panel.style.display === "none" ? "block" : "none";
+    document.body.appendChild(panel);
+    document.body.appendChild(gear);
+  }
+});
+
+
+// === PONDER MARKET INTELLIGENCE DASHBOARD V1 ===
+window.addEventListener("load", function () {
+  if (window.__ponderMarketIntelV1) return;
+  window.__ponderMarketIntelV1 = true;
+
+  const btn = document.createElement("button");
+  btn.innerHTML = "🧠";
+  btn.title = "Market Intelligence";
+  btn.style.cssText = `
+    position:fixed; right:22px; top:420px; z-index:100000;
+    width:44px; height:44px; border-radius:14px;
+    border:1px solid rgba(140,160,255,.35);
+    background:rgba(18,24,45,.92); color:white;
+    cursor:pointer; font-size:18px;
+  `;
+  document.body.appendChild(btn);
+
+  const panel = document.createElement("div");
+  panel.id = "ponderMarketIntelPanel";
+  panel.style.cssText = `
+    display:none; position:fixed; inset:72px 36px 36px 260px;
+    z-index:100000; overflow:auto; padding:24px;
+    border-radius:24px; border:1px solid rgba(140,160,255,.25);
+    background:rgba(8,12,24,.97); color:white;
+    box-shadow:0 24px 70px rgba(0,0,0,.55);
+    font-family:Arial,sans-serif;
+  `;
+  document.body.appendChild(panel);
+
+  function row(x) {
+    return `
+      <tr>
+        <td>${x.symbol ?? ""}</td>
+        <td>${x.final_score ?? ""}</td>
+        <td>${x.entry_zone ?? ""}</td>
+        <td>${x.pullback_from_sma5_pct ?? ""}%</td>
+        <td>${x.extension_from_sma20_pct ?? ""}%</td>
+        <td>${x.label ?? ""}</td>
+      </tr>
+    `;
+  }
+
+  async function loadIntel() {
+    panel.innerHTML = "<h2>🧠 Market Intelligence</h2><p>Loading research data...</p>";
+    try {
+      const res = await fetch("/static/research/market_intelligence_latest.json?ts=" + Date.now());
+      const data = await res.json();
+
+      panel.innerHTML = `
+        <div style="display:flex;justify-content:space-between;gap:16px;align-items:center">
+          <div>
+            <h1 style="margin:0">🧠 Market Intelligence</h1>
+            <p style="color:#a8b3c7">Updated: ${data.updated_at}</p>
+          </div>
+          <button id="closeIntel" style="padding:10px 14px;border-radius:12px;background:#111827;color:white;border:1px solid #334155;cursor:pointer">Close</button>
+        </div>
+
+        <h2>✅ Trade-Friendly / Pullback Setups</h2>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+          <thead><tr><th>Symbol</th><th>Score</th><th>Entry Zone</th><th>Pullback</th><th>Extension</th><th>Label</th></tr></thead>
+          <tbody>${(data.trade_ready || []).map(row).join("")}</tbody>
+        </table>
+
+        <h2>⚠️ Strong but Extended</h2>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+          <thead><tr><th>Symbol</th><th>Score</th><th>Entry Zone</th><th>Pullback</th><th>Extension</th><th>Label</th></tr></thead>
+          <tbody>${(data.extended_wait || []).map(row).join("")}</tbody>
+        </table>
+
+        <h2>🧪 Best Strategy Research</h2>
+        <pre style="background:rgba(255,255,255,.05);padding:16px;border-radius:16px;white-space:pre-wrap">${JSON.stringify(data.best_strategy || {}, null, 2)}</pre>
+      `;
+
+      panel.querySelectorAll("td,th").forEach(e => {
+        e.style.cssText = "padding:10px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left";
+      });
+
+      document.getElementById("closeIntel").onclick = () => panel.style.display = "none";
+    } catch (e) {
+      panel.innerHTML = "<h2>Market Intelligence</h2><p>No research data found yet. Run <code>python3 research_pipeline_v1.py</code>.</p>";
+    }
+  }
+
+  btn.onclick = function () {
+    panel.style.display = panel.style.display === "none" ? "block" : "none";
+    if (panel.style.display === "block") loadIntel();
+  };
+});
+
+
+// === PONDER INTELLIGENCE UI V2 ===
+window.addEventListener("load", function () {
+  if (window.__ponderIntelUIV2) return;
+  window.__ponderIntelUIV2 = true;
+
+  const style = document.createElement("style");
+  style.innerHTML = `
+    #ponderIntelBtn {
+      position: fixed;
+      right: 22px;
+      top: 420px;
+      z-index: 100000;
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      border: 1px solid rgba(120,180,255,.35);
+      background: rgba(10,14,28,.94);
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 12px 30px rgba(0,0,0,.35);
+    }
+
+    #ponderIntelPanel {
+      display: none;
+      position: fixed;
+      inset: 60px 34px 34px 260px;
+      z-index: 100000;
+      overflow: auto;
+      padding: 26px;
+      border-radius: 26px;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(110,255,170,.08), transparent 30%),
+        linear-gradient(180deg, rgba(9,13,25,.98), rgba(4,6,12,.98));
+      color: white;
+      border: 1px solid rgba(140,160,255,.22);
+      box-shadow: 0 26px 80px rgba(0,0,0,.62);
+      font-family: Arial, sans-serif;
+    }
+
+    .intel-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin: 18px 0 24px;
+    }
+
+    .intel-card {
+      padding: 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.045);
+    }
+
+    .intel-card h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: #a8b3c7;
+    }
+
+    .intel-card .big {
+      font-size: 26px;
+      font-weight: 900;
+    }
+
+    .intel-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 28px;
+      font-size: 13px;
+    }
+
+    .intel-table th, .intel-table td {
+      padding: 10px;
+      border-bottom: 1px solid rgba(255,255,255,.075);
+      text-align: left;
+    }
+
+    .intel-table th {
+      color: #a8b3c7;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .intel-badge {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.08);
+      white-space: nowrap;
+    }
+
+    .intel-close {
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color: white;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    @media (max-width: 900px) {
+      #ponderIntelPanel {
+        inset: 20px;
+      }
+      .intel-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+
+  const btn = document.createElement("button");
+  btn.id = "ponderIntelBtn";
+  btn.innerHTML = "🧠";
+  btn.title = "Market Intelligence";
+  document.body.appendChild(btn);
+
+  const panel = document.createElement("div");
+  panel.id = "ponderIntelPanel";
+  document.body.appendChild(panel);
+
+  function safe(n) {
+    if (n === undefined || n === null || Number.isNaN(n)) return "--";
+    return n;
+  }
+
+  function row(x) {
+    return `
+      <tr>
+        <td><strong>${safe(x.symbol)}</strong></td>
+        <td>${safe(x.final_score)}</td>
+        <td><span class="intel-badge">${safe(x.entry_zone)}</span></td>
+        <td>${safe(x.pullback_from_sma5_pct)}%</td>
+        <td>${safe(x.extension_from_sma20_pct)}%</td>
+        <td>${safe(x.change_5d_pct)}%</td>
+        <td>${safe(x.volume_ratio)}x</td>
+        <td>${safe(x.label)}</td>
+      </tr>
+    `;
+  }
+
+  function table(title, items) {
+    return `
+      <h2>${title}</h2>
+      <table class="intel-table">
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Score</th>
+            <th>Entry Zone</th>
+            <th>Pullback</th>
+            <th>Extension</th>
+            <th>5D</th>
+            <th>Vol</th>
+            <th>Label</th>
+          </tr>
+        </thead>
+        <tbody>${(items || []).map(row).join("")}</tbody>
+      </table>
+    `;
+  }
+
+  async function loadIntel() {
+    panel.style.display = "block";
+    panel.innerHTML = `<h1>🧠 Market Intelligence</h1><p style="color:#a8b3c7">Loading scanner + optimizer research...</p>`;
+
+    try {
+      const res = await fetch("/static/research/market_intelligence_latest.json?ts=" + Date.now());
+      const data = await res.json();
+
+      const tradeReady = data.trade_ready || [];
+      const extended = data.extended_wait || [];
+      const scannerTop = data.scanner_top || [];
+      const best = data.best_strategy || {};
+
+      panel.innerHTML = `
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px">
+          <div>
+            <h1 style="margin:0;font-size:34px">🧠 Market Intelligence</h1>
+            <p style="color:#a8b3c7;margin-top:8px">Research-only scanner. Does not control live trades.</p>
+            <p style="color:#7c8aa5;font-size:13px">Updated: ${safe(data.updated_at)}</p>
+          </div>
+          <button class="intel-close" id="ponderIntelClose">Close</button>
+        </div>
+
+        <div class="intel-grid">
+          <div class="intel-card">
+            <h3>Trade-Friendly Setups</h3>
+            <div class="big">${tradeReady.length}</div>
+            <div style="color:#a8b3c7;font-size:13px">Healthy or pullback zones</div>
+          </div>
+          <div class="intel-card">
+            <h3>Extended / Wait</h3>
+            <div class="big">${extended.length}</div>
+            <div style="color:#a8b3c7;font-size:13px">Strong, but risky to chase</div>
+          </div>
+          <div class="intel-card">
+            <h3>Best Research Config</h3>
+            <div class="big">${safe(best.win_rate)}%</div>
+            <div style="color:#a8b3c7;font-size:13px">Win rate from optimizer</div>
+          </div>
+        </div>
+
+        ${table("✅ Trade-Friendly / Pullback Setups", tradeReady)}
+        ${table("⚠️ Strong but Extended / Wait", extended)}
+        ${table("📡 Scanner Top 15", scannerTop)}
+
+        <h2>🧪 Best Strategy Research</h2>
+        <pre style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);padding:16px;border-radius:16px;white-space:pre-wrap">${JSON.stringify(best, null, 2)}</pre>
+      `;
+
+      document.getElementById("ponderIntelClose").onclick = () => panel.style.display = "none";
+    } catch (e) {
+      panel.innerHTML = `
+        <h1>🧠 Market Intelligence</h1>
+        <p style="color:#ffb4b4">No research file loaded yet.</p>
+        <p>Run:</p>
+        <pre style="background:rgba(255,255,255,.05);padding:16px;border-radius:16px">python3 research_pipeline_v1.py</pre>
+      `;
+    }
+  }
+
+  btn.onclick = function () {
+    if (panel.style.display === "block") {
+      panel.style.display = "none";
+    } else {
+      loadIntel();
+    }
+  };
+});
+

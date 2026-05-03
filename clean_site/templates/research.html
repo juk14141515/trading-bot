@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Research Center</h1>
+<p class="muted">All current research feeds in one clean place.</p>
+
+<div class="tabs">
+  <button onclick="loadResearch('ai')">AI Summary</button>
+  <button onclick="loadResearch('alerts')">Alerts</button>
+  <button onclick="loadResearch('market')">Market</button>
+  <button onclick="loadResearch('overnight')">Overnight</button>
+  <button onclick="loadResearch('sell')">Sell</button>
+  <button onclick="loadResearch('rotation')">Rotation</button>
+  <button onclick="loadResearch('performance')">Performance</button>
+  <button onclick="loadResearch('shadow')">Shadow</button>
+</div>
+
+<section class="card" id="researchOutput">Loading...</section>
+{% endblock %}
+{% block scripts %}
+<script>loadResearch('ai');</script>
+{% endblock %}

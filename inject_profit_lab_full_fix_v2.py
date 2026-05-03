@@ -1,0 +1,147 @@
+from pathlib import Path
+from datetime import datetime
+import shutil
+
+ROOT = Path("/home/ubuntu/trading-bot")
+STAMP = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+def backup(name):
+    p = ROOT / name
+    if p.exists():
+        b = ROOT / f"{name}.bak_full_fix_{STAMP}"
+        shutil.copy2(p, b)
+        print(f"BACKUP | {name} -> {b.name}")
+
+backup("profit_lab_routes.py")
+
+p = ROOT / "profit_lab_routes.py"
+
+p.write_text('''
+from flask import Blueprint, jsonify, render_template_string
+from profit_ops_analytics import snapshot
+
+profit_lab_bp = Blueprint("profit_lab", __name__)
+
+@profit_lab_bp.route("/api/profit-lab")
+def api_profit_lab():
+    return jsonify(snapshot())
+
+@profit_lab_bp.route("/profit-lab")
+def profit_lab_page():
+    return render_template_string("""
+<!DOCTYPE html>
+<html>
+<head>
+<title>Profit Lab</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body { background:#0b1220; color:white; font-family:sans-serif; }
+.card { background:#111827; padding:16px; border-radius:12px; margin:10px; }
+.grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.value.good { color:#4ade80 }
+.value.bad { color:#f87171 }
+</style>
+</head>
+<body>
+
+<h1>Ponder Invest AI – Profit Lab</h1>
+
+<div class="grid">
+  <div class="card">
+    <div>Today P/L</div>
+    <div id="todayPnl" class="value">$0</div>
+  </div>
+
+  <div class="card">
+    <div>Win Rate</div>
+    <div id="todayWin" class="value">0%</div>
+  </div>
+
+  <div class="card">
+    <div>AI Health</div>
+    <div id="health" class="value">--</div>
+  </div>
+
+  <div class="card">
+    <div>Open P/L</div>
+    <div id="openPl" class="value">$0</div>
+  </div>
+</div>
+
+<div class="card" style="height:400px;">
+  <canvas id="chart"></canvas>
+</div>
+
+<div class="card">
+  <h3>Live Positions</h3>
+  <table style="width:100%">
+    <thead>
+      <tr>
+        <th>Symbol</th><th>Qty</th><th>P/L</th>
+      </tr>
+    </thead>
+    <tbody id="positions"></tbody>
+  </table>
+</div>
+
+<script>
+let chart;
+
+function money(x){return "$"+Number(x||0).toFixed(2)}
+function pct(x){return Number(x||0).toFixed(2)+"%"}
+function cls(x){return Number(x)>=0?"good":"bad"}
+
+async function load(){
+  let r = await fetch("/api/profit-lab");
+  let d = await r.json();
+
+  let l = d.latest || {};
+  let eq = d.equity || [];
+  let lab = d.lab || {};
+
+  document.getElementById("todayPnl").textContent = money(lab.net_today);
+  document.getElementById("todayWin").textContent = pct(lab.win_rate_today);
+  document.getElementById("health").textContent = (d.health?.score || "--");
+  document.getElementById("openPl").textContent = money(l.open_pl);
+
+  // Chart
+  let labels = eq.map(x=>x.timestamp);
+  let values = eq.map(x=>x.portfolio_value);
+
+  if(!chart){
+    chart = new Chart(document.getElementById("chart"), {
+      type:"line",
+      data:{labels:labels, datasets:[{label:"Equity", data:values}]}
+    });
+  } else {
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = values;
+    chart.update();
+  }
+
+  // Positions
+  let rows = (lab.positions || []).map(p =>
+    `<tr>
+      <td>${p.symbol}</td>
+      <td>${p.qty}</td>
+      <td class="${cls(p.unrealized_pl)}">${money(p.unrealized_pl)}</td>
+    </tr>`
+  ).join("");
+
+  document.getElementById("positions").innerHTML =
+    rows || "<tr><td colspan='3'>No positions</td></tr>";
+}
+
+load();
+setInterval(load, 5000);
+</script>
+
+</body>
+</html>
+""")
+''')
+
+print("DONE: Full Profit Lab Fix Installed")
+print("NEXT:")
+print("python3 -m py_compile profit_lab_routes.py")
+print("sudo systemctl restart tradebot-dashboard")

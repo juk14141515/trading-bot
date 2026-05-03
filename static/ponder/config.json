@@ -1,0 +1,9 @@
+{
+  "version": "pondermod2",
+  "theme": "black_pro",
+  "colorblind": true,
+  "adhd_mode": false,
+  "show_toasts": true,
+  "show_ponder": true,
+  "refresh_seconds": 60
+}

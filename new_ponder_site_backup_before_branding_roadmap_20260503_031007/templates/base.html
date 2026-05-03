@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Ponder Invest AI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <aside class="side">
+    <div class="brand"><span class="brand-mark">P</span> Ponder<span>AI</span></div>
+    <p class="sub">Research-only command center</p>
+    <a class="{% if request.path == '/' %}active{% endif %}" href="/">Dashboard</a>
+    <a class="{% if request.path == '/profit' %}active{% endif %}" href="/profit">Profit Ops</a>
+    <a class="{% if request.path == '/profit-lab' %}active{% endif %}" href="/profit-lab">Profit Lab</a>
+    <a class="{% if request.path == '/research' %}active{% endif %}" href="/research">Research</a>
+    <a class="{% if request.path == '/assistant' %}active{% endif %}" href="/assistant">Ask Ponder</a>
+    <a class="{% if request.path == '/learning' %}active{% endif %}" href="/learning">Learning</a>
+    <a class="{% if request.path == '/settings' %}active{% endif %}" href="/settings">Settings</a>
+    <a class="{% if request.path == '/history' or request.path == '/profit/history' %}active{% endif %}" href="/history">History</a>
+    <a class="{% if request.path == '/debug-snapshot' %}active{% endif %}" href="/debug-snapshot">Snapshot</a>
+    <a href="/logout">Logout</a>
+  </aside>
+
+  <main class="main">
+    {% block content %}{% endblock %}
+  </main>
+  <script src="/static/site/js/app.js?v=consistency1"></script>
+</body>
+</html>

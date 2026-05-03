@@ -1,0 +1,19 @@
+
+{% extends "base.html" %}
+{% block content %}
+<h1>Learning Center</h1>
+<section class="grid">
+  <div class="card"><h3>Achievements</h3><div class="big">{{ achievements.get("total_unlocked", achievements.get("achievements", [])|length) }}</div></div>
+  <div class="card"><h3>Pending Evaluations</h3><div class="big">{{ performance.get("summary", {}).get("pending_evaluations", 0) }}</div></div>
+</section>
+
+<section class="card">
+  <h2>Daily Missions</h2>
+  <ul>
+    <li>Review AI Summary.</li>
+    <li>Check Alerts before strategy changes.</li>
+    <li>Let tracker collect more outcomes.</li>
+    <li>Do not connect experimental modules to live trading yet.</li>
+  </ul>
+</section>
+{% endblock %}

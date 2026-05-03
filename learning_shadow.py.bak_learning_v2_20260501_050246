@@ -1,0 +1,97 @@
+
+import csv
+import json
+from pathlib import Path
+from datetime import datetime
+
+ROOT = Path("/home/ubuntu/trading-bot")
+MEMORY_FILE = ROOT / "learning_shadow_log.csv"
+STATE_FILE = ROOT / "learning_shadow_state.json"
+
+FIELDS = [
+    "timestamp",
+    "event",
+    "symbol",
+    "score",
+    "price",
+    "qty",
+    "reason",
+    "open_pl",
+    "rotation_score",
+    "rotation_decision",
+    "notes"
+]
+
+def _ensure_file():
+    if not MEMORY_FILE.exists():
+        with MEMORY_FILE.open("w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=FIELDS)
+            writer.writeheader()
+
+def log_learning_event(
+    event,
+    symbol="-",
+    score="",
+    price="",
+    qty="",
+    reason="",
+    open_pl="",
+    rotation_score="",
+    rotation_decision="",
+    notes=""
+):
+    try:
+        _ensure_file()
+        row = {
+            "timestamp": datetime.now().isoformat(),
+            "event": event,
+            "symbol": symbol,
+            "score": score,
+            "price": price,
+            "qty": qty,
+            "reason": reason,
+            "open_pl": open_pl,
+            "rotation_score": rotation_score,
+            "rotation_decision": rotation_decision,
+            "notes": notes
+        }
+        with MEMORY_FILE.open("a", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=FIELDS)
+            writer.writerow(row)
+        return True
+    except Exception:
+        return False
+
+def summarize_learning(limit=200):
+    _ensure_file()
+    rows = []
+    try:
+        with MEMORY_FILE.open("r") as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)[-limit:]
+    except Exception:
+        rows = []
+
+    counts = {}
+    symbols = {}
+
+    for r in rows:
+        event = r.get("event", "UNKNOWN")
+        counts[event] = counts.get(event, 0) + 1
+
+        sym = r.get("symbol") or "-"
+        if sym != "-":
+            symbols.setdefault(sym, {"events": 0, "buys": 0, "sells": 0})
+            symbols[sym]["events"] += 1
+            if "BUY" in event:
+                symbols[sym]["buys"] += 1
+            if "SELL" in event:
+                symbols[sym]["sells"] += 1
+
+    return {
+        "rows": rows[-50:],
+        "counts": counts,
+        "symbols": symbols,
+        "total": len(rows),
+        "mode": "shadow_only"
+    }
