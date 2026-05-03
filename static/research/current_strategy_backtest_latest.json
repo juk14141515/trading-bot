@@ -1,4 +1,87 @@
 {
-  "status": "insufficient_data",
-  "message": "No closed trades yet"
+  "updated_at": "2026-05-03T22:38:50+00:00",
+  "version": "research_only_strategy_evaluator_v1",
+  "status": "evaluated",
+  "source": "trade_history.csv",
+  "summary": {
+    "status": "evaluated",
+    "sample_size": 1,
+    "wins": 0,
+    "losses": 1,
+    "win_rate": 0.0,
+    "net_pnl": -625.84,
+    "avg_return_pct": -4.2573,
+    "best_return_pct": -4.2573,
+    "worst_return_pct": -4.2573,
+    "by_symbol": [
+      {
+        "symbol": "NVDA",
+        "sample_size": 1,
+        "win_rate": 0.0,
+        "net_pnl": -625.84,
+        "avg_return_pct": -4.2573
+      }
+    ]
+  },
+  "setups": [
+    {
+      "setup": "current_bot",
+      "status": "evaluated",
+      "sample_size": 1,
+      "win_rate": 0.0,
+      "avg_return_pct": -4.2573,
+      "outcome": "real closed trade memory",
+      "reason": "Derived only from closed trade_history.csv rows with PnL."
+    },
+    {
+      "setup": "breakout",
+      "status": "insufficient_data",
+      "sample_size": 0,
+      "win_rate": null,
+      "avg_return_pct": null,
+      "outcome": "insufficient data",
+      "reason": "No closed trade rows with PnL were available."
+    },
+    {
+      "setup": "pullback",
+      "status": "insufficient_data",
+      "sample_size": 0,
+      "win_rate": null,
+      "avg_return_pct": null,
+      "outcome": "insufficient data",
+      "reason": "No closed trade rows with PnL were available."
+    },
+    {
+      "setup": "momentum",
+      "status": "insufficient_data",
+      "sample_size": 0,
+      "win_rate": null,
+      "avg_return_pct": null,
+      "outcome": "insufficient data",
+      "reason": "No closed trade rows with PnL were available."
+    },
+    {
+      "setup": "oversold",
+      "status": "insufficient_data",
+      "sample_size": 0,
+      "win_rate": null,
+      "avg_return_pct": null,
+      "outcome": "insufficient data",
+      "reason": "No closed trade rows with PnL were available."
+    },
+    {
+      "setup": "rotation",
+      "status": "insufficient_data",
+      "sample_size": 0,
+      "win_rate": null,
+      "avg_return_pct": null,
+      "outcome": "insufficient data",
+      "reason": "No closed trade rows with PnL were available."
+    }
+  ],
+  "limitations": [
+    "No live orders are placed by this module.",
+    "No fake strategy edge is generated when real outcomes are missing.",
+    "Historical setup comparison requires enough logged closed trades or separately generated forward simulation outcomes."
+  ]
 }

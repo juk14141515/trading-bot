@@ -1,4 +1,73 @@
 {
+  "updated_at": "2026-05-03T22:38:50+00:00",
+  "version": "research_only_forward_setup_summary_v1",
   "status": "insufficient_data",
-  "message": "No evaluated forward simulations yet"
+  "summary": {
+    "evaluated": 0,
+    "pending": 283,
+    "message": "No evaluated forward/shadow outcomes were found yet. Keep collecting simulated ideas before trusting setup win rates.",
+    "scanner_candidates_available": 15,
+    "capital_snapshot_available": true
+  },
+  "setups": [
+    {
+      "setup": "current_bot",
+      "status": "insufficient_data",
+      "sample_size": 0,
+      "win_rate": null,
+      "avg_return_pct": null,
+      "outcome": "insufficient data",
+      "reason": "No evaluated forward/shadow outcomes were found yet. Keep collecting simulated ideas before trusting setup win rates."
+    },
+    {
+      "setup": "breakout",
+      "status": "insufficient_data",
+      "sample_size": 0,
+      "win_rate": null,
+      "avg_return_pct": null,
+      "outcome": "insufficient data",
+      "reason": "No evaluated forward/shadow outcomes were found yet. Keep collecting simulated ideas before trusting setup win rates."
+    },
+    {
+      "setup": "pullback",
+      "status": "insufficient_data",
+      "sample_size": 0,
+      "win_rate": null,
+      "avg_return_pct": null,
+      "outcome": "insufficient data",
+      "reason": "No evaluated forward/shadow outcomes were found yet. Keep collecting simulated ideas before trusting setup win rates."
+    },
+    {
+      "setup": "momentum",
+      "status": "insufficient_data",
+      "sample_size": 0,
+      "win_rate": null,
+      "avg_return_pct": null,
+      "outcome": "insufficient data",
+      "reason": "No evaluated forward/shadow outcomes were found yet. Keep collecting simulated ideas before trusting setup win rates."
+    },
+    {
+      "setup": "oversold",
+      "status": "insufficient_data",
+      "sample_size": 0,
+      "win_rate": null,
+      "avg_return_pct": null,
+      "outcome": "insufficient data",
+      "reason": "No evaluated forward/shadow outcomes were found yet. Keep collecting simulated ideas before trusting setup win rates."
+    },
+    {
+      "setup": "rotation",
+      "status": "insufficient_data",
+      "sample_size": 0,
+      "win_rate": null,
+      "avg_return_pct": null,
+      "outcome": "insufficient data",
+      "reason": "No evaluated forward/shadow outcomes were found yet. Keep collecting simulated ideas before trusting setup win rates."
+    }
+  ],
+  "notes": [
+    "This feed summarizes evaluated research outcomes only.",
+    "It does not infer win rates from scanner scores.",
+    "Use this as the display layer until a dedicated forward_setup_simulator logs enough real simulated outcomes."
+  ]
 }

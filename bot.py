@@ -324,6 +324,19 @@ def safe_headline_text(item):
         return ""
 
 
+
+def build_entry_reason(symbol, final_score, adaptive_reason, base_score=None):
+    parts = [
+        "qualified candidate passed risk checks",
+        f"symbol={symbol}",
+        f"final_score={final_score}",
+    ]
+    if base_score is not None:
+        parts.append(f"base_score={base_score}")
+    if adaptive_reason:
+        parts.append(f"adaptive={adaptive_reason}")
+    return " | ".join(str(p) for p in parts)
+
 def get_momentum_score(symbol):
     """
     Safe momentum score fallback.
@@ -359,8 +372,9 @@ def get_momentum_score(symbol):
         return 0
 
 
-def buy(symbol, score):
+def buy(symbol, score, entry_reason=None, setup="current_bot"):
     price = float(api.get_latest_trade(symbol).price)
+    entry_reason = entry_reason or f"current_bot entry | score={score}"
 
     atr = get_atr(symbol)
 
@@ -423,7 +437,17 @@ def buy(symbol, score):
     )
 
     try:
-        record_trade(symbol, "buy", shares, price, reason="buy order submitted", score=score)
+        record_trade(
+            symbol,
+            "buy",
+            shares,
+            price,
+            reason=entry_reason,
+            score=score,
+            entry_reason=entry_reason,
+            strategy="current_bot",
+            setup=setup,
+        )
     except Exception as e:
         log(f"TRADE MEMORY ERROR | buy {symbol} | {e}")
 
@@ -458,7 +482,19 @@ def sell(symbol, qty, reason):
     notify_discord(f"🔴 SELL PLACED | {symbol} | qty={qty} | reason={reason}")
 
     try:
-        record_trade(symbol, "sell", qty, sell_price, reason=reason, score=None, pnl=pnl, pnl_pct=pnl_pct)
+        record_trade(
+            symbol,
+            "sell",
+            qty,
+            sell_price,
+            reason=reason,
+            score=None,
+            pnl=pnl,
+            pnl_pct=pnl_pct,
+            exit_reason=reason,
+            strategy="current_bot",
+            setup="current_bot",
+        )
     except Exception as e:
         log(f"TRADE MEMORY ERROR | sell {symbol} | {e}")
 
@@ -739,10 +775,11 @@ def run_bot():
             )
             continue
 
-        log_learning_event("LEARNING_SHADOW_BUY_DECISION", symbol=symbol, score=final_score, reason="candidate selected")
+        entry_reason = build_entry_reason(symbol, final_score, adaptive_reason, base_score=score)
+        log_learning_event("LEARNING_SHADOW_BUY_DECISION", symbol=symbol, score=final_score, reason=entry_reason)
         # LEARNING_SHADOW_BUY_DECISION
-        log(f"BUY DECISION | {symbol} | score={final_score} | reason=qualified candidate passed risk checks")
-        buy(symbol, final_score)
+        log(f"BUY DECISION | {symbol} | score={final_score} | reason={entry_reason}")
+        buy(symbol, final_score, entry_reason=entry_reason, setup="current_bot")
         status = load_bot_status()
         status.update({
              "last_action": f"BUY {symbol}",

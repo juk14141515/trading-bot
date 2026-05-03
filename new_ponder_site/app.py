@@ -68,6 +68,8 @@ def build_dashboard_data():
     ai = load_json("ai_summary_latest.json")
     alerts = load_json("notifications_latest.json")
     performance = load_json("rotation_performance_latest.json")
+    strategy_backtest = load_json("current_strategy_backtest_latest.json")
+    forward_simulations = load_json("forward_setup_simulations_latest.json")
     bot = load_root_json("bot_status.json")
     profit_ops = build_profit_ops_data()
     return {
@@ -78,6 +80,8 @@ def build_dashboard_data():
         "capital": capital,
         "profit_ops": profit_ops,
         "capital_history": load_capital_history(),
+        "strategy_backtest": strategy_backtest,
+        "forward_simulations": forward_simulations,
         "scanner_top": (market.get("scanner_top") or [])[:6],
         "top_rotation": (rotation.get("rotation_suggestions") or [{}])[0],
         "top_exit": sell.get("top_exit_candidate") or (sell.get("sell_candidates") or [{}])[0],
@@ -92,6 +96,8 @@ def build_dashboard_data():
             "sell": sell,
             "shadow": shadow,
             "performance": performance,
+            "strategy_backtest": strategy_backtest,
+            "forward_simulations": forward_simulations,
         }),
     }
 
@@ -203,6 +209,8 @@ def build_snapshot():
         "top_exit": data.get("top_exit"),
         "top_shadow": data.get("top_shadow"),
         "module_health": data.get("module_health"),
+        "strategy_backtest": data.get("strategy_backtest"),
+        "forward_simulations": data.get("forward_simulations"),
         "roadmap": build_feature_roadmap(),
         "codex_cloud_handoff": build_codex_cloud_handoff(),
         "next_build_targets": [
@@ -289,6 +297,8 @@ def research():
         "performance": load_json("rotation_performance_latest.json"),
         "shadow": load_json("shadow_capital_allocator_latest.json"),
         "regime": load_json("market_regime_filter_latest.json"),
+        "strategy_backtest": load_json("current_strategy_backtest_latest.json"),
+        "forward_simulations": load_json("forward_setup_simulations_latest.json"),
     }
     return render_template("research.html", data=data)
 

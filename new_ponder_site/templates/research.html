@@ -8,6 +8,8 @@
 {% set rotation = data.get("rotation", {}) %}
 {% set performance = data.get("performance", {}) %}
 {% set shadow = data.get("shadow", {}) %}
+{% set strategy_backtest = data.get("strategy_backtest", {}) %}
+{% set forward_simulations = data.get("forward_simulations", {}) %}
 
 <h1>Research Center</h1>
 <p class="muted">Readable intelligence modules. Raw JSON is still available inside each detail drawer.</p>
@@ -21,6 +23,7 @@
   <button onclick="showTab('rotation')">Rotation</button>
   <button onclick="showTab('performance')">Performance</button>
   <button onclick="showTab('shadow')">Shadow</button>
+  <button onclick="showTab('strategy')">Strategy</button>
   <button onclick="showTab('future')">Future Labs</button>
 </div>
 
@@ -112,6 +115,73 @@
       <div class="card mini"><h3>{{ s.get("sell_symbol") }} to {{ s.get("buy_symbol") }}</h3><div class="big small-big">{{ s.get("recommendation") }}</div><p>{{ s.get("confidence") }} · allocation {{ s.get("shadow_allocation_pct") }}%</p></div>
     {% else %}<p>No shadow actions.</p>{% endfor %}
   </div>
+</section>
+
+
+<section id="tab-strategy" class="tab card" style="display:none">
+  <h2>Strategy Intelligence</h2>
+  <p class="muted">Research-only strategy learning. Metrics stay marked as insufficient data until real outcomes exist.</p>
+
+  {% set backtest_summary = strategy_backtest.get("summary", {}) %}
+  {% set forward_summary = forward_simulations.get("summary", {}) %}
+
+  <div class="grid">
+    <div class="card mini">
+      <h3>Backtest Status</h3>
+      <div class="big small-big">{{ strategy_backtest.get("status", "missing") }}</div>
+      <p>{{ backtest_summary.get("message", "Uses closed trade memory when available.") }}</p>
+    </div>
+    <div class="card mini">
+      <h3>Closed Samples</h3>
+      <div class="big">{{ backtest_summary.get("sample_size", 0) }}</div>
+      <p>Real closed trades with PnL.</p>
+    </div>
+    <div class="card mini">
+      <h3>Current Bot Win Rate</h3>
+      <div class="big">
+        {% if backtest_summary.get("win_rate") is not none %}
+          {{ backtest_summary.get("win_rate") }}%
+        {% else %}
+          No evaluated trades yet
+        {% endif %}
+      </div>
+      <p>Never inferred from fake data.</p>
+    </div>
+    <div class="card mini">
+      <h3>Forward Status</h3>
+      <div class="big small-big">{{ forward_simulations.get("status", "missing") }}</div>
+      <p>{{ forward_summary.get("message", "Waiting for evaluated forward outcomes.") }}</p>
+    </div>
+  </div>
+
+  <h3>Setup Comparison</h3>
+  <table>
+    <thead><tr><th>Setup</th><th>Status</th><th>Samples</th><th>Win Rate</th><th>Avg Return</th><th>Outcome</th></tr></thead>
+    <tbody>
+      {% for setup in strategy_backtest.get("setups", []) %}
+        <tr>
+          <td><strong>{{ setup.get("setup", "unknown") }}</strong></td>
+          <td>{{ setup.get("status", "insufficient_data") }}</td>
+          <td>{{ setup.get("sample_size", 0) }}</td>
+          <td>{% if setup.get("win_rate") is not none %}{{ setup.get("win_rate") }}%{% else %}No evaluated trades yet{% endif %}</td>
+          <td>{% if setup.get("avg_return_pct") is not none %}{{ setup.get("avg_return_pct") }}%{% else %}No evaluated trades yet{% endif %}</td>
+          <td>{{ setup.get("outcome", "insufficient data") }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6">No setup data yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h3>Forward Simulation Summary</h3>
+  <div class="grid">
+    <div class="card mini"><h3>Evaluated</h3><div class="big">{{ forward_summary.get("evaluated", 0) }}</div></div>
+    <div class="card mini"><h3>Pending</h3><div class="big">{{ forward_summary.get("pending", 0) }}</div></div>
+    <div class="card mini"><h3>Scanner Candidates</h3><div class="big">{{ forward_summary.get("scanner_candidates_available", 0) }}</div></div>
+  </div>
+
+  <details><summary>Raw Strategy Backtest</summary><pre>{{ strategy_backtest | tojson(indent=2) }}</pre></details>
+  <details><summary>Raw Forward Simulations</summary><pre>{{ forward_simulations | tojson(indent=2) }}</pre></details>
 </section>
 
 <section id="tab-future" class="tab card" style="display:none">
