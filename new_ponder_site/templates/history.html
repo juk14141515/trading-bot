@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h2>Activity History</h2>
+  <p class="subtitle">Unified history view in modular shell (no old inline dashboard).</p>
+  <pre>{% for line in log_lines %}{{ line }}
+{% endfor %}</pre>
+</section>
+{% endblock %}

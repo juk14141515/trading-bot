@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h2>Settings</h2>
+  <p class="subtitle">Research-only preferences (UI state saved in browser).</p>
+  <label><input id="denseMode" type="checkbox" /> Dense cards</label>
+  <label><input id="highContrast" type="checkbox" /> High contrast</label>
+  <button id="saveSettings">Save Settings</button>
+  <p id="settingsStatus" class="subtitle"></p>
+</section>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel panel--wide">
+  <h2>Research Momentum</h2>
+  <canvas id="momentumChart" width="1200" height="420"></canvas>
+</section>
+<section class="grid">
+  {% for card in cards %}
+  <article class="panel card"><h3>{{ card.title }}</h3><p>{{ card.content }}</p></article>
+  {% endfor %}
+</section>
+{% endblock %}

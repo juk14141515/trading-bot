@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ app_name }}{% if page_title %} | {{ page_title }}{% endif %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <h2>🐶 Ponder</h2>
+      <nav>
+        <a href="{{ url_for('home') }}">Dashboard</a>
+        <a href="{{ url_for('history') }}">History</a>
+        <a href="{{ url_for('settings') }}">Settings</a>
+        <a href="{{ url_for('build_plan') }}">Build Plan</a>
+        <a href="{{ url_for('research') }}">Research Hub</a>
+        <a href="{{ url_for('debug_snapshot') }}">Debug Snapshot</a>
+      </nav>
+    </aside>
+    <main class="main">
+      <header class="topbar"><h1>{{ page_title or app_name }}</h1></header>
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  <script src="{{ url_for('static', filename='site/js/app.js') }}"></script>
+</body>
+</html>
