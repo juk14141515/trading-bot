@@ -1,0 +1,46 @@
+[
+  {
+    "id": "rot-1",
+    "created_at": "2026-05-01T12:00:00+00:00",
+    "type": "rotation",
+    "from_symbol": "AAPL",
+    "to_symbol": "QQQ",
+    "entry_from_price": 180,
+    "entry_to_price": 430,
+    "latest_from_price": 176,
+    "latest_to_price": 438,
+    "confidence": "Low",
+    "action": "NO SHADOW MOVE",
+    "reason": "LOW EDGE",
+    "status": "evaluated",
+    "evaluations": {
+      "30m": {
+        "status": "evaluated",
+        "alpha": 0.040827,
+        "result": "Helped",
+        "outcome": "helped",
+        "window": "30m",
+        "evaluated_at": "2026-05-03T08:49:54.580615+00:00"
+      },
+      "1h": {
+        "status": "evaluated",
+        "alpha": 0.040827,
+        "result": "Helped",
+        "outcome": "helped",
+        "window": "1h",
+        "evaluated_at": "2026-05-03T08:49:54.580615+00:00"
+      },
+      "1d": {
+        "status": "evaluated",
+        "alpha": 0.040827,
+        "result": "Helped",
+        "outcome": "helped",
+        "window": "1d",
+        "evaluated_at": "2026-05-03T08:49:54.580615+00:00"
+      }
+    },
+    "result": "Helped",
+    "alpha": 0.040827,
+    "outcome": "helped"
+  }
+]

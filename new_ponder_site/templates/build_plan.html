@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h2>Build Plan</h2>
+  <ul>
+  {% for item in targets %}
+    <li>{{ item }}</li>
+  {% endfor %}
+  </ul>
+</section>
+{% endblock %}

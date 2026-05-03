@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h2>Research Learning Metrics</h2>
+  <p>Evaluated: {{ summary.evaluated }} | Pending: {{ summary.pending }} | Helped: {{ summary.helped }} | Hurt: {{ summary.hurt }} | Neutral: {{ summary.neutral }}</p>
+  <p>Win Rate: {% if summary.win_rate is not none %}{{ summary.win_rate }}%{% else %}No evaluated decisions yet{% endif %}</p>
+  <p>Avg Alpha: {{ summary.avg_alpha if summary.avg_alpha is not none else 'Not evaluated yet' }}</p>
+</section>
+<section class="panel">
+  <h3>Ideas</h3>
+  <table><tr><th>ID</th><th>Type</th><th>Pair</th><th>Status</th><th>Result</th><th>Alpha</th><th>Outcome</th></tr>
+  {% for i in ideas %}
+    <tr>
+      <td>{{ i.id }}</td>
+      <td>{{ i.type }}</td>
+      <td>{{ (i.from_symbol or '-') ~ '→' ~ (i.to_symbol or '-') }}</td>
+      <td>{{ i.status or 'pending' }}</td>
+      <td>{{ i.result or 'Pending' }}</td>
+      <td>{{ i.alpha if i.alpha is not none else 'Not evaluated yet' }}</td>
+      <td>{{ i.outcome if i.outcome != 'unresolved' else 'Not evaluated yet' }}</td>
+    </tr>
+  {% endfor %}
+  </table>
+</section>
+{% endblock %}

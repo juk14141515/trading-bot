@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h2>Debug Snapshot Handoff</h2>
+  <button data-copy-target="cloudPrompt">Copy Cloud Prompt</button>
+  <pre id="cloudPrompt">{{ cloud_prompt.replace('{task_prompt}', snapshot_json.task_prompt).replace('{snapshot_json}', snapshot_json|tojson(indent=2)) }}</pre>
+  <button data-copy-target="snapshotJson">Copy Snapshot</button>
+  <pre id="snapshotJson">{{ snapshot_json|tojson(indent=2) }}</pre>
+</section>
+{% endblock %}

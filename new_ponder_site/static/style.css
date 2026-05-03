@@ -1,0 +1,8 @@
+:root { --bg:#0f172a; --panel:#111827; --text:#e5e7eb; --muted:#94a3b8; --accent:#22d3ee; }
+*{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui;background:linear-gradient(180deg,#020617 0%,var(--bg) 100%);color:var(--text)}
+.shell{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+.sidebar{padding:1rem;border-right:1px solid #1f2937;background:#0b1220}.sidebar a{display:block;color:var(--text);text-decoration:none;padding:.45rem 0}
+.main{padding:1rem 1.25rem}.topbar{margin-bottom:.6rem}
+.panel{background:rgba(17,24,39,.92);border:1px solid #1f2937;border-radius:14px;padding:1rem;margin:1rem 0}
+.panel--wide canvas{width:100%;max-height:440px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.8rem}
+.subtitle{color:var(--muted)} pre{white-space:pre-wrap;overflow:auto}
