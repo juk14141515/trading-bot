@@ -1,8 +1,8 @@
 """
 Research-only shadow evaluation engine for Ponder Invest AI.
 
-This file evaluates shadow/research recommendations only. It does not place
-orders, modify Alpaca execution, rotate positions, or change live bot logic.
+This evaluates shadow/research recommendations only. It does not place orders,
+modify Alpaca execution, rotate positions, or change live bot logic.
 
 Manual run:
     python3 shadow_evaluator.py
@@ -15,7 +15,9 @@ Outputs:
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
+import io
 import json
 import math
 import os
@@ -26,7 +28,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 try:
     import yfinance as yf
-except Exception:  # pragma: no cover - runtime dependency on VPS
+except Exception:  # pragma: no cover
     yf = None
 
 ROOT = Path(__file__).resolve().parent
@@ -44,12 +46,7 @@ DEFAULT_WINDOWS = {
     "1h": timedelta(hours=1),
     "1d": timedelta(days=1),
 }
-HORIZON_ALIASES = {
-    "60m": "1h",
-    "1hr": "1h",
-    "24h": "1d",
-    "1day": "1d",
-}
+HORIZON_ALIASES = {"60m": "1h", "1hr": "1h", "24h": "1d", "1day": "1d"}
 
 
 def utc_now() -> datetime:
@@ -71,22 +68,21 @@ def parse_time(value: Any) -> Optional[datetime]:
     text = str(value).strip()
     if not text:
         return None
-    for suffix in ("Z", "+00:00"):
-        if text.endswith(suffix):
-            text = text[: -len(suffix)]
-            break
-    formats = (
+    if text.endswith("Z"):
+        text = text[:-1]
+    if text.endswith("+00:00"):
+        text = text[:-6]
+    for fmt in (
         "%Y-%m-%dT%H:%M:%S.%f",
         "%Y-%m-%dT%H:%M:%S",
         "%Y-%m-%d %H:%M:%S.%f",
         "%Y-%m-%d %H:%M:%S",
         "%Y-%m-%d",
-    )
-    for fmt in formats:
+    ):
         try:
             return datetime.strptime(text, fmt).replace(tzinfo=timezone.utc)
         except ValueError:
-            continue
+            pass
     try:
         parsed = datetime.fromisoformat(str(value))
         if parsed.tzinfo is None:
@@ -148,6 +144,19 @@ def horizon_delta(horizon: str) -> timedelta:
     return timedelta(hours=1)
 
 
+def yfinance_download_quiet(*args: Any, **kwargs: Any):
+    """Call yfinance without flooding the terminal on market-closed windows."""
+    if yf is None:
+        return None
+    kwargs.setdefault("progress", False)
+    kwargs.setdefault("threads", False)
+    try:
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            return yf.download(*args, **kwargs)
+    except Exception:
+        return None
+
+
 def make_id(row: Dict[str, Any]) -> str:
     existing = clean_text(row.get("id"), "")
     if existing:
@@ -199,7 +208,7 @@ def normalize_record(row: Dict[str, Any]) -> Dict[str, Any]:
 
     if outcome in {"helped", "hurt", "neutral"}:
         status = "evaluated"
-    elif status not in {"evaluated", "pending", "unresolved", "skipped"}:
+    elif status not in {"evaluated", "pending", "unresolved", "skipped", "waiting_for_market_data"}:
         status = "pending"
 
     record["status"] = status
@@ -210,35 +219,38 @@ def normalize_record(row: Dict[str, Any]) -> Dict[str, Any]:
     return record
 
 
+def extract_close_value(data: Any, first: bool = False) -> Optional[float]:
+    if data is None or getattr(data, "empty", True) or "Close" not in data:
+        return None
+    try:
+        close = data["Close"].dropna()
+        if getattr(close, "empty", True):
+            return None
+        value = close.iloc[0 if first else -1]
+        if hasattr(value, "iloc"):
+            value = value.iloc[0]
+        return clean_number(value, None)
+    except Exception:
+        return None
+
+
 def price_at_or_after(symbol: str, when: datetime, max_lookahead: timedelta = timedelta(minutes=20)) -> Optional[float]:
     if not symbol or yf is None:
         return None
     start = when - timedelta(minutes=5)
-    end = when + max_lookahead
-    now = utc_now()
-    if start > now:
-        return None
-    if end > now:
-        end = now
-    if end <= start:
+    end = min(when + max_lookahead, utc_now())
+    if start > utc_now() or end <= start:
         return None
 
-    # 5m bars are available longer than 1m bars and are enough for research labels.
-    try:
-        data = yf.download(
-            symbol,
-            start=start.strftime("%Y-%m-%d"),
-            end=(end + timedelta(days=1)).strftime("%Y-%m-%d"),
-            interval="5m",
-            auto_adjust=True,
-            progress=False,
-            threads=False,
-        )
-    except Exception:
+    data = yfinance_download_quiet(
+        symbol,
+        start=start.strftime("%Y-%m-%d"),
+        end=(end + timedelta(days=1)).strftime("%Y-%m-%d"),
+        interval="5m",
+        auto_adjust=True,
+    )
+    if data is None or getattr(data, "empty", True) or "Close" not in data:
         return None
-    if data is None or data.empty or "Close" not in data:
-        return None
-
     try:
         frame = data.copy()
         if getattr(frame.index, "tz", None) is None:
@@ -246,38 +258,37 @@ def price_at_or_after(symbol: str, when: datetime, max_lookahead: timedelta = ti
         else:
             frame.index = frame.index.tz_convert(timezone.utc)
         window = frame[(frame.index >= start) & (frame.index <= end)]
-        if window.empty:
-            return None
-        close = window["Close"].dropna()
-        if close.empty:
-            return None
-        value = close.iloc[0]
-        if hasattr(value, "iloc"):
-            value = value.iloc[0]
-        return clean_number(value, None)
+        return extract_close_value(window, first=True)
     except Exception:
         return None
+
+
+def prior_regular_close(symbol: str, when: datetime) -> Optional[float]:
+    """Fallback for ideas generated while the market is closed.
+
+    If a signal is timestamped on a weekend/after-hours window, there may be no
+    5m candle at the signal. This returns the latest daily close before that
+    timestamp. It is used only to keep pending records clean; if both entry and
+    exit fall on the same market close, the record waits for market data instead
+    of pretending a meaningful outcome exists.
+    """
+    if not symbol or yf is None:
+        return None
+    start = (when - timedelta(days=10)).strftime("%Y-%m-%d")
+    end = (when + timedelta(days=1)).strftime("%Y-%m-%d")
+    data = yfinance_download_quiet(symbol, start=start, end=end, interval="1d", auto_adjust=True)
+    return extract_close_value(data, first=False)
 
 
 def latest_price(symbol: str) -> Optional[float]:
     if not symbol or yf is None:
         return None
-    try:
-        data = yf.download(symbol, period="5d", interval="5m", auto_adjust=True, progress=False, threads=False)
-    except Exception:
-        return None
-    if data is None or data.empty or "Close" not in data:
-        return None
-    try:
-        close = data["Close"].dropna()
-        if close.empty:
-            return None
-        value = close.iloc[-1]
-        if hasattr(value, "iloc"):
-            value = value.iloc[0]
-        return clean_number(value, None)
-    except Exception:
-        return None
+    data = yfinance_download_quiet(symbol, period="5d", interval="5m", auto_adjust=True)
+    value = extract_close_value(data, first=False)
+    if value is not None:
+        return value
+    daily = yfinance_download_quiet(symbol, period="10d", interval="1d", auto_adjust=True)
+    return extract_close_value(daily, first=False)
 
 
 def classify_alpha(alpha: float) -> str:
@@ -288,13 +299,18 @@ def classify_alpha(alpha: float) -> str:
     return "neutral"
 
 
+def waiting_for_data(record: Dict[str, Any], reason: str) -> Tuple[Dict[str, Any], str]:
+    record["status"] = "waiting_for_market_data"
+    record["result"] = "Pending"
+    record["outcome"] = None
+    record["reason"] = reason
+    return record, "waiting"
+
+
 def evaluate_rotation(record: Dict[str, Any], now: datetime) -> Tuple[Dict[str, Any], str]:
     created = parse_time(record.get("signal_timestamp"))
     if not created:
-        record["status"] = "unresolved"
-        record["result"] = "Not evaluated yet"
-        record["reason"] = "missing signal timestamp"
-        return record, "error"
+        return waiting_for_data(record, "missing signal timestamp")
 
     due_at = created + horizon_delta(record.get("horizon"))
     if now < due_at:
@@ -306,30 +322,26 @@ def evaluate_rotation(record: Dict[str, Any], now: datetime) -> Tuple[Dict[str, 
     from_symbol = record.get("from_symbol") or record.get("sell_symbol")
     to_symbol = record.get("to_symbol") or record.get("buy_symbol")
     if not from_symbol or not to_symbol:
-        record["status"] = "unresolved"
-        record["result"] = "Not evaluated yet"
-        record["reason"] = "missing from/to symbol"
-        return record, "error"
+        return waiting_for_data(record, "missing from/to symbol")
 
     entry_from = clean_number(record.get("entry_from_price") or record.get("from_entry_price") or record.get("sell_entry_price"), None)
     entry_to = clean_number(record.get("entry_to_price") or record.get("to_entry_price") or record.get("buy_entry_price"), None)
     if entry_from is None:
-        entry_from = price_at_or_after(from_symbol, created)
+        entry_from = price_at_or_after(from_symbol, created) or prior_regular_close(from_symbol, created)
     if entry_to is None:
-        entry_to = price_at_or_after(to_symbol, created)
+        entry_to = price_at_or_after(to_symbol, created) or prior_regular_close(to_symbol, created)
 
     exit_from = clean_number(record.get("exit_from_price") or record.get("from_exit_price") or record.get("sell_exit_price"), None)
     exit_to = clean_number(record.get("exit_to_price") or record.get("to_exit_price") or record.get("buy_exit_price"), None)
     if exit_from is None:
-        exit_from = price_at_or_after(from_symbol, due_at) or latest_price(from_symbol)
+        exit_from = price_at_or_after(from_symbol, due_at)
     if exit_to is None:
-        exit_to = price_at_or_after(to_symbol, due_at) or latest_price(to_symbol)
+        exit_to = price_at_or_after(to_symbol, due_at)
 
-    if not entry_from or not entry_to or not exit_from or not exit_to:
-        record["status"] = "pending"
-        record["result"] = "Pending"
-        record["reason"] = "price data unavailable"
-        return record, "error"
+    if not entry_from or not entry_to:
+        return waiting_for_data(record, "entry price unavailable")
+    if not exit_from or not exit_to:
+        return waiting_for_data(record, "waiting for market data after signal window")
 
     from_return = (exit_from - entry_from) / entry_from
     to_return = (exit_to - entry_to) / entry_to
@@ -362,10 +374,7 @@ def evaluate_rotation(record: Dict[str, Any], now: datetime) -> Tuple[Dict[str, 
 def evaluate_sell(record: Dict[str, Any], now: datetime) -> Tuple[Dict[str, Any], str]:
     created = parse_time(record.get("signal_timestamp"))
     if not created:
-        record["status"] = "unresolved"
-        record["result"] = "Not evaluated yet"
-        record["reason"] = "missing signal timestamp"
-        return record, "error"
+        return waiting_for_data(record, "missing signal timestamp")
     due_at = created + horizon_delta(record.get("horizon"))
     if now < due_at:
         record["status"] = "pending"
@@ -374,16 +383,14 @@ def evaluate_sell(record: Dict[str, Any], now: datetime) -> Tuple[Dict[str, Any]
         return record, "too_new"
 
     symbol = record.get("from_symbol") or record.get("sell_symbol") or record.get("symbol")
-    entry = clean_number(record.get("entry_price") or record.get("entry_from_price"), None) or price_at_or_after(symbol, created)
-    exit_price = clean_number(record.get("exit_price") or record.get("exit_from_price"), None) or price_at_or_after(symbol, due_at) or latest_price(symbol)
-    if not symbol or not entry or not exit_price:
-        record["status"] = "pending"
-        record["result"] = "Pending"
-        record["reason"] = "price data unavailable"
-        return record, "error"
+    entry = clean_number(record.get("entry_price") or record.get("entry_from_price"), None) or price_at_or_after(symbol, created) or prior_regular_close(symbol, created)
+    exit_price = clean_number(record.get("exit_price") or record.get("exit_from_price"), None) or price_at_or_after(symbol, due_at)
+    if not symbol or not entry:
+        return waiting_for_data(record, "entry price unavailable")
+    if not exit_price:
+        return waiting_for_data(record, "waiting for market data after sell warning")
 
     move = (exit_price - entry) / entry
-    # For sell/trim warnings, downside after the warning means the warning helped.
     if move < OUTCOME_HURT_THRESHOLD:
         outcome = "helped"
     elif move > OUTCOME_HELPED_THRESHOLD:
@@ -423,10 +430,13 @@ def summarize(records: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
     helped = [r for r in evaluated if r.get("outcome") == "helped"]
     hurt = [r for r in evaluated if r.get("outcome") == "hurt"]
     neutral = [r for r in evaluated if r.get("outcome") == "neutral"]
+    waiting = [r for r in pending if r.get("status") == "waiting_for_market_data"]
+    too_new = [r for r in pending if r.get("status") == "pending"]
     alphas = [clean_number(r.get("alpha"), None) for r in evaluated]
     alphas = [a for a in alphas if a is not None]
-    by_type: Dict[str, Dict[str, Any]] = defaultdict(lambda: {"evaluated": 0, "pending": 0, "helped": 0, "hurt": 0, "neutral": 0})
-    by_horizon: Dict[str, Dict[str, Any]] = defaultdict(lambda: {"evaluated": 0, "pending": 0, "helped": 0, "hurt": 0, "neutral": 0, "win_rate": None, "avg_alpha_pct": None})
+
+    by_type: Dict[str, Dict[str, Any]] = defaultdict(lambda: {"evaluated": 0, "pending": 0, "helped": 0, "hurt": 0, "neutral": 0, "waiting_for_market_data": 0})
+    by_horizon: Dict[str, Dict[str, Any]] = defaultdict(lambda: {"evaluated": 0, "pending": 0, "helped": 0, "hurt": 0, "neutral": 0, "waiting_for_market_data": 0, "win_rate": None, "avg_alpha_pct": None})
 
     for r in rows:
         typ = clean_text(r.get("type"), "unknown")
@@ -439,6 +449,9 @@ def summarize(records: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
         else:
             by_type[typ]["pending"] += 1
             by_horizon[horizon]["pending"] += 1
+            if r.get("status") == "waiting_for_market_data":
+                by_type[typ]["waiting_for_market_data"] += 1
+                by_horizon[horizon]["waiting_for_market_data"] += 1
 
     for bucket in list(by_type.values()) + list(by_horizon.values()):
         bucket["win_rate"] = safe_percent(bucket.get("helped", 0), bucket.get("evaluated", 0))
@@ -456,6 +469,8 @@ def summarize(records: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
         "evaluated": len(evaluated),
         "pending": len(pending),
         "pending_evaluations": len(pending),
+        "waiting_for_market_data": len(waiting),
+        "too_new": len(too_new),
         "helped": len(helped),
         "hurt": len(hurt),
         "neutral": len(neutral),
@@ -478,7 +493,6 @@ def dedupe(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         if existing is None:
             merged[record["id"]] = record
             continue
-        # Prefer evaluated records over pending records, otherwise keep latest normalized fields.
         if existing.get("status") != "evaluated" and record.get("status") == "evaluated":
             merged[record["id"]] = record
         else:
@@ -493,12 +507,6 @@ def load_existing_records() -> List[Dict[str, Any]]:
 
 
 def create_current_research_records() -> List[Dict[str, Any]]:
-    """Create pending records from latest research feeds when they expose ideas.
-
-    Existing performance evaluations remain the primary source. These additions are
-    intentionally conservative and only help future runs capture current ideas with
-    a consistent schema.
-    """
     created_at = iso_now()
     records: List[Dict[str, Any]] = []
 
@@ -507,68 +515,57 @@ def create_current_research_records() -> List[Dict[str, Any]]:
         if not isinstance(idea, dict):
             continue
         for horizon in DEFAULT_WINDOWS:
-            records.append(
-                {
-                    "type": "rotation",
-                    "signal_timestamp": idea.get("timestamp") or rotation.get("updated_at") or created_at,
-                    "horizon": horizon,
-                    "from_symbol": idea.get("from_symbol") or idea.get("sell_symbol"),
-                    "to_symbol": idea.get("to_symbol") or idea.get("buy_symbol"),
-                    "action": idea.get("action") or idea.get("recommendation") or "Rotation research idea",
-                    "confidence": idea.get("confidence"),
-                    "rotation_score": idea.get("rotation_score"),
-                    "expected_edge": idea.get("expected_edge"),
-                    "status": "pending",
-                    "result": "Pending",
-                    "reason": idea.get("reason") or "Not evaluated yet",
-                }
-            )
+            records.append({
+                "type": "rotation",
+                "signal_timestamp": idea.get("timestamp") or rotation.get("updated_at") or created_at,
+                "horizon": horizon,
+                "from_symbol": idea.get("from_symbol") or idea.get("sell_symbol"),
+                "to_symbol": idea.get("to_symbol") or idea.get("buy_symbol"),
+                "action": idea.get("action") or idea.get("recommendation") or "Rotation research idea",
+                "confidence": idea.get("confidence"),
+                "rotation_score": idea.get("rotation_score"),
+                "expected_edge": idea.get("expected_edge"),
+                "status": "pending",
+                "result": "Pending",
+                "reason": idea.get("reason") or "Not evaluated yet",
+            })
 
     shadow = read_json(SHADOW_ALLOCATOR_FILE, {})
     for idea in shadow.get("shadow_actions", []) or []:
-        if not isinstance(idea, dict):
-            continue
-        if not (idea.get("sell_symbol") and idea.get("buy_symbol")):
+        if not isinstance(idea, dict) or not (idea.get("sell_symbol") and idea.get("buy_symbol")):
             continue
         for horizon in DEFAULT_WINDOWS:
-            records.append(
-                {
-                    "type": "rotation",
-                    "signal_timestamp": idea.get("timestamp") or shadow.get("updated_at") or created_at,
-                    "horizon": horizon,
-                    "from_symbol": idea.get("sell_symbol"),
-                    "to_symbol": idea.get("buy_symbol"),
-                    "action": idea.get("recommendation") or "Shadow allocator idea",
-                    "confidence": idea.get("confidence"),
-                    "status": "pending",
-                    "result": "Pending",
-                    "reason": idea.get("reason") or "Not evaluated yet",
-                }
-            )
+            records.append({
+                "type": "rotation",
+                "signal_timestamp": idea.get("timestamp") or shadow.get("updated_at") or created_at,
+                "horizon": horizon,
+                "from_symbol": idea.get("sell_symbol"),
+                "to_symbol": idea.get("buy_symbol"),
+                "action": idea.get("recommendation") or "Shadow allocator idea",
+                "confidence": idea.get("confidence"),
+                "status": "pending",
+                "result": "Pending",
+                "reason": idea.get("reason") or "Not evaluated yet",
+            })
 
     sell = read_json(SELL_FILE, {})
     for idea in sell.get("sell_candidates", []) or []:
-        if not isinstance(idea, dict):
-            continue
-        symbol = idea.get("symbol")
-        if not symbol:
+        if not isinstance(idea, dict) or not idea.get("symbol"):
             continue
         for horizon in DEFAULT_WINDOWS:
-            records.append(
-                {
-                    "type": "sell",
-                    "signal_timestamp": idea.get("timestamp") or sell.get("updated_at") or created_at,
-                    "horizon": horizon,
-                    "from_symbol": symbol,
-                    "sell_symbol": symbol,
-                    "action": idea.get("verdict") or idea.get("recommendation") or "Sell intelligence idea",
-                    "confidence": idea.get("confidence"),
-                    "sell_pressure": idea.get("sell_pressure"),
-                    "status": "pending",
-                    "result": "Pending",
-                    "reason": ", ".join(idea.get("reasons", [])) if isinstance(idea.get("reasons"), list) else clean_text(idea.get("reason"), "Not evaluated yet"),
-                }
-            )
+            records.append({
+                "type": "sell",
+                "signal_timestamp": idea.get("timestamp") or sell.get("updated_at") or created_at,
+                "horizon": horizon,
+                "from_symbol": idea.get("symbol"),
+                "sell_symbol": idea.get("symbol"),
+                "action": idea.get("verdict") or idea.get("recommendation") or "Sell intelligence idea",
+                "confidence": idea.get("confidence"),
+                "sell_pressure": idea.get("sell_pressure"),
+                "status": "pending",
+                "result": "Pending",
+                "reason": ", ".join(idea.get("reasons", [])) if isinstance(idea.get("reasons"), list) else clean_text(idea.get("reason"), "Not evaluated yet"),
+            })
     return records
 
 
@@ -579,7 +576,14 @@ def run_evaluator(include_current_feeds: bool = True) -> Dict[str, Any]:
         loaded.extend(create_current_research_records())
     records = dedupe(loaded)
 
-    counts = {"pending_loaded": 0, "evaluated_now": 0, "skipped_too_new": 0, "errors": 0, "already_evaluated": 0}
+    counts = {
+        "pending_loaded": 0,
+        "evaluated_now": 0,
+        "skipped_too_new": 0,
+        "waiting_for_market_data": 0,
+        "errors": 0,
+        "already_evaluated": 0,
+    }
     updated_records: List[Dict[str, Any]] = []
 
     for record in records:
@@ -599,6 +603,8 @@ def run_evaluator(include_current_feeds: bool = True) -> Dict[str, Any]:
             counts["evaluated_now"] += 1
         elif state == "too_new":
             counts["skipped_too_new"] += 1
+        elif state == "waiting":
+            counts["waiting_for_market_data"] += 1
         elif state == "error":
             counts["errors"] += 1
         updated_records.append(normalize_record(evaluated))
@@ -606,7 +612,7 @@ def run_evaluator(include_current_feeds: bool = True) -> Dict[str, Any]:
     summary = summarize(updated_records)
     output = {
         "updated_at": iso_now(),
-        "version": "v3_research_only_shadow_evaluator",
+        "version": "v4_research_only_market_data_aware",
         "status": "research_only",
         "summary": summary,
         "by_horizon": summary.get("by_horizon", {}),
@@ -617,6 +623,7 @@ def run_evaluator(include_current_feeds: bool = True) -> Dict[str, Any]:
             "Research-only evaluator. Does not place orders or modify live trading logic.",
             "Rotation alpha = return(to_symbol) - return(from_symbol).",
             "Sell warning alpha is positive when price moved down after the warning.",
+            "Ideas generated while the market is closed wait for real market bars before evaluation.",
         ],
     }
     write_json(PERFORMANCE_FILE, output)
@@ -632,6 +639,7 @@ def main() -> None:
     print(f"pending loaded: {run.get('pending_loaded', 0)}")
     print(f"evaluated now: {run.get('evaluated_now', 0)}")
     print(f"skipped too new: {run.get('skipped_too_new', 0)}")
+    print(f"waiting for market data: {run.get('waiting_for_market_data', 0)}")
     print(f"already evaluated: {run.get('already_evaluated', 0)}")
     print(f"errors/unresolved: {run.get('errors', 0)}")
     print(f"total evaluated: {summary.get('evaluated', 0)}")
