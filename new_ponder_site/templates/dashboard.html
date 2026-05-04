@@ -58,15 +58,15 @@
       </span>
       <span class="status-pill update-pill">Last updated: {{ positions.get("updated_at", "unknown") }}</span>
     </summary>
-    {% if positions.get("warning") %}
+    {% if positions.get("error") %}
       <div class="empty-state positions-empty">
         <strong>Positions unavailable</strong>
-        <span>{{ positions.get("warning", "Positions data source is missing.") }}</span>
+        <span>{{ positions.get("error", "Alpaca read-only positions are unavailable.") }}</span>
       </div>
     {% elif not positions.get("positions", []) %}
       <div class="empty-state positions-empty">
         <strong>No open positions</strong>
-        <span>When a read-only positions feed is available, holdings will appear here.</span>
+        <span>Alpaca returned zero current holdings.</span>
       </div>
     {% else %}
       <div class="positions-table-wrap">

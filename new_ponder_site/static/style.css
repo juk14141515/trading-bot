@@ -1176,6 +1176,9 @@ summary{
 .position-watch{
   color:#fde68a;
 }
+.position-flat{
+  color:#cbd5e1;
+}
 .position-pill.position-profit{
   background:rgba(34,197,94,.12);
   border-color:rgba(34,197,94,.45);
@@ -1187,6 +1190,10 @@ summary{
 .position-pill.position-watch{
   background:rgba(245,158,11,.12);
   border-color:rgba(245,158,11,.45);
+}
+.position-pill.position-flat{
+  background:rgba(148,163,184,.12);
+  border-color:rgba(148,163,184,.34);
 }
 .positions-empty{
   margin-top:18px;
@@ -1251,10 +1258,12 @@ summary{
   color:#fde68a;
   background:rgba(245,158,11,.12);
 }
-.quality-missing{
+.quality-missing,
+.quality-error{
   border-color:rgba(239,68,68,.32);
 }
-.quality-missing em{
+.quality-missing em,
+.quality-error em{
   color:#fca5a5;
   background:rgba(239,68,68,.12);
 }

@@ -67,6 +67,9 @@ def percent_display(value):
         number *= 100
     return f"{number:.2f}%"
 
+def safe_attr(obj, name, default=None):
+    return getattr(obj, name, default)
+
 def normalize_position(raw):
     if not isinstance(raw, dict):
         return {}
@@ -79,12 +82,22 @@ def normalize_position(raw):
     elif pl_number < 0:
         status = "loss"
     else:
-        status = "watch"
+        status = "flat"
 
     qty = raw.get("qty", raw.get("quantity", raw.get("shares")))
     qty_number = as_float(qty)
     return {
         "symbol": raw.get("symbol", raw.get("ticker", raw.get("asset", "-"))),
+        "qty": qty,
+        "avg_entry_price": raw.get("avg_entry_price", raw.get("average_entry_price", raw.get("entry_price", raw.get("avg_price")))),
+        "current_price": raw.get("current_price", raw.get("last_price", raw.get("price"))),
+        "market_value": raw.get("market_value", raw.get("value")),
+        "cost_basis": raw.get("cost_basis"),
+        "unrealized_pl": unrealized_pl,
+        "unrealized_plpc": raw.get("unrealized_plpc", raw.get("unrealized_pl_pct", raw.get("pnl_pct", raw.get("pl_pct")))),
+        "side": raw.get("side"),
+        "asset_class": raw.get("asset_class"),
+        "exchange": raw.get("exchange"),
         "qty_display": f"{qty_number:g}" if qty_number is not None else compact(qty, "-"),
         "avg_entry_price_display": money_display(raw.get("avg_entry_price", raw.get("average_entry_price", raw.get("entry_price", raw.get("avg_price"))))),
         "current_price_display": money_display(raw.get("current_price", raw.get("last_price", raw.get("price")))),
@@ -93,8 +106,60 @@ def normalize_position(raw):
         "unrealized_plpc_display": percent_display(raw.get("unrealized_plpc", raw.get("unrealized_pl_pct", raw.get("pnl_pct", raw.get("pl_pct"))))),
         "age_display": compact(raw.get("position_age", raw.get("age", raw.get("opened_at"))), "-"),
         "status": status,
-        "status_label": {"profit": "Profit", "loss": "Loss", "watch": "Watch"}.get(status, "Watch"),
+        "status_label": {"profit": "Profit", "loss": "Loss", "flat": "Flat", "watch": "Watch"}.get(status, "Watch"),
     }
+
+def build_live_positions_snapshot():
+    generated_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    api_key = os.getenv("APCA_API_KEY_ID")
+    secret_key = os.getenv("APCA_API_SECRET_KEY")
+    base_url = os.getenv("BASE_URL")
+    if not api_key or not secret_key or not base_url:
+        return {
+            "generated_at": generated_at,
+            "updated_at": generated_at,
+            "count": 0,
+            "positions": [],
+            "error": "Alpaca credentials are not configured for read-only positions.",
+            "warning": "Positions unavailable",
+        }
+    try:
+        import alpaca_trade_api as tradeapi
+        api = tradeapi.REST(api_key, secret_key, base_url)
+        rows = []
+        for pos in api.list_positions():
+            raw = {
+                "symbol": safe_attr(pos, "symbol"),
+                "qty": safe_attr(pos, "qty"),
+                "avg_entry_price": safe_attr(pos, "avg_entry_price"),
+                "current_price": safe_attr(pos, "current_price"),
+                "market_value": safe_attr(pos, "market_value"),
+                "cost_basis": safe_attr(pos, "cost_basis"),
+                "unrealized_pl": safe_attr(pos, "unrealized_pl"),
+                "unrealized_plpc": safe_attr(pos, "unrealized_plpc"),
+                "side": safe_attr(pos, "side"),
+                "asset_class": safe_attr(pos, "asset_class"),
+                "exchange": safe_attr(pos, "exchange"),
+            }
+            normalized = normalize_position(raw)
+            rows.append(normalized)
+        return {
+            "generated_at": generated_at,
+            "updated_at": generated_at,
+            "count": len(rows),
+            "positions": rows,
+            "error": "",
+            "warning": "",
+        }
+    except Exception as e:
+        return {
+            "generated_at": generated_at,
+            "updated_at": generated_at,
+            "count": 0,
+            "positions": [],
+            "error": f"{type(e).__name__}: {str(e)[:160]}",
+            "warning": "Positions unavailable",
+        }
 
 def build_positions_snapshot(feeds):
     candidate_keys = (
@@ -167,7 +232,10 @@ def build_data_quality(feeds):
             parsed = parse_timestamp(updated)
             status = "present"
             warning = "Present"
-            if parsed:
+            if data.get("error"):
+                status = "error"
+                warning = f"Error: {data.get('error')}"
+            elif parsed:
                 age_minutes = int((now - parsed.astimezone(timezone.utc)).total_seconds() / 60)
                 if age_minutes > 60:
                     status = "stale"
@@ -213,7 +281,8 @@ def build_dashboard_data():
     forward_simulations = load_json("forward_setup_simulations_latest.json")
     bot = load_root_json("bot_status.json")
     profit_ops = build_profit_ops_data()
-    positions = build_positions_snapshot({
+    positions_live = build_live_positions_snapshot()
+    positions_static = build_positions_snapshot({
         "market": market,
         "capital": capital,
         "profit_ops": profit_ops,
@@ -221,6 +290,7 @@ def build_dashboard_data():
         "shadow": shadow,
         "bot_status": bot,
     })
+    positions = positions_live
     data_feeds = {
         "bot_status": bot,
         "market": market,
@@ -233,7 +303,8 @@ def build_dashboard_data():
         "performance": performance,
         "strategy_backtest": strategy_backtest,
         "forward_simulations": forward_simulations,
-        "positions": positions if positions.get("available") else {},
+        "positions_live": positions_live,
+        "positions_static": positions_static if positions_static.get("available") else {},
     }
     return {
         "bot": bot,
@@ -243,6 +314,7 @@ def build_dashboard_data():
         "capital": capital,
         "profit_ops": profit_ops,
         "positions": positions,
+        "positions_live": positions_live,
         "capital_history": load_capital_history(),
         "strategy_backtest": strategy_backtest,
         "forward_simulations": forward_simulations,
@@ -489,6 +561,10 @@ def api_dashboard_data():
 @app.route("/api/profit-ops")
 def api_profit_ops():
     return jsonify(build_profit_ops_data())
+
+@app.route("/api/positions")
+def api_positions():
+    return jsonify(build_live_positions_snapshot())
 
 @app.route("/api/snapshot")
 def api_snapshot():
