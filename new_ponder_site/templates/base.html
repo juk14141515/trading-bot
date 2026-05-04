@@ -9,6 +9,10 @@
   <aside class="side">
     <div class="brand"><span class="brand-mark">P</span> Ponder<span>AI</span></div>
     <p class="sub">Research-only command center</p>
+    <div class="env-badge {{ dashboard_env.get('badge_class', 'env-dev') }}">
+      <strong>{{ dashboard_env.get("label", "DEV DASHBOARD") }}</strong>
+      <span>{{ dashboard_env.get("subtitle", "Research/UI sandbox - not live") }}</span>
+    </div>
     <a class="{% if request.path == '/' %}active{% endif %}" href="/"><i data-lucide="layout-dashboard"></i>Dashboard</a>
     <a class="{% if request.path == '/profit' %}active{% endif %}" href="/profit"><i data-lucide="line-chart"></i>Profit Ops</a>
     <a class="{% if request.path == '/profit-lab' %}active{% endif %}" href="/profit-lab"><i data-lucide="flask-conical"></i>Profit Lab</a>

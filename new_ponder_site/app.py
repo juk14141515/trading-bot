@@ -16,6 +16,20 @@ load_dotenv(ROOT / ".env")
 app.secret_key = os.getenv("PONDER_SECRET_KEY") or os.getenv("SECRET_KEY") or secrets.token_hex(32)
 DASHBOARD_USERNAME = os.getenv("PONDER_DASHBOARD_USERNAME") or os.getenv("DASHBOARD_USERNAME") or "admin"
 DASHBOARD_PASSWORD = os.getenv("PONDER_DASHBOARD_PASSWORD") or os.getenv("DASHBOARD_PASSWORD") or "change-me-now"
+DASHBOARD_ENV = (os.getenv("PONDER_DASHBOARD_ENV") or "dev").strip().lower()
+DASHBOARD_HOST = os.getenv("PONDER_DASHBOARD_HOST") or os.getenv("PONDER_DEV_HOST") or "127.0.0.1"
+
+def env_int(names, default):
+    for name in names:
+        value = os.getenv(name)
+        if value:
+            try:
+                return int(value)
+            except ValueError:
+                return default
+    return default
+
+DASHBOARD_PORT = env_int(("PONDER_DASHBOARD_PORT", "PONDER_DEV_PORT"), 5050)
 
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -25,6 +39,19 @@ try:
 except Exception as e:
     print(f"Profit Ops analytics unavailable: {e}")
     profit_ops_snapshot = None
+
+@app.context_processor
+def inject_dashboard_environment():
+    is_live = DASHBOARD_ENV == "live"
+    return {
+        "dashboard_env": {
+            "name": "live" if is_live else "dev",
+            "label": "LIVE DASHBOARD" if is_live else "DEV DASHBOARD",
+            "subtitle": "Read-only dashboard / research mode" if is_live else "Research/UI sandbox - not live",
+            "badge_class": "env-live" if is_live else "env-dev",
+            "port": DASHBOARD_PORT,
+        }
+    }
 
 def load_json(name):
     p = Path(name)
@@ -580,4 +607,4 @@ def logout():
     return redirect("/login")
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5050)
+    app.run(host=DASHBOARD_HOST, port=DASHBOARD_PORT)
