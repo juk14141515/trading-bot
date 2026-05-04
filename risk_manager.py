@@ -6,7 +6,7 @@ RISK_PER_TRADE_PCT = 0.005
 
 # Paper-learning threshold. This is intentionally looser than future live cash rules
 # so the bot can collect enough paper-trade outcomes to learn from.
-MIN_SCORE_TO_TRADE = 70
+MIN_SCORE_TO_TRADE = 68
 
 
 def can_trade(symbol, score):
