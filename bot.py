@@ -1,4 +1,5 @@
 from learning_shadow import log_learning_event
+from shadow_learning_v2 import run_shadow_learning_v2
 import time
 from datetime import datetime
 import requests
@@ -765,6 +766,16 @@ def run_bot():
             })
 
     candidates.sort(key=lambda x: x.get("score", 0), reverse=True)
+
+    # --- SHADOW LEARNING V2 (RESEARCH ONLY) ---
+    try:
+        run_shadow_learning_v2(
+            positions=get_positions(),
+            candidates=candidates,
+            log_func=log
+        )
+    except Exception as e:
+        log(f"SHADOW V2 ERROR | {e}")
 
     if len(candidates) == 0 and enhanced:
         log(f"LEARNING MODE | no scored candidates | using enhanced fallback={enhanced[:2]}")
