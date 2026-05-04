@@ -13,7 +13,34 @@ app = Flask(__name__)
 ROOT = Path(__file__).resolve().parent.parent
 RESEARCH = ROOT / "static" / "research"
 load_dotenv(ROOT / ".env")
-app.secret_key = os.getenv("PONDER_SECRET_KEY") or os.getenv("SECRET_KEY") or secrets.token_hex(32)
+
+def load_dashboard_secret_key():
+    configured = os.getenv("PONDER_SECRET_KEY") or os.getenv("SECRET_KEY")
+    if configured:
+        return configured
+
+    secret_path = ROOT / ".ponder_dashboard_secret_key"
+    try:
+        if secret_path.exists():
+            existing = secret_path.read_text().strip()
+            if existing:
+                return existing
+
+        generated = secrets.token_hex(32)
+        try:
+            fd = os.open(str(secret_path), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(fd, "w") as f:
+                f.write(generated)
+            return generated
+        except FileExistsError:
+            existing = secret_path.read_text().strip()
+            if existing:
+                return existing
+    except Exception:
+        pass
+    return secrets.token_hex(32)
+
+app.secret_key = load_dashboard_secret_key()
 DASHBOARD_USERNAME = os.getenv("PONDER_DASHBOARD_USERNAME") or os.getenv("DASHBOARD_USERNAME") or "admin"
 DASHBOARD_PASSWORD = os.getenv("PONDER_DASHBOARD_PASSWORD") or os.getenv("DASHBOARD_PASSWORD") or "change-me-now"
 DASHBOARD_ENV = (os.getenv("PONDER_DASHBOARD_ENV") or "dev").strip().lower()

@@ -58,7 +58,7 @@ EnvironmentFile=-/home/ubuntu/trading-bot/.env
 Environment=PONDER_DASHBOARD_ENV=dev
 Environment=PONDER_DASHBOARD_HOST=127.0.0.1
 Environment=PONDER_DASHBOARD_PORT=5050
-ExecStart=/bin/bash -lc 'cd /home/ubuntu/trading-bot && if [ -x venv/bin/gunicorn ]; then exec venv/bin/gunicorn --workers 2 --bind 127.0.0.1:5050 new_ponder_site_dev.app:app; fi; exec venv/bin/python new_ponder_site_dev/app.py'
+ExecStart=/bin/bash -lc 'cd /home/ubuntu/trading-bot && if [ -x venv/bin/gunicorn ]; then exec venv/bin/gunicorn --workers 1 --bind 127.0.0.1:5050 new_ponder_site_dev.app:app; fi; exec venv/bin/python new_ponder_site_dev/app.py'
 Restart=always
 RestartSec=5
 
@@ -80,7 +80,7 @@ EnvironmentFile=-/home/ubuntu/trading-bot/.env
 Environment=PONDER_DASHBOARD_ENV=live
 Environment=PONDER_DASHBOARD_HOST=127.0.0.1
 Environment=PONDER_DASHBOARD_PORT=5000
-ExecStart=/bin/bash -lc 'cd /home/ubuntu/trading-bot && if [ -x venv/bin/gunicorn ]; then exec venv/bin/gunicorn --workers 2 --bind 127.0.0.1:5000 new_ponder_site.app:app; fi; exec venv/bin/python new_ponder_site/app.py'
+ExecStart=/bin/bash -lc 'cd /home/ubuntu/trading-bot && if [ -x venv/bin/gunicorn ]; then exec venv/bin/gunicorn --workers 1 --bind 127.0.0.1:5000 new_ponder_site.app:app; fi; exec venv/bin/python new_ponder_site/app.py'
 Restart=always
 RestartSec=5
 
