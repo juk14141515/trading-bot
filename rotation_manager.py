@@ -60,9 +60,10 @@ def find_weakest_position(positions):
     return ranked[0]
 
 
-def should_rotate(weak_position, new_candidate_score, min_new_score=72, required_edge=18):
+def should_rotate(weak_position, new_candidate_score, min_new_score=70, required_edge=18):
     """
     Rotate only when the new trade is clearly stronger than the weakest current position.
+    Slightly loosened for paper learning phase.
     """
     if not weak_position:
         return False, "no weak position"
