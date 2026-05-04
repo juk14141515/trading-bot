@@ -112,6 +112,32 @@
     })).filter(p => p.portfolio || p.buyingPower || p.openPl);
   }
 
+  function parseJsonAttribute(el, name) {
+    try {
+      return JSON.parse(el.dataset[name] || '[]');
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function tvTime(value) {
+    const date = new Date(value || '');
+    if (Number.isNaN(date.getTime())) return null;
+    return Math.floor(date.getTime() / 1000);
+  }
+
+  function tvFallbackData(points) {
+    const seen = new Set();
+    return normalizePoints(points)
+      .map(point => ({ time: tvTime(point.label || point.date), value: point.portfolio }))
+      .filter(point => point.time && Number.isFinite(point.value) && point.value > 0)
+      .filter(point => {
+        if (seen.has(point.time)) return false;
+        seen.add(point.time);
+        return true;
+      });
+  }
+
   function chartTooltip() {
     let tip = document.querySelector('.chart-tooltip');
     if (!tip) {
@@ -467,6 +493,12 @@
     document.querySelectorAll('[data-tv-chart]').forEach(el => {
       if (el.__ponderTv || !window.LightweightCharts) return;
       el.__ponderTv = true;
+      const shell = el.closest('.tv-chart-shell');
+      const fallback = tvFallbackData(parseJsonAttribute(el, 'points'));
+      if (fallback.length < 2) {
+        if (shell) shell.classList.remove('has-data');
+        return;
+      }
       const chart = LightweightCharts.createChart(el, {
         autoSize: true,
         layout: { background: { color: '#050507' }, textColor: '#94a3b8' },
@@ -475,7 +507,35 @@
         timeScale: { borderColor: 'rgba(148,163,184,.18)' },
         crosshair: { mode: 1 }
       });
+      const options = {
+        color: '#22c55e',
+        lineWidth: 2,
+        priceLineVisible: true,
+        lastValueVisible: true,
+        title: 'Portfolio'
+      };
+      let series = null;
+      if (chart.addLineSeries) {
+        series = chart.addLineSeries(options);
+      } else if (chart.addSeries && LightweightCharts.LineSeries) {
+        series = chart.addSeries(LightweightCharts.LineSeries, options);
+      }
+      if (!series) {
+        if (shell) shell.classList.remove('has-data');
+        return;
+      }
+      series.setData(fallback);
       el.__ponderTvChart = chart;
+      el.__ponderTvSeries = series;
+      if (shell) {
+        shell.classList.add('has-data');
+        if (!shell.querySelector('.tv-chart-label')) {
+          const label = document.createElement('div');
+          label.className = 'tv-chart-label';
+          label.textContent = 'Fallback: portfolio history';
+          shell.appendChild(label);
+        }
+      }
       chart.timeScale().fitContent();
     });
   }

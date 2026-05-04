@@ -58,10 +58,10 @@
   <div class="card chart-card" data-expandable="chart">
     <div class="card-head">
       <h2>Price Chart Lab</h2>
-      <span class="muted">TradingView Lightweight Charts foundation.</span>
+      <span class="muted">Fallback: portfolio history</span>
     </div>
     <div class="tv-chart-shell">
-      <div id="tvPriceChart" class="tv-chart" data-tv-chart></div>
+      <div id="tvPriceChart" class="tv-chart" data-tv-chart data-points='{{ profit.get("equity", []) | tojson }}'></div>
       <div class="empty-state"><span class="pulse-dot"></span><span>Waiting for real market data feed</span></div>
     </div>
   </div>
