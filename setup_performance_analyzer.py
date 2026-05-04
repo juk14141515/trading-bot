@@ -10,7 +10,6 @@ Manual run:
 
 Outputs:
     static/research/setup_performance_latest.json
-    static/research/forward_setup_simulations_latest.json
 """
 
 from __future__ import annotations
@@ -28,7 +27,6 @@ RESEARCH_DIR = ROOT / "static" / "research"
 PERFORMANCE_FILE = RESEARCH_DIR / "rotation_performance_latest.json"
 LEARNING_FILE = RESEARCH_DIR / "shadow_learning_latest.json"
 SETUP_PERFORMANCE_FILE = RESEARCH_DIR / "setup_performance_latest.json"
-FORWARD_SETUP_FILE = RESEARCH_DIR / "forward_setup_simulations_latest.json"
 
 VALID_OUTCOMES = {"helped", "hurt", "neutral"}
 SETUP_KEYWORDS = {
@@ -228,7 +226,7 @@ def build_output() -> Dict[str, Any]:
 
     return {
         "updated_at": utc_now(),
-        "version": "v1_setup_level_research_only",
+        "version": "v2_setup_level_research_only",
         "status": "research_only",
         "summary": {
             "total_records": len(records),
@@ -243,6 +241,7 @@ def build_output() -> Dict[str, Any]:
             "Research-only setup analyzer. Does not place orders or modify live trading logic.",
             "Setup labels are taken from explicit setup fields first, then inferred from action/reason text.",
             "Low sample-size warnings are intentional; do not optimize live trading from tiny samples.",
+            "This module intentionally does not overwrite forward_setup_simulations_latest.json.",
         ],
     }
 
@@ -250,7 +249,6 @@ def build_output() -> Dict[str, Any]:
 def run_analyzer() -> Dict[str, Any]:
     output = build_output()
     write_json(SETUP_PERFORMANCE_FILE, output)
-    write_json(FORWARD_SETUP_FILE, output)
     return output
 
 
@@ -263,7 +261,6 @@ def main() -> None:
     print(f"pending: {summary.get('pending', 0)}")
     print(f"setup count: {summary.get('setup_count', 0)}")
     print(f"updated: {SETUP_PERFORMANCE_FILE}")
-    print(f"updated: {FORWARD_SETUP_FILE}")
 
 
 if __name__ == "__main__":
