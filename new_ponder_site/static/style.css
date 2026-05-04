@@ -876,21 +876,29 @@ summary{
 .wide-left{
   grid-template-columns:1fr;
 }
+.chart-stack{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:18px;
+  margin:18px 0;
+}
 .card-head{
   display:flex;
   justify-content:space-between;
   gap:16px;
   align-items:flex-start;
-  margin-bottom:10px;
+  margin-bottom:14px;
 }
 .chart-card{
   overflow:hidden;
-  min-width:min(100%,700px);
+  width:100%;
+  min-width:0;
+  padding:22px;
 }
 .chart-frame{
   position:relative;
-  height:340px;
-  max-height:340px;
+  height:320px;
+  max-height:320px;
   min-height:260px;
   width:100%;
   overflow:hidden;
@@ -899,8 +907,8 @@ summary{
   background:#020617;
 }
 .chart-frame.chart-expanded{
-  height:min(68vh,720px);
-  max-height:720px;
+  height:min(70vh,620px);
+  max-height:620px;
 }
 .ponder-chart{
   display:block;
@@ -921,13 +929,15 @@ summary{
 }
 .tv-chart-shell{
   position:relative;
-  height:340px;
-  max-height:340px;
-  min-height:260px;
+  height:220px;
+  max-height:220px;
+  min-height:220px;
   border:1px solid rgba(148,163,184,.18);
   border-radius:18px;
   overflow:hidden;
   background:#050507;
+  display:grid;
+  place-items:center;
 }
 .tv-chart{
   width:100%;
@@ -936,11 +946,13 @@ summary{
 }
 .tv-chart-shell .empty-state{
   position:absolute;
-  left:18px;
-  right:18px;
-  bottom:18px;
+  inset:0;
+  display:grid;
+  place-items:center;
+  text-align:center;
   background:rgba(5,5,7,.78);
   backdrop-filter:blur(8px);
+  margin:0;
 }
 .tall-chart{
   height:520px;
@@ -978,8 +990,8 @@ summary{
 }
 .is-chart-full .chart-frame,
 .is-chart-full .tv-chart-shell{
-  height:min(68vh,720px);
-  max-height:720px;
+  height:min(70vh,620px);
+  max-height:620px;
 }
 .fade-in-ready .card,
 .fade-in-ready .research-panel,
@@ -1049,7 +1061,7 @@ summary{
     margin-top:10px;
   }
   .ponder-chart{
-    height:300px;
+    height:100%!important;
   }
   .tall-chart{
     height:360px;

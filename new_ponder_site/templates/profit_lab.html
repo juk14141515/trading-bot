@@ -24,12 +24,14 @@
   <div class="card metric metric-card hover-card"><h3>Learning Sample</h3><div class="big metric-warning">{{ metrics.get("closed_trades", 0) }}</div><p>More real sells needed before automation.</p></div>
 </section>
 
-<section class="card chart-card" data-expandable="chart">
-  <div class="card-head">
-    <h2>Equity Lab Chart</h2>
-    <span class="muted">Large chart for scanning on desktop or mobile tunnel.</span>
+<section class="chart-stack">
+  <div class="card chart-card" data-expandable="chart">
+    <div class="card-head">
+      <h2>Equity Lab Chart</h2>
+      <span class="muted">Large chart for scanning on desktop or mobile tunnel.</span>
+    </div>
+    <canvas class="ponder-chart tall-chart" data-chart="equity" data-points='{{ profit.get("equity", []) | tojson }}'></canvas>
   </div>
-  <canvas class="ponder-chart tall-chart" data-chart="equity" data-points='{{ profit.get("equity", []) | tojson }}'></canvas>
 </section>
 
 <section class="split">

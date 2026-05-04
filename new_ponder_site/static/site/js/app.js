@@ -133,8 +133,21 @@
     return frame;
   }
 
+  function shortTimeLabel(value, fallback = '') {
+    const raw = value || fallback || '';
+    const date = new Date(raw);
+    if (!Number.isNaN(date.getTime())) {
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+      const hour = String(date.getHours()).padStart(2, '0');
+      const minute = String(date.getMinutes()).padStart(2, '0');
+      return `${month}/${day} ${hour}:${minute}`;
+    }
+    return String(raw).replace('T', ' ').replace('Z', '').slice(0, 12) || 'Point';
+  }
+
   function chartData(points) {
-    const labels = points.map((p, i) => p.label || p.date || `Point ${i + 1}`);
+    const labels = points.map((p, i) => shortTimeLabel(p.label || p.date, `Point ${i + 1}`));
     return {
       labels,
       datasets: [
@@ -205,7 +218,10 @@
             padding: 12,
             displayColors: true,
             callbacks: {
-              title: items => items[0]?.label || 'Point',
+              title: items => {
+                const p = points[items[0]?.dataIndex || 0];
+                return p?.label || p?.date || items[0]?.label || 'Point';
+              },
               label: item => {
                 const suffix = item.dataset.yAxisID === 'percent' ? '%' : '';
                 const prefix = item.dataset.yAxisID === 'dollars' ? '$' : '';
@@ -221,7 +237,16 @@
           }
         },
         scales: {
-          x: { ticks: { color: '#94a3b8', maxTicksLimit: 6 }, grid: { color: grid } },
+          x: {
+            ticks: {
+              color: '#94a3b8',
+              autoSkip: true,
+              maxTicksLimit: 6,
+              maxRotation: 0,
+              minRotation: 0
+            },
+            grid: { color: grid }
+          },
           dollars: { type: 'linear', position: 'left', ticks: { color: '#94a3b8' }, grid: { color: grid } },
           percent: { type: 'linear', position: 'right', ticks: { color: '#fca5a5' }, grid: { drawOnChartArea: false } }
         }

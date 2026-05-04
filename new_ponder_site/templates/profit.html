@@ -28,18 +28,7 @@
   <div class="card metric metric-card hover-card"><h3>Max Drawdown</h3><div class="big metric-negative">{{ profit.get("drawdown", 0) }}%</div><p>From equity history</p></div>
 </section>
 
-<section class="card chart-card" data-expandable="chart">
-  <div class="card-head">
-    <h2>Price Chart Lab</h2>
-    <span class="muted">TradingView Lightweight Charts foundation. Waiting for real OHLC feed.</span>
-  </div>
-  <div class="tv-chart-shell">
-    <div id="tvPriceChart" class="tv-chart" data-tv-chart></div>
-    <div class="empty-state">No OHLC feed connected yet. Research-only chart container is ready.</div>
-  </div>
-</section>
-
-<section class="split wide-left">
+<section class="chart-stack">
   <div class="card chart-card" data-expandable="chart">
     <div class="card-head">
       <h2>Equity Curve</h2>
@@ -56,6 +45,16 @@
     </div>
     <p><strong>{{ capital.get("next_money_action", "No capital recommendation yet.") }}</strong></p>
     <p class="muted">Reserve cash: ${{ capital.get("reserve_cash", 0) }}. Deployable cash: ${{ capital.get("deployable_cash", 0) }}.</p>
+  </div>
+  <div class="card chart-card" data-expandable="chart">
+    <div class="card-head">
+      <h2>Price Chart Lab</h2>
+      <span class="muted">TradingView Lightweight Charts foundation.</span>
+    </div>
+    <div class="tv-chart-shell">
+      <div id="tvPriceChart" class="tv-chart" data-tv-chart></div>
+      <div class="empty-state">Waiting for real OHLC feed</div>
+    </div>
   </div>
 </section>
 
