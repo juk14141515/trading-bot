@@ -3,7 +3,10 @@ from trade_memory import recent_trade_count_today, symbol_traded_today
 MAX_TRADES_PER_DAY = 5
 MAX_POSITION_PCT = 0.12
 RISK_PER_TRADE_PCT = 0.005
-MIN_SCORE_TO_TRADE = 63
+
+# Paper-learning threshold. This is intentionally looser than future live cash rules
+# so the bot can collect enough paper-trade outcomes to learn from.
+MIN_SCORE_TO_TRADE = 70
 
 
 def can_trade(symbol, score):
