@@ -28,6 +28,15 @@ def _ensure_file():
             writer = csv.DictWriter(f, fieldnames=FIELDS)
             writer.writeheader()
 
+def _format_extra_fields(extra_fields):
+    """Convert unexpected logger keyword arguments into safe note text."""
+    if not extra_fields:
+        return ""
+    try:
+        return " | ".join(f"{key}={value}" for key, value in sorted(extra_fields.items()))
+    except Exception:
+        return str(extra_fields)
+
 def log_learning_event(
     event,
     symbol="-",
@@ -38,10 +47,23 @@ def log_learning_event(
     open_pl="",
     rotation_score="",
     rotation_decision="",
-    notes=""
+    notes="",
+    **extra_fields
 ):
+    """
+    Record a shadow-learning event without ever breaking the live bot.
+
+    The bot has multiple modules calling this logger. Accepting **extra_fields
+    prevents crashes like: log_learning_event() got an unexpected keyword
+    argument 'setup'. Unknown values are preserved in the notes column.
+    """
     try:
         _ensure_file()
+
+        extra_notes = _format_extra_fields(extra_fields)
+        if extra_notes:
+            notes = f"{notes} | {extra_notes}" if notes else extra_notes
+
         row = {
             "timestamp": datetime.now().isoformat(),
             "event": event,
@@ -180,10 +202,10 @@ def summarize_learning_performance(limit=500):
     status = "Collecting"
     if total >= 20 and closed == 0:
         status = "Decision data ready; waiting for closed trades"
-    elif closed >= 5:
-        status = "Early performance sample"
     elif closed >= 15:
         status = "Performance sample improving"
+    elif closed >= 5:
+        status = "Early performance sample"
 
     return {
         "mode": "shadow_performance",
