@@ -8,6 +8,8 @@
 {% set top_exit = dashboard_data.get("top_exit", {}) %}
 {% set top_rotation = dashboard_data.get("top_rotation", {}) %}
 {% set market = dashboard_data.get("market", {}) %}
+{% set positions = dashboard_data.get("positions", {}) %}
+{% set feed_quality = dashboard_data.get("data_quality", []) %}
 {% set last_update = latest.get("updated_at", profit.get("updated_at", capital.get("updated_at", "unknown"))) %}
 {% set market_open = market.get("market_open", market.get("is_open")) %}
 {% set data_quality = "Live" if market_open == true else ("Market Closed" if market_open == false else "Delayed") %}
@@ -35,6 +37,85 @@
   <div class="card metric metric-card hover-card"><h3>Win Rate</h3><div class="big metric-neutral">{{ metrics.get("win_rate", 0) }}%</div><p>{{ metrics.get("wins", 0) }} wins / {{ metrics.get("losses", 0) }} losses</p></div>
   <div class="card metric metric-card hover-card"><h3>Profit Factor</h3><div class="big metric-neutral">{{ metrics.get("profit_factor", 0) }}</div><p>Gross wins / gross losses</p></div>
   <div class="card metric metric-card hover-card"><h3>Max Drawdown</h3><div class="big metric-negative">{{ profit.get("drawdown", 0) }}%</div><p>From equity history</p></div>
+</section>
+
+<section class="card positions-panel hover-card">
+  <details open>
+    <summary class="positions-summary">
+      <span>
+        <strong>Current Positions</strong>
+        <small>{{ positions.get("count", 0) }} open</small>
+      </span>
+      <span class="status-pill update-pill">Last updated: {{ positions.get("updated_at", "unknown") }}</span>
+    </summary>
+    {% if positions.get("warning") %}
+      <div class="empty-state positions-empty">
+        <strong>Positions unavailable</strong>
+        <span>{{ positions.get("warning", "Positions data source is missing.") }}</span>
+      </div>
+    {% elif not positions.get("positions", []) %}
+      <div class="empty-state positions-empty">
+        <strong>No open positions</strong>
+        <span>When a read-only positions feed is available, holdings will appear here.</span>
+      </div>
+    {% else %}
+      <div class="positions-table-wrap">
+        <table class="positions-table">
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Qty</th>
+              <th>Avg Entry</th>
+              <th>Current</th>
+              <th>Market Value</th>
+              <th>Unrealized P/L</th>
+              <th>Unrealized %</th>
+              <th>Age</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in positions.get("positions", []) %}
+              <tr>
+                <td data-label="Symbol"><strong class="position-symbol">{{ p.get("symbol", "-") }}</strong></td>
+                <td data-label="Qty">{{ p.get("qty_display", "-") }}</td>
+                <td data-label="Avg Entry">{{ p.get("avg_entry_price_display", "-") }}</td>
+                <td data-label="Current">{{ p.get("current_price_display", "-") }}</td>
+                <td data-label="Market Value">{{ p.get("market_value_display", "-") }}</td>
+                <td data-label="Unrealized P/L" class="position-{{ p.get("status", "watch") }}">{{ p.get("unrealized_pl_display", "-") }}</td>
+                <td data-label="Unrealized %" class="position-{{ p.get("status", "watch") }}">{{ p.get("unrealized_plpc_display", "-") }}</td>
+                <td data-label="Age">{{ p.get("age_display", "-") }}</td>
+                <td data-label="Status"><span class="position-pill position-{{ p.get("status", "watch") }}">{{ p.get("status_label", "Watch") }}</span></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </details>
+</section>
+
+<section class="card data-quality-panel hover-card">
+  <div class="card-head">
+    <h2>Data Quality / Freshness</h2>
+    <span class="muted">Read-only feed timestamps and stale warnings</span>
+  </div>
+  <div class="quality-grid">
+    {% for feed in feed_quality %}
+      <div class="quality-item quality-{{ feed.get("status", "missing") }}">
+        <div>
+          <strong>{{ feed.get("name", "feed") }}</strong>
+          <span>{{ feed.get("updated_at", "unknown") }}</span>
+        </div>
+        <em>{{ feed.get("warning", "unknown") }}</em>
+      </div>
+    {% else %}
+      <div class="empty-state positions-empty">
+        <strong>No feed quality data</strong>
+        <span>Dashboard feeds are not available yet.</span>
+      </div>
+    {% endfor %}
+  </div>
 </section>
 
 <section class="chart-stack">

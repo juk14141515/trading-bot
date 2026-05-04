@@ -5,6 +5,7 @@ import csv
 import sys
 import os
 import secrets
+from datetime import datetime, timezone
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -44,6 +45,146 @@ def compact(value, default="unknown"):
         return default
     return value
 
+def as_float(value):
+    try:
+        if value in (None, ""):
+            return None
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+def money_display(value):
+    number = as_float(value)
+    if number is None:
+        return "-"
+    return f"${number:,.2f}"
+
+def percent_display(value):
+    number = as_float(value)
+    if number is None:
+        return "-"
+    if abs(number) <= 1:
+        number *= 100
+    return f"{number:.2f}%"
+
+def normalize_position(raw):
+    if not isinstance(raw, dict):
+        return {}
+    unrealized_pl = raw.get("unrealized_pl", raw.get("open_pl", raw.get("pnl")))
+    pl_number = as_float(unrealized_pl)
+    if pl_number is None:
+        status = "watch"
+    elif pl_number > 0:
+        status = "profit"
+    elif pl_number < 0:
+        status = "loss"
+    else:
+        status = "watch"
+
+    qty = raw.get("qty", raw.get("quantity", raw.get("shares")))
+    qty_number = as_float(qty)
+    return {
+        "symbol": raw.get("symbol", raw.get("ticker", raw.get("asset", "-"))),
+        "qty_display": f"{qty_number:g}" if qty_number is not None else compact(qty, "-"),
+        "avg_entry_price_display": money_display(raw.get("avg_entry_price", raw.get("average_entry_price", raw.get("entry_price", raw.get("avg_price"))))),
+        "current_price_display": money_display(raw.get("current_price", raw.get("last_price", raw.get("price")))),
+        "market_value_display": money_display(raw.get("market_value", raw.get("value"))),
+        "unrealized_pl_display": money_display(unrealized_pl),
+        "unrealized_plpc_display": percent_display(raw.get("unrealized_plpc", raw.get("unrealized_pl_pct", raw.get("pnl_pct", raw.get("pl_pct"))))),
+        "age_display": compact(raw.get("position_age", raw.get("age", raw.get("opened_at"))), "-"),
+        "status": status,
+        "status_label": {"profit": "Profit", "loss": "Loss", "watch": "Watch"}.get(status, "Watch"),
+    }
+
+def build_positions_snapshot(feeds):
+    candidate_keys = (
+        "positions",
+        "open_positions",
+        "current_positions",
+        "holdings",
+        "portfolio_positions",
+    )
+    for source, data in feeds.items():
+        if not isinstance(data, dict):
+            continue
+        for key in candidate_keys:
+            raw_positions = data.get(key)
+            if raw_positions is None:
+                continue
+            if isinstance(raw_positions, dict):
+                raw_positions = list(raw_positions.values())
+            if not isinstance(raw_positions, list):
+                continue
+            positions = [p for p in (normalize_position(item) for item in raw_positions) if p]
+            return {
+                "available": True,
+                "source": source,
+                "updated_at": data.get("updated_at") or data.get("generated_at") or data.get("timestamp") or "unknown",
+                "count": len(positions),
+                "positions": positions,
+                "warning": "",
+            }
+    bot_positions_count = as_float((feeds.get("bot_status") or {}).get("positions") if isinstance(feeds.get("bot_status"), dict) else None)
+    if bot_positions_count is not None:
+        return {
+            "available": False,
+            "source": "bot_status",
+            "updated_at": (feeds.get("bot_status") or {}).get("status_updated_at", "unknown"),
+            "count": int(bot_positions_count),
+            "positions": [],
+            "warning": "bot_status.json exposes only the open position count, not detailed holdings.",
+        }
+    return {
+        "available": False,
+        "source": "",
+        "updated_at": "unknown",
+        "count": 0,
+        "positions": [],
+        "warning": "Current positions data not exposed to dashboard yet.",
+    }
+
+def parse_timestamp(value):
+    if not value:
+        return None
+    try:
+        clean = str(value).replace("Z", "+00:00")
+        parsed = datetime.fromisoformat(clean)
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed
+    except ValueError:
+        return None
+
+def build_data_quality(feeds):
+    rows = []
+    now = datetime.now(timezone.utc)
+    for name, data in feeds.items():
+        updated = ""
+        status = "missing"
+        warning = "Missing feed"
+        if isinstance(data, dict) and data:
+            updated = data.get("updated_at") or data.get("generated_at") or data.get("status_updated_at") or data.get("timestamp") or ""
+            parsed = parse_timestamp(updated)
+            status = "present"
+            warning = "Present"
+            if parsed:
+                age_minutes = int((now - parsed.astimezone(timezone.utc)).total_seconds() / 60)
+                if age_minutes > 60:
+                    status = "stale"
+                    warning = f"Stale: {age_minutes} minutes old"
+                else:
+                    warning = f"Fresh: {age_minutes} minutes old"
+            elif not updated:
+                status = "warning"
+                warning = "Present, timestamp missing"
+        rows.append({
+            "name": name,
+            "status": status,
+            "updated_at": updated or "unknown",
+            "warning": warning,
+        })
+    return rows
+
 def load_capital_history():
     capital = load_json("capital_intelligence_latest.json")
     history = capital.get("history") or []
@@ -72,6 +213,28 @@ def build_dashboard_data():
     forward_simulations = load_json("forward_setup_simulations_latest.json")
     bot = load_root_json("bot_status.json")
     profit_ops = build_profit_ops_data()
+    positions = build_positions_snapshot({
+        "market": market,
+        "capital": capital,
+        "profit_ops": profit_ops,
+        "sell": sell,
+        "shadow": shadow,
+        "bot_status": bot,
+    })
+    data_feeds = {
+        "bot_status": bot,
+        "market": market,
+        "capital": capital,
+        "profit_ops": profit_ops,
+        "alerts": alerts,
+        "rotation": rotation,
+        "sell": sell,
+        "shadow": shadow,
+        "performance": performance,
+        "strategy_backtest": strategy_backtest,
+        "forward_simulations": forward_simulations,
+        "positions": positions if positions.get("available") else {},
+    }
     return {
         "bot": bot,
         "ai": ai,
@@ -79,6 +242,7 @@ def build_dashboard_data():
         "market": market,
         "capital": capital,
         "profit_ops": profit_ops,
+        "positions": positions,
         "capital_history": load_capital_history(),
         "strategy_backtest": strategy_backtest,
         "forward_simulations": forward_simulations,
@@ -86,19 +250,8 @@ def build_dashboard_data():
         "top_rotation": (rotation.get("rotation_suggestions") or [{}])[0],
         "top_exit": sell.get("top_exit_candidate") or (sell.get("sell_candidates") or [{}])[0],
         "top_shadow": (shadow.get("shadow_actions") or [{}])[0],
-        "module_health": build_module_health({
-            "bot_status": bot,
-            "ai_summary": ai,
-            "alerts": alerts,
-            "market": market,
-            "capital": capital,
-            "rotation": rotation,
-            "sell": sell,
-            "shadow": shadow,
-            "performance": performance,
-            "strategy_backtest": strategy_backtest,
-            "forward_simulations": forward_simulations,
-        }),
+        "data_quality": build_data_quality(data_feeds),
+        "module_health": build_module_health(data_feeds),
     }
 
 def build_profit_ops_data():
