@@ -67,7 +67,7 @@ BASE_URL = os.getenv("BASE_URL")
 strategy = run_backtest()
 print(f"Using strategy: {strategy}")
 
-FINNHUB_API_KEY = "d7ntn5hr01qs975tf2r0d7ntn5hr01qs975tf2rg"
+FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY")
 
 WATCHLIST = [
     "AAPL", "AMZN", "NVDA", "MSFT", "GOOGL",
@@ -807,9 +807,20 @@ def run_bot():
                 )
                 continue
 
+            allowed, reason = can_trade(symbol, final_score)
+            if not allowed:
+                log(f"ROTATION BLOCKED BY RISK | candidate={symbol} | reason={reason}")
+                set_why_not_trading(
+                    f"Rotation blocked for {symbol}.",
+                    reason,
+                    "blocked"
+                )
+                continue
+
             log(f"ROTATION APPROVED | replacing={weakest_position['symbol']} | new={symbol} | score={final_score} | reason={rotate_reason}")
             sell(weakest_position["symbol"], weakest_position["qty"], f"rotation into {symbol}")
             notify_discord(f"🔁 ROTATION | Sold {weakest_position['symbol']} to buy {symbol} | score={final_score}")
+            buy(symbol, final_score)
             return
 
         allowed, reason = can_trade(symbol, final_score)
