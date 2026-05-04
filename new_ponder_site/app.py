@@ -299,6 +299,7 @@ def research():
         "regime": load_json("market_regime_filter_latest.json"),
         "strategy_backtest": load_json("current_strategy_backtest_latest.json"),
         "forward_simulations": load_json("forward_setup_simulations_latest.json"),
+        "setup_performance": load_json("setup_performance_latest.json"),
     }
     return render_template("research.html", data=data)
 

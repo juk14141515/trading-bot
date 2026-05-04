@@ -10,6 +10,7 @@
 {% set shadow = data.get("shadow", {}) %}
 {% set strategy_backtest = data.get("strategy_backtest", {}) %}
 {% set forward_simulations = data.get("forward_simulations", {}) %}
+{% set setup_performance = data.get("setup_performance", {}) %}
 
 <h1>Research Center</h1>
 <p class="muted">Readable intelligence modules. Raw JSON is still available inside each detail drawer.</p>
@@ -179,6 +180,52 @@
     <div class="card mini"><h3>Pending</h3><div class="big">{{ forward_summary.get("pending", 0) }}</div></div>
     <div class="card mini"><h3>Scanner Candidates</h3><div class="big">{{ forward_summary.get("scanner_candidates_available", 0) }}</div></div>
   </div>
+
+  <h3>Setup Performance</h3>
+  {% if setup_performance %}
+    {% set setup_summary = setup_performance.get("summary", {}) %}
+    {% set by_setup = setup_performance.get("by_setup", {}) %}
+    <p class="muted">
+      Research-only setup outcomes. Low sample sizes and pending evaluations mean these are not trade instructions.
+      Updated: {{ setup_performance.get("updated_at", "unknown") }}
+    </p>
+    <div class="grid">
+      <div class="card mini"><h3>Total Records</h3><div class="big">{{ setup_summary.get("total_records", 0) }}</div></div>
+      <div class="card mini"><h3>Evaluated</h3><div class="big">{{ setup_summary.get("evaluated", 0) }}</div></div>
+      <div class="card mini"><h3>Pending</h3><div class="big">{{ setup_summary.get("pending", 0) }}</div></div>
+      <div class="card mini"><h3>Setup Count</h3><div class="big">{{ setup_summary.get("setup_count", 0) }}</div></div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Setup</th>
+          <th>Total</th>
+          <th>Evaluated</th>
+          <th>Pending</th>
+          <th>Win Rate</th>
+          <th>Avg Alpha %</th>
+          <th>Sample Warning</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for setup_name, setup in by_setup.items() %}
+          <tr>
+            <td><strong>{{ setup_name }}</strong></td>
+            <td>{{ setup.get("total", 0) }}</td>
+            <td>{{ setup.get("evaluated", 0) }}</td>
+            <td>{{ setup.get("pending", 0) }}</td>
+            <td>{{ setup.get("win_rate") or "not ready" }}</td>
+            <td>{{ setup.get("avg_alpha_pct") or "not ready" }}</td>
+            <td>{{ setup.get("sample_warning") or "No warning reported" }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="7">No setup performance data yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No setup performance data yet.</p>
+  {% endif %}
 
   <details><summary>Raw Strategy Backtest</summary><pre>{{ strategy_backtest | tojson(indent=2) }}</pre></details>
   <details><summary>Raw Forward Simulations</summary><pre>{{ forward_simulations | tojson(indent=2) }}</pre></details>
