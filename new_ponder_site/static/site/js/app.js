@@ -201,35 +201,103 @@
         {
           label: 'Capital Used %',
           data: points.map(p => p.capitalUsed),
-          borderColor: '#ef4444',
-          backgroundColor: 'rgba(239,68,68,.08)',
+          borderColor: 'rgba(239,68,68,.42)',
+          backgroundColor: 'rgba(239,68,68,.04)',
+          borderDash: [6, 6],
+          borderWidth: 1.5,
           tension: 0.36,
           yAxisID: 'y2',
           pointRadius: 0,
-          pointHoverRadius: 4
+          pointHoverRadius: 2,
+          pointHoverBorderWidth: 1
         }
       ]
     };
   }
 
+  function visibleChartPoints(canvas, points) {
+    if (!canvas.__ponderZoom || points.length < 3) return points;
+    const start = Math.max(0, canvas.__ponderZoom.start);
+    const end = Math.min(points.length, canvas.__ponderZoom.end);
+    return points.slice(start, Math.max(start + 2, end));
+  }
+
+  function applyChartZoom(canvas) {
+    if (!canvas.__ponderChartJs || !canvas.__ponderRawPoints) return;
+    canvas.__ponderVisiblePoints = visibleChartPoints(canvas, canvas.__ponderRawPoints);
+    canvas.__ponderChartJs.data = chartData(canvas.__ponderVisiblePoints);
+    canvas.__ponderChartJs.update('none');
+  }
+
+  function bindChartJsZoom(canvas) {
+    if (canvas.__ponderZoomBound) return;
+    canvas.__ponderZoomBound = true;
+    canvas.addEventListener('wheel', event => {
+      const points = canvas.__ponderRawPoints || [];
+      if (points.length < 8) return;
+      event.preventDefault();
+      const zoom = canvas.__ponderZoom || { start: 0, end: points.length };
+      const rect = canvas.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / Math.max(rect.width, 1)));
+      const span = zoom.end - zoom.start;
+      const minSpan = Math.min(6, points.length);
+      const nextSpan = event.deltaY < 0
+        ? Math.max(minSpan, Math.round(span * 0.82))
+        : Math.min(points.length, Math.round(span * 1.18));
+      const center = zoom.start + span * ratio;
+      let start = Math.round(center - nextSpan * ratio);
+      start = Math.max(0, Math.min(points.length - nextSpan, start));
+      canvas.__ponderZoom = { start, end: start + nextSpan };
+      applyChartZoom(canvas);
+    }, { passive: false });
+    canvas.addEventListener('dblclick', () => {
+      canvas.__ponderZoom = null;
+      applyChartZoom(canvas);
+    });
+  }
+
   function renderChartJs(canvas, points) {
     if (!window.Chart) return false;
     const frame = ensureChartFrame(canvas);
+    canvas.__ponderRawPoints = points;
+    const visiblePoints = visibleChartPoints(canvas, points);
+    canvas.__ponderVisiblePoints = visiblePoints;
     if (canvas.__ponderChartJs) {
-      canvas.__ponderChartJs.data = chartData(points);
+      canvas.__ponderChartJs.data = chartData(visiblePoints);
       canvas.__ponderChartJs.update('none');
       return true;
     }
     const grid = 'rgba(148,163,184,.14)';
+    const hoverLinePlugin = {
+      id: 'ponderHoverLine',
+      afterDatasetsDraw(chart) {
+        const active = chart.tooltip?.getActiveElements?.() || [];
+        if (!active.length) return;
+        const { ctx, chartArea } = chart;
+        const x = active[0].element.x;
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(x, chartArea.top);
+        ctx.lineTo(x, chartArea.bottom);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(239,68,68,.55)';
+        ctx.shadowColor = 'rgba(239,68,68,.35)';
+        ctx.shadowBlur = 8;
+        ctx.stroke();
+        ctx.restore();
+      }
+    };
     canvas.__ponderChartJs = new Chart(canvas, {
       type: 'line',
-      data: chartData(points),
+      data: chartData(visiblePoints),
+      plugins: [hoverLinePlugin],
       options: {
         responsive: true,
         maintainAspectRatio: false,
         resizeDelay: 200,
         animation: { duration: 650, easing: 'easeOutQuart' },
         interaction: { intersect: false, mode: 'index' },
+        layout: { padding: { top: 10, right: 8, bottom: 10, left: 8 } },
         plugins: {
           legend: {
             display: true,
@@ -245,7 +313,8 @@
             displayColors: true,
             callbacks: {
               title: items => {
-                const p = points[items[0]?.dataIndex || 0];
+                const view = canvas.__ponderVisiblePoints || points;
+                const p = view[items[0]?.dataIndex || 0];
                 return p?.label || p?.date || items[0]?.label || 'Point';
               },
               label: item => {
@@ -254,7 +323,8 @@
                 return `${item.dataset.label}: ${numberLabel(item.parsed.y, prefix)}${suffix}`;
               },
               afterBody: items => {
-                const p = points[items[0]?.dataIndex || 0];
+                const view = canvas.__ponderVisiblePoints || points;
+                const p = view[items[0]?.dataIndex || 0];
                 const start = points[0]?.portfolio || 0;
                 const pct = p && start ? ((p.portfolio - start) / start) * 100 : null;
                 return [`Change from start: ${pct === null ? 'unknown' : numberLabel(pct) + '%'}`];
@@ -290,12 +360,14 @@
             position: 'right',
             min: 0,
             max: 100,
-            ticks: { color: '#fca5a5', callback: value => `${value}%` },
+            display: false,
+            ticks: { display: false },
             grid: { drawOnChartArea: false }
           }
         }
       }
     });
+    bindChartJsZoom(canvas);
     frame.__ponderChartCanvas = canvas;
     return true;
   }
@@ -503,6 +575,8 @@
         autoSize: true,
         layout: { background: { color: '#050507' }, textColor: '#94a3b8' },
         grid: { vertLines: { color: 'rgba(148,163,184,.12)' }, horzLines: { color: 'rgba(148,163,184,.12)' } },
+        handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
+        handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
         rightPriceScale: { borderColor: 'rgba(148,163,184,.18)' },
         timeScale: { borderColor: 'rgba(148,163,184,.18)' },
         crosshair: { mode: 1 }
@@ -532,7 +606,7 @@
         if (!shell.querySelector('.tv-chart-label')) {
           const label = document.createElement('div');
           label.className = 'tv-chart-label';
-          label.textContent = 'Fallback: portfolio history';
+          label.textContent = 'Using portfolio history (no live market feed)';
           shell.appendChild(label);
         }
       }
