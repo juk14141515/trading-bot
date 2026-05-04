@@ -7,13 +7,113 @@
 {% set sell = data.get("sell", {}) %}
 {% set rotation = data.get("rotation", {}) %}
 {% set performance = data.get("performance", {}) %}
+{% set capital = data.get("capital", {}) %}
 {% set shadow = data.get("shadow", {}) %}
 {% set strategy_backtest = data.get("strategy_backtest", {}) %}
 {% set forward_simulations = data.get("forward_simulations", {}) %}
 {% set setup_performance = data.get("setup_performance", {}) %}
+{% set setup_summary = setup_performance.get("summary", {}) %}
+{% set scanner_candidates = market.get("scanner_top", []) %}
+{% set evaluated_count = setup_summary.get("evaluated", 0) %}
+{% set pending_count = setup_summary.get("pending", 0) %}
+{% set setup_count = setup_summary.get("setup_count", 0) %}
+{% set collecting_data = (evaluated_count | int) == 0 %}
 
-<h1>Research Center</h1>
-<p class="muted">Readable intelligence modules. Raw JSON is still available inside each detail drawer.</p>
+<div class="research-hero">
+  <div>
+    <div class="eyebrow">Research-only command center</div>
+    <h1>Research Center</h1>
+    <p class="muted">Readable intelligence modules. Raw JSON is still available inside each detail drawer.</p>
+  </div>
+  <div class="research-readiness-pill {{ 'pill-warn' if collecting_data else 'pill-good' }}">
+    {{ "Collecting data" if collecting_data else "Evaluating outcomes" }}
+  </div>
+</div>
+
+<section class="research-statusbar">
+  <div>
+    <span class="status-dot warn"></span>
+    <strong>Collecting data - do not optimize yet.</strong>
+  </div>
+  <span>{{ evaluated_count }} evaluated</span>
+  <span>{{ pending_count }} pending</span>
+  <span>{{ setup_count }} setups</span>
+</section>
+
+<section class="research-app-grid">
+  <div class="research-panel readiness-panel">
+    <div class="card-head">
+      <div>
+        <div class="eyebrow">Learning Status</div>
+        <h2>Research Readiness</h2>
+      </div>
+      <span class="status-pill pill-warn">Collecting data</span>
+    </div>
+    <div class="metric-row">
+      <div><span>Evaluated</span><strong>{{ evaluated_count }}</strong></div>
+      <div><span>Pending</span><strong>{{ pending_count }}</strong></div>
+      <div><span>Setups</span><strong>{{ setup_count }}</strong></div>
+    </div>
+    <p class="research-warning">Not enough evaluated outcomes yet. Do not optimize live trading.</p>
+  </div>
+
+  <div class="research-panel">
+    <div class="eyebrow">Risk Context</div>
+    <h2>Why Not Trading?</h2>
+    <ul class="reason-list">
+      <li><span class="status-pill pill-neutral">Market</span>{{ market.get("market_status") or market.get("status") or "Market closed / unknown" }}</li>
+      <li><span class="status-pill pill-warn">Samples</span>{{ "Waiting for evaluated samples" if collecting_data else "Evaluated samples available" }}</li>
+      <li><span class="status-pill pill-warn">Edge</span>{{ "No proven setup edge yet" if collecting_data else "Review setup edge before changing risk" }}</li>
+      <li><span class="status-pill {{ 'pill-good' if scanner_candidates else 'pill-neutral' }}">Scanner</span>{{ (scanner_candidates | length) }} candidates available</li>
+      <li><span class="status-pill pill-neutral">Capital</span>{{ capital.get("capital_status") or capital.get("status") or "Capital may be tied up" }}</li>
+    </ul>
+  </div>
+</section>
+
+<section class="research-panel">
+  <div class="card-head">
+    <div>
+      <div class="eyebrow">Opportunity Board</div>
+      <h2>Scanner Candidates</h2>
+    </div>
+    <span class="status-pill {{ 'pill-good' if scanner_candidates else 'pill-neutral' }}">{{ scanner_candidates | length }} found</span>
+  </div>
+  {% if scanner_candidates %}
+    <div class="opportunity-grid">
+      {% for c in scanner_candidates[:6] %}
+        <div class="opportunity-card">
+          <div class="opportunity-top">
+            <strong>{{ c.get("symbol", "UNKNOWN") }}</strong>
+            <span>{{ c.get("final_score") or c.get("score") or "n/a" }}</span>
+          </div>
+          <p>{{ c.get("setup") or c.get("label") or c.get("category") or "Research candidate" }}</p>
+          <small>Entry: {{ c.get("entry_zone") or c.get("entry") or "not defined" }}</small>
+          <small>{{ c.get("reason") or c.get("summary") or c.get("thesis") or "No summary available yet." }}</small>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">No scanner candidates available. Keep collecting market data.</div>
+  {% endif %}
+</section>
+
+<section class="research-panel">
+  <div class="card-head">
+    <div>
+      <div class="eyebrow">System Feeds</div>
+      <h2>Module Health</h2>
+    </div>
+  </div>
+  <div class="research-health-grid">
+    <div class="health-pill {{ 'health-online' if market else 'health-missing' }}"><strong>market</strong><span>{{ "present" if market else "missing" }} - {{ market.get("updated_at") or market.get("timestamp") or "not reported" }}</span></div>
+    <div class="health-pill {{ 'health-online' if rotation else 'health-missing' }}"><strong>rotation</strong><span>{{ "present" if rotation else "missing" }} - {{ rotation.get("updated_at") or rotation.get("timestamp") or "not reported" }}</span></div>
+    <div class="health-pill {{ 'health-online' if sell else 'health-missing' }}"><strong>sell</strong><span>{{ "present" if sell else "missing" }} - {{ sell.get("updated_at") or sell.get("timestamp") or "not reported" }}</span></div>
+    <div class="health-pill {{ 'health-online' if shadow else 'health-missing' }}"><strong>shadow</strong><span>{{ "present" if shadow else "missing" }} - {{ shadow.get("updated_at") or shadow.get("timestamp") or "not reported" }}</span></div>
+    <div class="health-pill {{ 'health-online' if performance else 'health-missing' }}"><strong>performance</strong><span>{{ "present" if performance else "missing" }} - {{ performance.get("updated_at") or performance.get("timestamp") or "not reported" }}</span></div>
+    <div class="health-pill {{ 'health-online' if setup_performance else 'health-missing' }}"><strong>setup_performance</strong><span>{{ "present" if setup_performance else "missing" }} - {{ setup_performance.get("updated_at") or "not reported" }}</span></div>
+    <div class="health-pill {{ 'health-online' if forward_simulations else 'health-missing' }}"><strong>forward_simulations</strong><span>{{ "present" if forward_simulations else "missing" }} - {{ forward_simulations.get("updated_at") or forward_simulations.get("timestamp") or "not reported" }}</span></div>
+  </div>
+</section>
 
 <div class="tabs">
   <button onclick="showTab('ai')">AI Summary</button>

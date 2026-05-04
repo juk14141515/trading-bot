@@ -295,6 +295,7 @@ def research():
         "sell": load_json("sell_intelligence_latest.json"),
         "rotation": load_json("rotation_engine_latest.json"),
         "performance": load_json("rotation_performance_latest.json"),
+        "capital": load_json("capital_intelligence_latest.json"),
         "shadow": load_json("shadow_capital_allocator_latest.json"),
         "regime": load_json("market_regime_filter_latest.json"),
         "strategy_backtest": load_json("current_strategy_backtest_latest.json"),
