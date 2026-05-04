@@ -15,3 +15,21 @@ bot_status.json
 
 # Research outputs
 static/research/*.json
+
+# Local backups / secrets
+*.bak
+*.backup_*
+backups/
+.ponder_dashboard_secret_key
+
+# Runtime/generated trading data
+learning_shadow_log.csv
+market_scanner_results_v2.csv
+trade_history.csv
+top_10_candidates_v2.json
+static/research/*.json
+static/research/*.jsonl
+static/research/*.csv
+
+# Nested accidental repo clone
+trading-bot/

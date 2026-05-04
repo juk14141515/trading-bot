@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block content %}
+{% set latest = profit.get("latest", {}) %}
+{% set metrics = profit.get("metrics", {}) %}
+{% set health = profit.get("health", {}) %}
+{% set capital = dashboard_data.get("capital", {}) %}
+{% set logs = profit.get("logs", {}) %}
+{% set top_exit = dashboard_data.get("top_exit", {}) %}
+{% set top_rotation = dashboard_data.get("top_rotation", {}) %}
+{% set market = dashboard_data.get("market", {}) %}
+{% set positions = dashboard_data.get("positions", {}) %}
+{% set feed_quality = dashboard_data.get("data_quality", []) %}
+{% set last_update = latest.get("updated_at", profit.get("updated_at", capital.get("updated_at", "unknown"))) %}
+{% set market_open = market.get("market_open", market.get("is_open")) %}
+{% set data_quality = "Live" if market_open == true else ("Market Closed" if market_open == false else "Delayed") %}
+{% set equity_pct = profit.get("equity_change", {}).get("pct", 0)|float %}
+
+<header class="page-head">
+  <div>
+    <h1>Profit Ops</h1>
+    <p class="muted">Performance, capital, live P/L, decision flow, and risk health in the new modular layout.</p>
+  </div>
+  <div class="page-actions">
+    <div class="status-pill">Research-only</div>
+    <div class="status-pill {{ 'pill-good' if data_quality == 'Live' else ('pill-risk' if data_quality == 'Market Closed' else 'pill-warn') }}">{{ data_quality }}</div>
+    <div class="status-pill update-pill">Last update: {{ last_update }}</div>
+  </div>
+</header>
+
+<section class="grid">
+  <div class="card metric metric-card hover-card"><h3>Portfolio Value</h3><div class="big money metric-neutral">$<span data-live-field="portfolio_value">{{ latest.get("portfolio_value", capital.get("portfolio_value", 0))|round(2) }}</span></div><span class="metric-delta {{ 'metric-positive' if equity_pct >= 0 else 'metric-negative' }}">{{ '+' if equity_pct >= 0 else '' }}{{ equity_pct|round(2) }}% visible history</span><p>{{ data_quality }} data quality</p><canvas class="sparkline" data-sparkline="portfolio" data-points='{{ profit.get("equity", []) | tojson }}'></canvas></div>
+  {% set open_pl = latest.get("open_pl", capital.get("open_pl", 0)) %}
+  <div class="card metric metric-card hover-card"><h3>Open P/L</h3><div class="big {{ 'metric-positive' if open_pl|float >= 0 else 'metric-negative' }}">${{ open_pl|round(2) }}</div><span class="metric-delta {{ 'metric-positive' if open_pl|float >= 0 else 'metric-negative' }}">{{ 'Above' if open_pl|float >= 0 else 'Below' }} flat</span><p>Unrealized</p><canvas class="sparkline" data-sparkline="openPl" data-points='{{ profit.get("equity", []) | tojson }}'></canvas></div>
+  <div class="card metric metric-card hover-card"><h3>Buying Power</h3><div class="big money">${{ latest.get("buying_power", capital.get("buying_power", 0))|round(2) }}</div><span class="metric-delta metric-neutral">{{ capital.get("capital_used_pct", "unknown") }}% capital used</span><p>{{ capital.get("capital_mode", "unknown") }}</p><canvas class="sparkline" data-sparkline="buyingPower" data-points='{{ profit.get("equity", []) | tojson }}'></canvas></div>
+  <div class="card metric metric-card hover-card"><h3>Today / Week / All</h3><div class="big small-big metric-neutral">${{ capital.get("today_pl", 0) }} / ${{ capital.get("week_pl", 0) }} / ${{ capital.get("all_time_pl", 0) }}</div><p>Closed P/L will improve after real sells are logged.</p></div>
+  <div class="card metric metric-card hover-card"><h3>AI Health</h3><div class="big metric-warning">{{ health.get("score", 0) }}/100</div><p>{{ health.get("note", "Waiting for data.") }}</p></div>
+  <div class="card metric metric-card hover-card"><h3>Win Rate</h3><div class="big metric-neutral">{{ metrics.get("win_rate", 0) }}%</div><p>{{ metrics.get("wins", 0) }} wins / {{ metrics.get("losses", 0) }} losses</p></div>
+  <div class="card metric metric-card hover-card"><h3>Profit Factor</h3><div class="big metric-neutral">{{ metrics.get("profit_factor", 0) }}</div><p>Gross wins / gross losses</p></div>
+  <div class="card metric metric-card hover-card"><h3>Max Drawdown</h3><div class="big metric-negative">{{ profit.get("drawdown", 0) }}%</div><p>From equity history</p></div>
+</section>
+
+<section class="card positions-panel hover-card">
+  <details open>
+    <summary class="positions-summary">
+      <span>
+        <strong>Current Positions</strong>
+        <small>{{ positions.get("count", 0) }} open</small>
+      </span>
+      <span class="status-pill update-pill">Last updated: {{ positions.get("updated_at", "unknown") }}</span>
+    </summary>
+    {% if positions.get("error") %}
+      <div class="empty-state positions-empty">
+        <strong>Positions unavailable</strong>
+        <span>{{ positions.get("error", "Alpaca read-only positions are unavailable.") }}</span>
+      </div>
+    {% elif not positions.get("positions", []) %}
+      <div class="empty-state positions-empty">
+        <strong>No open positions</strong>
+        <span>Alpaca returned zero current holdings.</span>
+      </div>
+    {% else %}
+      <div class="positions-table-wrap">
+        <table class="positions-table">
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Qty</th>
+              <th>Avg Entry</th>
+              <th>Current</th>
+              <th>Market Value</th>
+              <th>Unrealized P/L</th>
+              <th>Unrealized %</th>
+              <th>Age</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in positions.get("positions", []) %}
+              <tr>
+                <td data-label="Symbol"><strong class="position-symbol">{{ p.get("symbol", "-") }}</strong></td>
+                <td data-label="Qty">{{ p.get("qty_display", "-") }}</td>
+                <td data-label="Avg Entry">{{ p.get("avg_entry_price_display", "-") }}</td>
+                <td data-label="Current">{{ p.get("current_price_display", "-") }}</td>
+                <td data-label="Market Value">{{ p.get("market_value_display", "-") }}</td>
+                <td data-label="Unrealized P/L" class="position-{{ p.get("status", "watch") }}">{{ p.get("unrealized_pl_display", "-") }}</td>
+                <td data-label="Unrealized %" class="position-{{ p.get("status", "watch") }}">{{ p.get("unrealized_plpc_display", "-") }}</td>
+                <td data-label="Age">{{ p.get("age_display", "-") }}</td>
+                <td data-label="Status"><span class="position-pill position-{{ p.get("status", "watch") }}">{{ p.get("status_label", "Watch") }}</span></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </details>
+</section>
+
+<section class="card data-quality-panel hover-card">
+  <div class="card-head">
+    <h2>Data Quality / Freshness</h2>
+    <span class="muted">Read-only feed timestamps and stale warnings</span>
+  </div>
+  <div class="quality-grid">
+    {% for feed in feed_quality %}
+      <div class="quality-item quality-{{ feed.get("status", "missing") }}">
+        <div>
+          <strong>{{ feed.get("name", "feed") }}</strong>
+          <span>{{ feed.get("updated_at", "unknown") }}</span>
+        </div>
+        <em>{{ feed.get("warning", "unknown") }}</em>
+      </div>
+    {% else %}
+      <div class="empty-state positions-empty">
+        <strong>No feed quality data</strong>
+        <span>Dashboard feeds are not available yet.</span>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="chart-stack">
+  <div class="card chart-card" data-expandable="chart">
+    <div class="card-head">
+      <h2>Equity Curve</h2>
+      <span class="muted">Portfolio value, buying power, and open P/L</span>
+    </div>
+    <canvas class="ponder-chart" data-chart="equity" data-points='{{ profit.get("equity", []) | tojson }}'></canvas>
+  </div>
+  <div class="card">
+    <h2>Capital Efficiency</h2>
+    <div class="capital-line">
+      <span>Used</span>
+      <div class="capital-track"><div class="capital-fill" style="width: {{ capital.get("capital_used_pct", 0) }}%"></div></div>
+      <strong>{{ capital.get("capital_used_pct", "unknown") }}%</strong>
+    </div>
+    <p><strong>{{ capital.get("next_money_action", "No capital recommendation yet.") }}</strong></p>
+    <p class="muted">Reserve cash: ${{ capital.get("reserve_cash", 0) }}. Deployable cash: ${{ capital.get("deployable_cash", 0) }}.</p>
+  </div>
+  <div class="card chart-card" data-expandable="chart">
+    <div class="card-head">
+      <h2>Price Chart Lab</h2>
+      <span class="muted">Using portfolio history (no live market feed)</span>
+    </div>
+    <div class="tv-chart-shell">
+      <div id="tvPriceChart" class="tv-chart" data-tv-chart data-points='{{ profit.get("equity", []) | tojson }}'></div>
+      <div class="empty-state"><span class="pulse-dot"></span><span>Waiting for real market data feed</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="grid">
+  <div class="card"><h2>Top Exit Watch</h2><div class="big">{{ top_exit.get("symbol", "none") }}</div><p>{{ top_exit.get("verdict", "No sell candidate.") }} / pressure {{ top_exit.get("sell_pressure", "unknown") }}</p></div>
+  <div class="card"><h2>Top Rotation</h2><div class="big small-big">{{ top_rotation.get("sell_symbol", "-") }} to {{ top_rotation.get("buy_symbol", "-") }}</div><p>{{ top_rotation.get("action", "No action") }} / score {{ top_rotation.get("rotation_score", "unknown") }}</p></div>
+  <div class="card"><h2>Risk Alerts</h2><ul>{% for w in logs.get("warnings", [])[:5] %}<li>{{ w }}</li>{% else %}<li>No current critical log warnings.</li>{% endfor %}</ul></div>
+</section>
+
+<section class="card">
+  <h2>Decision Feed</h2>
+  <div class="log-feed">
+    {% for line in logs.get("decision_feed", [])[-35:] %}
+      <div>{{ line }}</div>
+    {% else %}
+      <div>No decision logs found yet.</div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
