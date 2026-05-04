@@ -7,20 +7,29 @@
 {% set logs = profit.get("logs", {}) %}
 {% set top_exit = dashboard_data.get("top_exit", {}) %}
 {% set top_rotation = dashboard_data.get("top_rotation", {}) %}
+{% set market = dashboard_data.get("market", {}) %}
+{% set last_update = latest.get("updated_at", profit.get("updated_at", capital.get("updated_at", "unknown"))) %}
+{% set market_open = market.get("market_open", market.get("is_open")) %}
+{% set data_quality = "Live" if market_open == true else ("Market Closed" if market_open == false else "Delayed") %}
+{% set equity_pct = profit.get("equity_change", {}).get("pct", 0)|float %}
 
 <header class="page-head">
   <div>
     <h1>Profit Ops</h1>
     <p class="muted">Performance, capital, live P/L, decision flow, and risk health in the new modular layout.</p>
   </div>
-  <div class="status-pill">Research-only</div>
+  <div class="page-actions">
+    <div class="status-pill">Research-only</div>
+    <div class="status-pill {{ 'pill-good' if data_quality == 'Live' else ('pill-risk' if data_quality == 'Market Closed' else 'pill-warn') }}">{{ data_quality }}</div>
+    <div class="status-pill update-pill">Last update: {{ last_update }}</div>
+  </div>
 </header>
 
 <section class="grid">
-  <div class="card metric metric-card hover-card"><h3>Portfolio Value</h3><div class="big money metric-neutral">$<span data-live-field="portfolio_value">{{ latest.get("portfolio_value", capital.get("portfolio_value", 0))|round(2) }}</span></div><p>{{ profit.get("equity_change", {}).get("pct", 0) }}% from visible history</p><canvas class="sparkline" data-sparkline="portfolio" data-points='{{ profit.get("equity", []) | tojson }}'></canvas></div>
+  <div class="card metric metric-card hover-card"><h3>Portfolio Value</h3><div class="big money metric-neutral">$<span data-live-field="portfolio_value">{{ latest.get("portfolio_value", capital.get("portfolio_value", 0))|round(2) }}</span></div><span class="metric-delta {{ 'metric-positive' if equity_pct >= 0 else 'metric-negative' }}">{{ '+' if equity_pct >= 0 else '' }}{{ equity_pct|round(2) }}% visible history</span><p>{{ data_quality }} data quality</p><canvas class="sparkline" data-sparkline="portfolio" data-points='{{ profit.get("equity", []) | tojson }}'></canvas></div>
   {% set open_pl = latest.get("open_pl", capital.get("open_pl", 0)) %}
-  <div class="card metric metric-card hover-card"><h3>Open P/L</h3><div class="big {{ 'metric-positive' if open_pl|float >= 0 else 'metric-negative' }}">${{ open_pl|round(2) }}</div><p>Unrealized</p><canvas class="sparkline" data-sparkline="openPl" data-points='{{ profit.get("equity", []) | tojson }}'></canvas></div>
-  <div class="card metric metric-card hover-card"><h3>Buying Power</h3><div class="big money">${{ latest.get("buying_power", capital.get("buying_power", 0))|round(2) }}</div><p>{{ capital.get("capital_mode", "unknown") }}</p><canvas class="sparkline" data-sparkline="buyingPower" data-points='{{ profit.get("equity", []) | tojson }}'></canvas></div>
+  <div class="card metric metric-card hover-card"><h3>Open P/L</h3><div class="big {{ 'metric-positive' if open_pl|float >= 0 else 'metric-negative' }}">${{ open_pl|round(2) }}</div><span class="metric-delta {{ 'metric-positive' if open_pl|float >= 0 else 'metric-negative' }}">{{ 'Above' if open_pl|float >= 0 else 'Below' }} flat</span><p>Unrealized</p><canvas class="sparkline" data-sparkline="openPl" data-points='{{ profit.get("equity", []) | tojson }}'></canvas></div>
+  <div class="card metric metric-card hover-card"><h3>Buying Power</h3><div class="big money">${{ latest.get("buying_power", capital.get("buying_power", 0))|round(2) }}</div><span class="metric-delta metric-neutral">{{ capital.get("capital_used_pct", "unknown") }}% capital used</span><p>{{ capital.get("capital_mode", "unknown") }}</p><canvas class="sparkline" data-sparkline="buyingPower" data-points='{{ profit.get("equity", []) | tojson }}'></canvas></div>
   <div class="card metric metric-card hover-card"><h3>Today / Week / All</h3><div class="big small-big metric-neutral">${{ capital.get("today_pl", 0) }} / ${{ capital.get("week_pl", 0) }} / ${{ capital.get("all_time_pl", 0) }}</div><p>Closed P/L will improve after real sells are logged.</p></div>
   <div class="card metric metric-card hover-card"><h3>AI Health</h3><div class="big metric-warning">{{ health.get("score", 0) }}/100</div><p>{{ health.get("note", "Waiting for data.") }}</p></div>
   <div class="card metric metric-card hover-card"><h3>Win Rate</h3><div class="big metric-neutral">{{ metrics.get("win_rate", 0) }}%</div><p>{{ metrics.get("wins", 0) }} wins / {{ metrics.get("losses", 0) }} losses</p></div>
@@ -53,7 +62,7 @@
     </div>
     <div class="tv-chart-shell">
       <div id="tvPriceChart" class="tv-chart" data-tv-chart></div>
-      <div class="empty-state">Waiting for real OHLC feed</div>
+      <div class="empty-state"><span class="pulse-dot"></span><span>Waiting for real market data feed</span></div>
     </div>
   </div>
 </section>

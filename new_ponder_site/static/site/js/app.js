@@ -158,7 +158,7 @@
           backgroundColor: 'rgba(34,197,94,.10)',
           tension: 0.36,
           fill: true,
-          yAxisID: 'dollars',
+          yAxisID: 'y',
           pointRadius: 0,
           pointHoverRadius: 4
         },
@@ -168,7 +168,7 @@
           borderColor: '#f59e0b',
           backgroundColor: 'rgba(245,158,11,.08)',
           tension: 0.36,
-          yAxisID: 'dollars',
+          yAxisID: 'y1',
           pointRadius: 0,
           pointHoverRadius: 4
         },
@@ -178,7 +178,7 @@
           borderColor: '#ef4444',
           backgroundColor: 'rgba(239,68,68,.08)',
           tension: 0.36,
-          yAxisID: 'percent',
+          yAxisID: 'y2',
           pointRadius: 0,
           pointHoverRadius: 4
         }
@@ -223,14 +223,14 @@
                 return p?.label || p?.date || items[0]?.label || 'Point';
               },
               label: item => {
-                const suffix = item.dataset.yAxisID === 'percent' ? '%' : '';
-                const prefix = item.dataset.yAxisID === 'dollars' ? '$' : '';
+                const suffix = item.dataset.yAxisID === 'y2' ? '%' : '';
+                const prefix = item.dataset.yAxisID === 'y' || item.dataset.yAxisID === 'y1' ? '$' : '';
                 return `${item.dataset.label}: ${numberLabel(item.parsed.y, prefix)}${suffix}`;
               },
               afterBody: items => {
                 const p = points[items[0]?.dataIndex || 0];
                 const start = points[0]?.portfolio || 0;
-                const pct = start ? ((p.portfolio - start) / start) * 100 : null;
+                const pct = p && start ? ((p.portfolio - start) / start) * 100 : null;
                 return [`Change from start: ${pct === null ? 'unknown' : numberLabel(pct) + '%'}`];
               }
             }
@@ -247,8 +247,26 @@
             },
             grid: { color: grid }
           },
-          dollars: { type: 'linear', position: 'left', ticks: { color: '#94a3b8' }, grid: { color: grid } },
-          percent: { type: 'linear', position: 'right', ticks: { color: '#fca5a5' }, grid: { drawOnChartArea: false } }
+          y: {
+            type: 'linear',
+            position: 'left',
+            ticks: { color: '#94a3b8' },
+            grid: { color: grid }
+          },
+          y1: {
+            type: 'linear',
+            position: 'right',
+            ticks: { color: '#fbbf24' },
+            grid: { drawOnChartArea: false }
+          },
+          y2: {
+            type: 'linear',
+            position: 'right',
+            min: 0,
+            max: 100,
+            ticks: { color: '#fca5a5', callback: value => `${value}%` },
+            grid: { drawOnChartArea: false }
+          }
         }
       }
     });

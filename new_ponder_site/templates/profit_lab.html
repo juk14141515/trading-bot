@@ -7,20 +7,27 @@
 {% set shadow = dashboard_data.get("top_shadow", {}) %}
 {% set market = dashboard_data.get("market", {}) %}
 {% set scanner = dashboard_data.get("scanner_top", []) %}
+{% set last_update = latest.get("updated_at", profit.get("updated_at", "unknown")) %}
+{% set market_open = market.get("market_open", market.get("is_open")) %}
+{% set data_quality = "Live" if market_open == true else ("Market Closed" if market_open == false else "Delayed") %}
+{% set lab_open_pl = latest.get("open_pl", 0) %}
 
 <header class="page-head">
   <div>
     <h1>Profit Lab</h1>
     <p class="muted">Experimental analytics and research-only modules. Nothing here places trades.</p>
   </div>
-  <div class="status-pill">Safe lab</div>
+  <div class="page-actions">
+    <div class="status-pill">Safe lab</div>
+    <div class="status-pill {{ 'pill-good' if data_quality == 'Live' else ('pill-risk' if data_quality == 'Market Closed' else 'pill-warn') }}">{{ data_quality }}</div>
+    <div class="status-pill update-pill">Last update: {{ last_update }}</div>
+  </div>
 </header>
 
 <section class="grid">
   <div class="card metric metric-card hover-card"><h3>AI Health</h3><div class="big metric-warning">{{ health.get("score", 0) }}/100</div><p>{{ health.get("note", "Waiting for data.") }}</p></div>
-  {% set lab_open_pl = latest.get("open_pl", 0) %}
-  <div class="card metric metric-card hover-card"><h3>Open P/L</h3><div class="big {{ 'metric-positive' if lab_open_pl|float >= 0 else 'metric-negative' }}">${{ lab_open_pl|round(2) }}</div><p>Unrealized</p></div>
-  <div class="card metric metric-card hover-card"><h3>Closed Net P/L</h3><div class="big metric-neutral">${{ metrics.get("net_closed_pnl", 0) }}</div><p>{{ metrics.get("closed_trades", 0) }} closed trades</p></div>
+  <div class="card metric metric-card hover-card"><h3>Open P/L</h3><div class="big {{ 'metric-positive' if lab_open_pl|float >= 0 else 'metric-negative' }}">${{ lab_open_pl|round(2) }}</div><span class="metric-delta {{ 'metric-positive' if lab_open_pl|float >= 0 else 'metric-negative' }}">{{ 'Above' if lab_open_pl|float >= 0 else 'Below' }} flat</span><p>Unrealized</p></div>
+  <div class="card metric metric-card hover-card"><h3>Closed Net P/L</h3><div class="big metric-neutral">${{ metrics.get("net_closed_pnl", 0) }}</div><span class="metric-delta metric-neutral">{{ metrics.get("closed_trades", 0) }} samples</span><p>{{ metrics.get("closed_trades", 0) }} closed trades</p></div>
   <div class="card metric metric-card hover-card"><h3>Learning Sample</h3><div class="big metric-warning">{{ metrics.get("closed_trades", 0) }}</div><p>More real sells needed before automation.</p></div>
 </section>
 

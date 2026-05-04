@@ -879,8 +879,8 @@ summary{
 .chart-stack{
   display:grid;
   grid-template-columns:1fr;
-  gap:18px;
-  margin:18px 0;
+  gap:28px;
+  margin:28px 0;
 }
 .card-head{
   display:flex;
@@ -893,7 +893,12 @@ summary{
   overflow:hidden;
   width:100%;
   min-width:0;
-  padding:22px;
+  padding:26px 24px;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  border-color:rgba(148,163,184,.30);
+  box-shadow:0 26px 76px rgba(0,0,0,.40),0 0 0 1px rgba(239,68,68,.08);
 }
 .chart-frame{
   position:relative;
@@ -902,9 +907,10 @@ summary{
   min-height:260px;
   width:100%;
   overflow:hidden;
-  border:1px solid var(--border);
+  border:1px solid rgba(148,163,184,.34);
   border-radius:16px;
   background:#020617;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 12px 34px rgba(0,0,0,.22);
 }
 .chart-frame.chart-expanded{
   height:min(70vh,620px);
@@ -929,15 +935,21 @@ summary{
 }
 .tv-chart-shell{
   position:relative;
-  height:220px;
-  max-height:220px;
-  min-height:220px;
-  border:1px solid rgba(148,163,184,.18);
+  height:180px;
+  max-height:180px;
+  min-height:180px;
+  border:1px solid rgba(148,163,184,.30);
   border-radius:18px;
   overflow:hidden;
-  background:#050507;
+  background:
+    linear-gradient(rgba(148,163,184,.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148,163,184,.05) 1px, transparent 1px),
+    radial-gradient(circle at 50% 0%, rgba(239,68,68,.13), transparent 42%),
+    #050507;
+  background-size:34px 34px,34px 34px,100% 100%,100% 100%;
   display:grid;
   place-items:center;
+  opacity:.85;
 }
 .tv-chart{
   width:100%;
@@ -947,12 +959,24 @@ summary{
 .tv-chart-shell .empty-state{
   position:absolute;
   inset:0;
-  display:grid;
-  place-items:center;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:center;
   text-align:center;
-  background:rgba(5,5,7,.78);
+  background:linear-gradient(180deg,rgba(5,5,7,.58),rgba(5,5,7,.82));
   backdrop-filter:blur(8px);
   margin:0;
+  font-weight:900;
+  color:#dbeafe;
+}
+.pulse-dot{
+  width:10px;
+  height:10px;
+  border-radius:999px;
+  background:var(--accent);
+  box-shadow:0 0 0 0 rgba(239,68,68,.45);
+  animation:pulseDot 1.8s ease-out infinite;
 }
 .tall-chart{
   height:520px;
@@ -993,6 +1017,24 @@ summary{
   height:min(70vh,620px);
   max-height:620px;
 }
+.metric-delta{
+  display:block;
+  margin-top:4px;
+  font-weight:900;
+  font-size:13px;
+}
+.page-actions{
+  display:flex;
+  align-items:flex-end;
+  justify-content:flex-start;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.update-pill{
+  border-color:rgba(148,163,184,.34);
+  background:rgba(148,163,184,.10);
+  color:#dbeafe;
+}
 .fade-in-ready .card,
 .fade-in-ready .research-panel,
 .fade-in-ready .hero{
@@ -1001,6 +1043,11 @@ summary{
 @keyframes appFadeIn{
   from{opacity:0;transform:translateY(6px)}
   to{opacity:1;transform:translateY(0)}
+}
+@keyframes pulseDot{
+  0%{box-shadow:0 0 0 0 rgba(239,68,68,.45);opacity:1}
+  70%{box-shadow:0 0 0 10px rgba(239,68,68,0);opacity:.72}
+  100%{box-shadow:0 0 0 0 rgba(239,68,68,0);opacity:1}
 }
 .ai-pulse{
   box-shadow:0 0 0 1px rgba(239,68,68,.22),0 0 24px rgba(239,68,68,.12);
