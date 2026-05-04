@@ -17,14 +17,15 @@
 </header>
 
 <section class="grid">
-  <div class="card metric"><h3>Portfolio Value</h3><div class="big money">$<span data-live-field="portfolio_value">{{ latest.get("portfolio_value", capital.get("portfolio_value", 0))|round(2) }}</span></div><p>{{ profit.get("equity_change", {}).get("pct", 0) }}% from visible history</p></div>
-  <div class="card metric"><h3>Open P/L</h3><div class="big good">${{ latest.get("open_pl", capital.get("open_pl", 0))|round(2) }}</div><p>Unrealized</p></div>
-  <div class="card metric"><h3>Buying Power</h3><div class="big money">${{ latest.get("buying_power", capital.get("buying_power", 0))|round(2) }}</div><p>{{ capital.get("capital_mode", "unknown") }}</p></div>
-  <div class="card metric"><h3>Today / Week / All</h3><div class="big small-big">${{ capital.get("today_pl", 0) }} / ${{ capital.get("week_pl", 0) }} / ${{ capital.get("all_time_pl", 0) }}</div><p>Closed P/L will improve after real sells are logged.</p></div>
-  <div class="card metric"><h3>AI Health</h3><div class="big">{{ health.get("score", 0) }}/100</div><p>{{ health.get("note", "Waiting for data.") }}</p></div>
-  <div class="card metric"><h3>Win Rate</h3><div class="big">{{ metrics.get("win_rate", 0) }}%</div><p>{{ metrics.get("wins", 0) }} wins / {{ metrics.get("losses", 0) }} losses</p></div>
-  <div class="card metric"><h3>Profit Factor</h3><div class="big">{{ metrics.get("profit_factor", 0) }}</div><p>Gross wins / gross losses</p></div>
-  <div class="card metric"><h3>Max Drawdown</h3><div class="big">{{ profit.get("drawdown", 0) }}%</div><p>From equity history</p></div>
+  <div class="card metric metric-card hover-card"><h3>Portfolio Value</h3><div class="big money metric-neutral">$<span data-live-field="portfolio_value">{{ latest.get("portfolio_value", capital.get("portfolio_value", 0))|round(2) }}</span></div><p>{{ profit.get("equity_change", {}).get("pct", 0) }}% from visible history</p></div>
+  {% set open_pl = latest.get("open_pl", capital.get("open_pl", 0)) %}
+  <div class="card metric metric-card hover-card"><h3>Open P/L</h3><div class="big {{ 'metric-positive' if open_pl|float >= 0 else 'metric-negative' }}">${{ open_pl|round(2) }}</div><p>Unrealized</p></div>
+  <div class="card metric metric-card hover-card"><h3>Buying Power</h3><div class="big money">${{ latest.get("buying_power", capital.get("buying_power", 0))|round(2) }}</div><p>{{ capital.get("capital_mode", "unknown") }}</p></div>
+  <div class="card metric metric-card hover-card"><h3>Today / Week / All</h3><div class="big small-big metric-neutral">${{ capital.get("today_pl", 0) }} / ${{ capital.get("week_pl", 0) }} / ${{ capital.get("all_time_pl", 0) }}</div><p>Closed P/L will improve after real sells are logged.</p></div>
+  <div class="card metric metric-card hover-card"><h3>AI Health</h3><div class="big metric-warning">{{ health.get("score", 0) }}/100</div><p>{{ health.get("note", "Waiting for data.") }}</p></div>
+  <div class="card metric metric-card hover-card"><h3>Win Rate</h3><div class="big metric-neutral">{{ metrics.get("win_rate", 0) }}%</div><p>{{ metrics.get("wins", 0) }} wins / {{ metrics.get("losses", 0) }} losses</p></div>
+  <div class="card metric metric-card hover-card"><h3>Profit Factor</h3><div class="big metric-neutral">{{ metrics.get("profit_factor", 0) }}</div><p>Gross wins / gross losses</p></div>
+  <div class="card metric metric-card hover-card"><h3>Max Drawdown</h3><div class="big metric-negative">{{ profit.get("drawdown", 0) }}%</div><p>From equity history</p></div>
 </section>
 
 <section class="split wide-left">

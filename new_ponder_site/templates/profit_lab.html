@@ -17,10 +17,11 @@
 </header>
 
 <section class="grid">
-  <div class="card metric"><h3>AI Health</h3><div class="big">{{ health.get("score", 0) }}/100</div><p>{{ health.get("note", "Waiting for data.") }}</p></div>
-  <div class="card metric"><h3>Open P/L</h3><div class="big good">${{ latest.get("open_pl", 0)|round(2) }}</div><p>Unrealized</p></div>
-  <div class="card metric"><h3>Closed Net P/L</h3><div class="big">${{ metrics.get("net_closed_pnl", 0) }}</div><p>{{ metrics.get("closed_trades", 0) }} closed trades</p></div>
-  <div class="card metric"><h3>Learning Sample</h3><div class="big">{{ metrics.get("closed_trades", 0) }}</div><p>More real sells needed before automation.</p></div>
+  <div class="card metric metric-card hover-card"><h3>AI Health</h3><div class="big metric-warning">{{ health.get("score", 0) }}/100</div><p>{{ health.get("note", "Waiting for data.") }}</p></div>
+  {% set lab_open_pl = latest.get("open_pl", 0) %}
+  <div class="card metric metric-card hover-card"><h3>Open P/L</h3><div class="big {{ 'metric-positive' if lab_open_pl|float >= 0 else 'metric-negative' }}">${{ lab_open_pl|round(2) }}</div><p>Unrealized</p></div>
+  <div class="card metric metric-card hover-card"><h3>Closed Net P/L</h3><div class="big metric-neutral">${{ metrics.get("net_closed_pnl", 0) }}</div><p>{{ metrics.get("closed_trades", 0) }} closed trades</p></div>
+  <div class="card metric metric-card hover-card"><h3>Learning Sample</h3><div class="big metric-warning">{{ metrics.get("closed_trades", 0) }}</div><p>More real sells needed before automation.</p></div>
 </section>
 
 <section class="card chart-card">

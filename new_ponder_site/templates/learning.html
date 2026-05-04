@@ -9,10 +9,10 @@
 {% set unlocked = achievements.get("total_unlocked", achievements.get("achievements", [])|length) %}
 
 <section class="grid">
-  <div class="card"><h3>XP</h3><div class="big">{{ unlocked * 25 + evaluated * 5 }}</div><p>Research learning points</p></div>
-  <div class="card"><h3>Achievements</h3><div class="big">{{ unlocked }}</div><p>Unlocked</p></div>
-  <div class="card"><h3>Pending Evaluations</h3><div class="big">{{ pending }}</div><p>Let the tracker collect outcomes.</p></div>
-  <div class="card"><h3>Automation Readiness</h3><div class="big">Not Yet</div><p>Need stable edge first.</p></div>
+  <div class="card metric-card hover-card"><h3>XP</h3><div class="big metric-neutral">{{ unlocked * 25 + evaluated * 5 }}</div><p>Research learning points</p></div>
+  <div class="card metric-card hover-card"><h3>Achievements</h3><div class="big metric-positive">{{ unlocked }}</div><p>Unlocked</p></div>
+  <div class="card metric-card hover-card"><h3>Pending Evaluations</h3><div class="big metric-warning">{{ pending }}</div><p>Let the tracker collect outcomes.</p></div>
+  <div class="card metric-card hover-card"><h3>Automation Readiness</h3><div class="big metric-negative">Not Yet</div><p>Need stable edge first.</p></div>
 </section>
 
 <section class="card highlight">

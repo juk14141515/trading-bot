@@ -87,7 +87,10 @@
             <span>{{ c.get("final_score") or c.get("score") or "n/a" }}</span>
           </div>
           <p>{{ c.get("setup") or c.get("label") or c.get("category") or "Research candidate" }}</p>
-          <small>Entry: {{ c.get("entry_zone") or c.get("entry") or "not defined" }}</small>
+          <div class="candidate-pills">
+            <span class="status-pill pill-neutral">{{ c.get("action") or c.get("recommendation") or "WATCH" }}</span>
+            <span class="status-pill pill-warn">{{ c.get("entry_zone") or c.get("entry") or "entry not defined" }}</span>
+          </div>
           <small>{{ c.get("reason") or c.get("summary") or c.get("thesis") or "No summary available yet." }}</small>
         </div>
       {% endfor %}
