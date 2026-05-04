@@ -70,9 +70,7 @@ body{
 }
 .sub{color:var(--muted);font-size:13px;margin-bottom:24px}
 .side a{
-  display:flex;
-  align-items:center;
-  gap:10px;
+  display:block;
   color:#dbeafe;
   text-decoration:none;
   padding:13px 14px;
@@ -80,11 +78,6 @@ body{
   border-radius:14px;
   border:1px solid transparent;
   font-weight:800;
-}
-.side a svg{
-  flex:0 0 auto;
-  color:var(--accent);
-  opacity:.9;
 }
 .side a:hover{border-color:var(--accent);background:rgba(147,197,253,.08)}
 .side a.active{
@@ -897,33 +890,6 @@ summary{
   max-width:100%;
   touch-action:none;
 }
-.sparkline{
-  display:block;
-  width:100%;
-  height:42px;
-  margin-top:10px;
-  max-width:100%;
-}
-.tv-chart-shell{
-  position:relative;
-  min-height:340px;
-  border:1px solid rgba(148,163,184,.18);
-  border-radius:18px;
-  overflow:hidden;
-  background:#050507;
-}
-.tv-chart{
-  width:100%;
-  height:340px;
-}
-.tv-chart-shell .empty-state{
-  position:absolute;
-  left:18px;
-  right:18px;
-  bottom:18px;
-  background:rgba(5,5,7,.78);
-  backdrop-filter:blur(8px);
-}
 .tall-chart{
   height:520px;
 }
@@ -944,35 +910,6 @@ summary{
 }
 .log-feed div:last-child{
   border-bottom:0;
-}
-.expand-button{
-  border:1px solid rgba(148,163,184,.28);
-  border-radius:999px;
-  padding:7px 10px;
-  margin-left:auto;
-  font-size:12px;
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-}
-.is-expanded-panel{
-  grid-column:1/-1;
-}
-.is-chart-full .ponder-chart,
-.is-chart-full .tv-chart{
-  height:min(68vh,720px);
-}
-.fade-in-ready .card,
-.fade-in-ready .research-panel,
-.fade-in-ready .hero{
-  animation:appFadeIn .32s ease both;
-}
-@keyframes appFadeIn{
-  from{opacity:0;transform:translateY(6px)}
-  to{opacity:1;transform:translateY(0)}
-}
-.ai-pulse{
-  box-shadow:0 0 0 1px rgba(239,68,68,.22),0 0 24px rgba(239,68,68,.12);
 }
 .table-wrap{
   overflow:auto;

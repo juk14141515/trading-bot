@@ -9,22 +9,25 @@
   <aside class="side">
     <div class="brand"><span class="brand-mark">P</span> Ponder<span>AI</span></div>
     <p class="sub">Research-only command center</p>
-    <a class="{% if request.path == '/' %}active{% endif %}" href="/">Dashboard</a>
-    <a class="{% if request.path == '/profit' %}active{% endif %}" href="/profit">Profit Ops</a>
-    <a class="{% if request.path == '/profit-lab' %}active{% endif %}" href="/profit-lab">Profit Lab</a>
-    <a class="{% if request.path == '/research' %}active{% endif %}" href="/research">Research</a>
-    <a class="{% if request.path == '/assistant' %}active{% endif %}" href="/assistant">Ask Ponder</a>
-    <a class="{% if request.path == '/learning' %}active{% endif %}" href="/learning">Learning</a>
-    <a class="{% if request.path == '/build-plan' %}active{% endif %}" href="/build-plan">Build Plan</a>
-    <a class="{% if request.path == '/settings' %}active{% endif %}" href="/settings">Settings</a>
-    <a class="{% if request.path == '/history' or request.path == '/profit/history' %}active{% endif %}" href="/history">History</a>
-    <a class="{% if request.path == '/debug-snapshot' %}active{% endif %}" href="/debug-snapshot">Snapshot</a>
-    <a href="/logout">Logout</a>
+    <a class="{% if request.path == '/' %}active{% endif %}" href="/"><i data-lucide="layout-dashboard"></i>Dashboard</a>
+    <a class="{% if request.path == '/profit' %}active{% endif %}" href="/profit"><i data-lucide="line-chart"></i>Profit Ops</a>
+    <a class="{% if request.path == '/profit-lab' %}active{% endif %}" href="/profit-lab"><i data-lucide="flask-conical"></i>Profit Lab</a>
+    <a class="{% if request.path == '/research' %}active{% endif %}" href="/research"><i data-lucide="search"></i>Research</a>
+    <a class="{% if request.path == '/assistant' %}active{% endif %}" href="/assistant"><i data-lucide="bot"></i>Ask Ponder</a>
+    <a class="{% if request.path == '/learning' %}active{% endif %}" href="/learning"><i data-lucide="graduation-cap"></i>Learning</a>
+    <a class="{% if request.path == '/build-plan' %}active{% endif %}" href="/build-plan"><i data-lucide="map"></i>Build Plan</a>
+    <a class="{% if request.path == '/settings' %}active{% endif %}" href="/settings"><i data-lucide="settings"></i>Settings</a>
+    <a class="{% if request.path == '/history' or request.path == '/profit/history' %}active{% endif %}" href="/history"><i data-lucide="history"></i>History</a>
+    <a class="{% if request.path == '/debug-snapshot' %}active{% endif %}" href="/debug-snapshot"><i data-lucide="clipboard-list"></i>Snapshot</a>
+    <a href="/logout"><i data-lucide="log-out"></i>Logout</a>
   </aside>
 
   <main class="main">
     {% block content %}{% endblock %}
   </main>
-  <script src="/static/site/js/app.js?v=consistency1"></script>
+  <script src="/static/vendor/chartjs/chart.umd.js"></script>
+  <script src="/static/vendor/tv/tv.js"></script>
+  <script src="/static/vendor/lucide/lucide.js"></script>
+  <script src="/static/site/js/app.js?v=ui-system2"></script>
 </body>
 </html>

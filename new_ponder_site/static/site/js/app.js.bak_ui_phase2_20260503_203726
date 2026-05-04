@@ -122,104 +122,8 @@
     return tip;
   }
 
-  function chartData(points) {
-    const labels = points.map((p, i) => p.label || p.date || `Point ${i + 1}`);
-    return {
-      labels,
-      datasets: [
-        {
-          label: 'Portfolio Value',
-          data: points.map(p => p.portfolio),
-          borderColor: '#22c55e',
-          backgroundColor: 'rgba(34,197,94,.10)',
-          tension: 0.36,
-          fill: true,
-          yAxisID: 'dollars',
-          pointRadius: 0,
-          pointHoverRadius: 4
-        },
-        {
-          label: 'Open P/L',
-          data: points.map(p => p.openPl),
-          borderColor: '#f59e0b',
-          backgroundColor: 'rgba(245,158,11,.08)',
-          tension: 0.36,
-          yAxisID: 'dollars',
-          pointRadius: 0,
-          pointHoverRadius: 4
-        },
-        {
-          label: 'Capital Used %',
-          data: points.map(p => p.capitalUsed),
-          borderColor: '#ef4444',
-          backgroundColor: 'rgba(239,68,68,.08)',
-          tension: 0.36,
-          yAxisID: 'percent',
-          pointRadius: 0,
-          pointHoverRadius: 4
-        }
-      ]
-    };
-  }
-
-  function renderChartJs(canvas, points) {
-    if (!window.Chart) return false;
-    if (canvas.__ponderChartJs) {
-      canvas.__ponderChartJs.data = chartData(points);
-      canvas.__ponderChartJs.update('none');
-      return true;
-    }
-    const grid = 'rgba(148,163,184,.14)';
-    canvas.__ponderChartJs = new Chart(canvas, {
-      type: 'line',
-      data: chartData(points),
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: { duration: 650, easing: 'easeOutQuart' },
-        interaction: { intersect: false, mode: 'index' },
-        plugins: {
-          legend: {
-            display: true,
-            labels: { color: '#cbd5e1', usePointStyle: true, boxWidth: 8, boxHeight: 8 }
-          },
-          tooltip: {
-            backgroundColor: 'rgba(5,5,7,.96)',
-            borderColor: 'rgba(239,68,68,.45)',
-            borderWidth: 1,
-            titleColor: '#fee2e2',
-            bodyColor: '#e5e7eb',
-            padding: 12,
-            displayColors: true,
-            callbacks: {
-              title: items => items[0]?.label || 'Point',
-              label: item => {
-                const suffix = item.dataset.yAxisID === 'percent' ? '%' : '';
-                const prefix = item.dataset.yAxisID === 'dollars' ? '$' : '';
-                return `${item.dataset.label}: ${numberLabel(item.parsed.y, prefix)}${suffix}`;
-              },
-              afterBody: items => {
-                const p = points[items[0]?.dataIndex || 0];
-                const start = points[0]?.portfolio || 0;
-                const pct = start ? ((p.portfolio - start) / start) * 100 : null;
-                return [`Change from start: ${pct === null ? 'unknown' : numberLabel(pct) + '%'}`];
-              }
-            }
-          }
-        },
-        scales: {
-          x: { ticks: { color: '#94a3b8', maxTicksLimit: 6 }, grid: { color: grid } },
-          dollars: { type: 'linear', position: 'left', ticks: { color: '#94a3b8' }, grid: { color: grid } },
-          percent: { type: 'linear', position: 'right', ticks: { color: '#fca5a5' }, grid: { drawOnChartArea: false } }
-        }
-      }
-    });
-    return true;
-  }
-
   function drawChart(canvas, hoverIndex = null, hoverSeries = null) {
     const points = normalizePoints(JSON.parse(canvas.dataset.points || '[]'));
-    if (renderChartJs(canvas, points)) return;
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
@@ -375,85 +279,11 @@
     });
   }
 
-  function drawSparklines() {
-    document.querySelectorAll('canvas[data-sparkline]').forEach(canvas => {
-      if (!window.Chart) return;
-      const points = normalizePoints(JSON.parse(canvas.dataset.points || '[]'));
-      if (points.length < 2) return;
-      const key = canvas.dataset.sparkline;
-      const color = key === 'openPl' ? '#f59e0b' : key === 'buyingPower' ? '#93c5fd' : '#22c55e';
-      if (canvas.__sparkChart) {
-        canvas.__sparkChart.data.labels = points.map((_, i) => i + 1);
-        canvas.__sparkChart.data.datasets[0].data = points.map(p => p[key]);
-        canvas.__sparkChart.update('none');
-        return;
-      }
-      canvas.__sparkChart = new Chart(canvas, {
-        type: 'line',
-        data: {
-          labels: points.map((_, i) => i + 1),
-          datasets: [{ data: points.map(p => p[key]), borderColor: color, backgroundColor: 'transparent', tension: .35, pointRadius: 0, borderWidth: 2 }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          animation: { duration: 500 },
-          plugins: { legend: { display: false }, tooltip: { enabled: false } },
-          scales: { x: { display: false }, y: { display: false } }
-        }
-      });
-    });
-  }
-
-  function initTradingViewPanels() {
-    document.querySelectorAll('[data-tv-chart]').forEach(el => {
-      if (el.__ponderTv || !window.LightweightCharts) return;
-      el.__ponderTv = true;
-      const chart = LightweightCharts.createChart(el, {
-        autoSize: true,
-        layout: { background: { color: '#050507' }, textColor: '#94a3b8' },
-        grid: { vertLines: { color: 'rgba(148,163,184,.12)' }, horzLines: { color: 'rgba(148,163,184,.12)' } },
-        rightPriceScale: { borderColor: 'rgba(148,163,184,.18)' },
-        timeScale: { borderColor: 'rgba(148,163,184,.18)' },
-        crosshair: { mode: 1 }
-      });
-      chart.timeScale().fitContent();
-    });
-  }
-
-  function initExpandablePanels() {
-    document.querySelectorAll('[data-expandable]').forEach(panel => {
-      if (panel.__ponderExpandable) return;
-      panel.__ponderExpandable = true;
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'expand-button';
-      button.innerHTML = '<i data-lucide="maximize-2"></i><span>Expand</span>';
-      button.addEventListener('click', () => {
-        const open = panel.classList.toggle(panel.dataset.expandable === 'chart' ? 'is-chart-full' : 'is-expanded-panel');
-        button.innerHTML = open ? '<i data-lucide="minimize-2"></i><span>Collapse</span>' : '<i data-lucide="maximize-2"></i><span>Expand</span>';
-        if (window.lucide) lucide.createIcons({ attrs: { width: 16, height: 16, strokeWidth: 2 } });
-        setTimeout(() => { drawCharts(); drawSparklines(); }, 220);
-      });
-      const head = panel.querySelector('.card-head');
-      if (head) head.appendChild(button);
-      else panel.insertBefore(button, panel.firstChild);
-    });
-  }
-
   refreshDashboard();
   setInterval(refreshDashboard, 15000);
-  document.documentElement.classList.add('fade-in-ready');
-  document.querySelectorAll('.health-online, .status-pill').forEach((el, index) => {
-    if (index < 3) el.classList.add('ai-pulse');
-  });
-  initExpandablePanels();
-  if (window.lucide) lucide.createIcons({ attrs: { width: 18, height: 18, strokeWidth: 2 } });
-  initTradingViewPanels();
   drawCharts();
-  drawSparklines();
   window.addEventListener('resize', () => {
     clearTimeout(window.__ponderChartTimer);
-    window.__ponderChartTimer = setTimeout(() => { drawCharts(); drawSparklines(); }, 150);
+    window.__ponderChartTimer = setTimeout(drawCharts, 150);
   });
 })();

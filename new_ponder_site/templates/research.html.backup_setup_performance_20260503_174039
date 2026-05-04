@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block content %}
+{% set ai = data.get("ai", {}) %}
+{% set alerts = data.get("alerts", {}) %}
+{% set market = data.get("market", {}) %}
+{% set overnight = data.get("overnight", {}) %}
+{% set sell = data.get("sell", {}) %}
+{% set rotation = data.get("rotation", {}) %}
+{% set performance = data.get("performance", {}) %}
+{% set shadow = data.get("shadow", {}) %}
+{% set strategy_backtest = data.get("strategy_backtest", {}) %}
+{% set forward_simulations = data.get("forward_simulations", {}) %}
+
+<h1>Research Center</h1>
+<p class="muted">Readable intelligence modules. Raw JSON is still available inside each detail drawer.</p>
+
+<div class="tabs">
+  <button onclick="showTab('ai')">AI Summary</button>
+  <button onclick="showTab('alerts')">Alerts</button>
+  <button onclick="showTab('market')">Market</button>
+  <button onclick="showTab('overnight')">Overnight</button>
+  <button onclick="showTab('sell')">Sell</button>
+  <button onclick="showTab('rotation')">Rotation</button>
+  <button onclick="showTab('performance')">Performance</button>
+  <button onclick="showTab('shadow')">Shadow</button>
+  <button onclick="showTab('strategy')">Strategy</button>
+  <button onclick="showTab('future')">Future Labs</button>
+</div>
+
+<section id="tab-ai" class="tab card">
+  <h2>AI Summary</h2>
+  <div class="grid">
+    <div class="card mini"><h3>Regime</h3><div class="big">{{ ai.get("key_readout", {}).get("regime", "unknown") }}</div></div>
+    <div class="card mini"><h3>News Impact</h3><div class="big">{{ ai.get("key_readout", {}).get("news_impact", "unknown") }}</div></div>
+    <div class="card mini"><h3>Pending Learning</h3><div class="big">{{ ai.get("key_readout", {}).get("pending_evaluations", "unknown") }}</div></div>
+  </div>
+  <h3>What Should I Do?</h3>
+  <ul>{% for x in ai.get("action_items", []) %}<li>{{ x }}</li>{% else %}<li>No action items yet.</li>{% endfor %}</ul>
+  <h3>Plain-English Summary</h3>
+  <ul>{% for x in ai.get("plain_english_summary", []) %}<li>{{ x }}</li>{% else %}<li>No plain-English summary yet.</li>{% endfor %}</ul>
+</section>
+
+<section id="tab-alerts" class="tab card" style="display:none">
+  <h2>Alerts</h2>
+  <div class="grid">
+    <div class="card mini"><h3>Total</h3><div class="big">{{ alerts.get("summary", {}).get("total", 0) }}</div></div>
+    <div class="card mini"><h3>Critical</h3><div class="big riskText">{{ alerts.get("summary", {}).get("critical", 0) }}</div></div>
+    <div class="card mini"><h3>Warnings</h3><div class="big warnText">{{ alerts.get("summary", {}).get("warning", 0) }}</div></div>
+  </div>
+  <table><thead><tr><th>Level</th><th>Category</th><th>Title</th><th>Message</th></tr></thead><tbody>
+  {% for a in alerts.get("alerts", []) %}
+    <tr><td>{{ a.get("level") }}</td><td>{{ a.get("category") }}</td><td><strong>{{ a.get("title") }}</strong></td><td>{{ a.get("message") }}</td></tr>
+  {% else %}<tr><td colspan="4">No alerts.</td></tr>{% endfor %}
+  </tbody></table>
+</section>
+
+<section id="tab-market" class="tab card" style="display:none">
+  <h2>Market Scanner</h2>
+  <p class="muted">Updated: {{ market.get("updated_at", "unknown") }}</p>
+  <div class="grid">
+    {% for c in market.get("scanner_top", [])[:8] %}
+      <div class="card mini"><h3>{{ c.get("symbol") }}</h3><div class="big">{{ c.get("final_score") }}</div><p>{{ c.get("entry_zone") }} · {{ c.get("label") }}</p></div>
+    {% else %}<p>No scanner candidates yet.</p>{% endfor %}
+  </div>
+</section>
+
+<section id="tab-overnight" class="tab card" style="display:none">
+  <h2>Overnight / Premarket</h2>
+  <div class="grid">
+    <div class="card mini"><h3>Status</h3><div class="big">{{ overnight.get("status", "research") }}</div></div>
+    <div class="card mini"><h3>Updated</h3><div class="big small-big">{{ overnight.get("updated_at", "unknown") }}</div></div>
+  </div>
+  <ul>
+    {% for note in overnight.get("notes", []) %}<li>{{ note }}</li>{% else %}
+      <li>Use this module for gap detection, earnings, futures/news checks, and next-day risk later.</li>
+    {% endfor %}
+  </ul>
+  <details><summary>Raw Overnight Data</summary><pre>{{ overnight | tojson(indent=2) }}</pre></details>
+</section>
+
+<section id="tab-sell" class="tab card" style="display:none">
+  <h2>Sell Intelligence</h2>
+  <table><thead><tr><th>Symbol</th><th>Pressure</th><th>Verdict</th><th>Reasons</th></tr></thead><tbody>
+  {% for s in sell.get("sell_candidates", [])[:10] %}
+    <tr><td><strong>{{ s.get("symbol") }}</strong></td><td>{{ s.get("sell_pressure") }}</td><td>{{ s.get("verdict") }}</td><td>{{ ", ".join(s.get("reasons", [])) }}</td></tr>
+  {% else %}<tr><td colspan="4">No sell candidates.</td></tr>{% endfor %}
+  </tbody></table>
+</section>
+
+<section id="tab-rotation" class="tab card" style="display:none">
+  <h2>Rotation Engine</h2>
+  <div class="grid">
+    {% for r in rotation.get("rotation_suggestions", [])[:8] %}
+      <div class="card mini"><h3>{{ r.get("sell_symbol") }} to {{ r.get("buy_symbol") }}</h3><div class="big">{{ r.get("rotation_score") }}</div><p>{{ r.get("action") }} · {{ r.get("confidence") }}</p></div>
+    {% else %}<p>No rotation suggestions.</p>{% endfor %}
+  </div>
+</section>
+
+<section id="tab-performance" class="tab card" style="display:none">
+  <h2>Performance</h2>
+  {% set summary = performance.get("summary", {}) %}
+  <div class="grid">
+    <div class="card mini"><h3>Evaluated</h3><div class="big">{{ summary.get("evaluated", 0) }}</div></div>
+    <div class="card mini"><h3>Pending</h3><div class="big">{{ summary.get("pending_evaluations", 0) }}</div></div>
+    <div class="card mini"><h3>Win Rate</h3><div class="big">{{ summary.get("win_rate", "unknown") }}</div></div>
+    <div class="card mini"><h3>Average Alpha</h3><div class="big">{{ summary.get("avg_alpha", "unknown") }}</div></div>
+  </div>
+  <details><summary>Raw Performance Data</summary><pre>{{ performance | tojson(indent=2) }}</pre></details>
+</section>
+
+<section id="tab-shadow" class="tab card" style="display:none">
+  <h2>Shadow Capital</h2>
+  <div class="grid">
+    {% for s in shadow.get("shadow_actions", [])[:8] %}
+      <div class="card mini"><h3>{{ s.get("sell_symbol") }} to {{ s.get("buy_symbol") }}</h3><div class="big small-big">{{ s.get("recommendation") }}</div><p>{{ s.get("confidence") }} · allocation {{ s.get("shadow_allocation_pct") }}%</p></div>
+    {% else %}<p>No shadow actions.</p>{% endfor %}
+  </div>
+</section>
+
+
+<section id="tab-strategy" class="tab card" style="display:none">
+  <h2>Strategy Intelligence</h2>
+  <p class="muted">Research-only strategy learning. Metrics stay marked as insufficient data until real outcomes exist.</p>
+
+  {% set backtest_summary = strategy_backtest.get("summary", {}) %}
+  {% set forward_summary = forward_simulations.get("summary", {}) %}
+
+  <div class="grid">
+    <div class="card mini">
+      <h3>Backtest Status</h3>
+      <div class="big small-big">{{ strategy_backtest.get("status", "missing") }}</div>
+      <p>{{ backtest_summary.get("message", "Uses closed trade memory when available.") }}</p>
+    </div>
+    <div class="card mini">
+      <h3>Closed Samples</h3>
+      <div class="big">{{ backtest_summary.get("sample_size", 0) }}</div>
+      <p>Real closed trades with PnL.</p>
+    </div>
+    <div class="card mini">
+      <h3>Current Bot Win Rate</h3>
+      <div class="big">
+        {% if backtest_summary.get("win_rate") is not none %}
+          {{ backtest_summary.get("win_rate") }}%
+        {% else %}
+          No evaluated trades yet
+        {% endif %}
+      </div>
+      <p>Never inferred from fake data.</p>
+    </div>
+    <div class="card mini">
+      <h3>Forward Status</h3>
+      <div class="big small-big">{{ forward_simulations.get("status", "missing") }}</div>
+      <p>{{ forward_summary.get("message", "Waiting for evaluated forward outcomes.") }}</p>
+    </div>
+  </div>
+
+  <h3>Setup Comparison</h3>
+  <table>
+    <thead><tr><th>Setup</th><th>Status</th><th>Samples</th><th>Win Rate</th><th>Avg Return</th><th>Outcome</th></tr></thead>
+    <tbody>
+      {% for setup in strategy_backtest.get("setups", []) %}
+        <tr>
+          <td><strong>{{ setup.get("setup", "unknown") }}</strong></td>
+          <td>{{ setup.get("status", "insufficient_data") }}</td>
+          <td>{{ setup.get("sample_size", 0) }}</td>
+          <td>{% if setup.get("win_rate") is not none %}{{ setup.get("win_rate") }}%{% else %}No evaluated trades yet{% endif %}</td>
+          <td>{% if setup.get("avg_return_pct") is not none %}{{ setup.get("avg_return_pct") }}%{% else %}No evaluated trades yet{% endif %}</td>
+          <td>{{ setup.get("outcome", "insufficient data") }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6">No setup data yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h3>Forward Simulation Summary</h3>
+  <div class="grid">
+    <div class="card mini"><h3>Evaluated</h3><div class="big">{{ forward_summary.get("evaluated", 0) }}</div></div>
+    <div class="card mini"><h3>Pending</h3><div class="big">{{ forward_summary.get("pending", 0) }}</div></div>
+    <div class="card mini"><h3>Scanner Candidates</h3><div class="big">{{ forward_summary.get("scanner_candidates_available", 0) }}</div></div>
+  </div>
+
+  <details><summary>Raw Strategy Backtest</summary><pre>{{ strategy_backtest | tojson(indent=2) }}</pre></details>
+  <details><summary>Raw Forward Simulations</summary><pre>{{ forward_simulations | tojson(indent=2) }}</pre></details>
+</section>
+
+<section id="tab-future" class="tab card" style="display:none">
+  <h2>Future Research Labs</h2>
+  <div class="grid">
+    <div class="card mini"><h3>IPO Watch</h3><p>Track upcoming IPOs, hype, lockups, and early price behavior. Research-only.</p></div>
+    <div class="card mini"><h3>Day Trading Lab</h3><p>Fast-market setups with separate entries/exits, disconnected from live trading.</p></div>
+    <div class="card mini"><h3>Crypto / ETF / Commodities</h3><p>Separate scanners and learning outputs later.</p></div>
+    <div class="card mini"><h3>Social Trend Scanner</h3><p>TikTok/social catalyst research later, not live execution.</p></div>
+    <div class="card mini"><h3>Event Impact Layer</h3><p>Powerful but intentionally delayed until the base system is stable.</p></div>
+    <div class="card mini"><h3>Strategy Sandbox</h3><p>Paper-test parameter changes before applying anything.</p></div>
+  </div>
+</section>
+
+<script>
+function showTab(name){
+  document.querySelectorAll('.tab').forEach(x => x.style.display='none');
+  document.getElementById('tab-'+name).style.display='block';
+  localStorage.setItem('ponderResearchTab', name);
+}
+showTab(localStorage.getItem('ponderResearchTab') || 'ai');
+</script>
+{% endblock %}

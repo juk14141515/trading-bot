@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block content %}
+{% set metrics = profit.get("metrics", {}) %}
+{% set health = profit.get("health", {}) %}
+{% set latest = profit.get("latest", {}) %}
+{% set rotation = dashboard_data.get("top_rotation", {}) %}
+{% set shadow = dashboard_data.get("top_shadow", {}) %}
+{% set market = dashboard_data.get("market", {}) %}
+{% set scanner = dashboard_data.get("scanner_top", []) %}
+
+<header class="page-head">
+  <div>
+    <h1>Profit Lab</h1>
+    <p class="muted">Experimental analytics and research-only modules. Nothing here places trades.</p>
+  </div>
+  <div class="status-pill">Safe lab</div>
+</header>
+
+<section class="grid">
+  <div class="card metric metric-card hover-card"><h3>AI Health</h3><div class="big metric-warning">{{ health.get("score", 0) }}/100</div><p>{{ health.get("note", "Waiting for data.") }}</p></div>
+  {% set lab_open_pl = latest.get("open_pl", 0) %}
+  <div class="card metric metric-card hover-card"><h3>Open P/L</h3><div class="big {{ 'metric-positive' if lab_open_pl|float >= 0 else 'metric-negative' }}">${{ lab_open_pl|round(2) }}</div><p>Unrealized</p></div>
+  <div class="card metric metric-card hover-card"><h3>Closed Net P/L</h3><div class="big metric-neutral">${{ metrics.get("net_closed_pnl", 0) }}</div><p>{{ metrics.get("closed_trades", 0) }} closed trades</p></div>
+  <div class="card metric metric-card hover-card"><h3>Learning Sample</h3><div class="big metric-warning">{{ metrics.get("closed_trades", 0) }}</div><p>More real sells needed before automation.</p></div>
+</section>
+
+<section class="card chart-card">
+  <div class="card-head">
+    <h2>Equity Lab Chart</h2>
+    <span class="muted">Large chart for scanning on desktop or mobile tunnel.</span>
+  </div>
+  <canvas class="ponder-chart tall-chart" data-chart="equity" data-points='{{ profit.get("equity", []) | tojson }}'></canvas>
+</section>
+
+<section class="split">
+  <div class="card">
+    <h2>Rotation Engine Visibility</h2>
+    <div class="big small-big">{{ rotation.get("sell_symbol", "-") }} to {{ rotation.get("buy_symbol", "-") }}</div>
+    <p>{{ rotation.get("action", "No rotation action.") }} / {{ rotation.get("confidence", "unknown") }} confidence</p>
+    <ul>
+      {% for why in rotation.get("why", [])[:7] %}
+        <li>{{ why }}</li>
+      {% else %}
+        <li>No rotation reasons available.</li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="card">
+    <h2>Shadow Execution</h2>
+    <div class="big small-big">{{ shadow.get("recommendation", "No shadow action") }}</div>
+    <p>{{ shadow.get("sell_symbol", "-") }} to {{ shadow.get("buy_symbol", "-") }} / {{ shadow.get("confidence", "unknown") }}</p>
+    <p class="muted">Research-only simulation. Keep this disconnected until rotation outcomes prove an edge.</p>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Opportunity Ranking</h2>
+  <table>
+    <thead><tr><th>Symbol</th><th>Score</th><th>Entry Zone</th><th>Label</th><th>Momentum</th><th>Trend</th></tr></thead>
+    <tbody>
+      {% for c in scanner[:12] %}
+        <tr>
+          <td><strong>{{ c.get("symbol") }}</strong></td>
+          <td>{{ c.get("final_score") }}</td>
+          <td>{{ c.get("entry_zone") }}</td>
+          <td>{{ c.get("label") }}</td>
+          <td>{{ c.get("momentum_score", "-") }}</td>
+          <td>{{ c.get("trend_score", "-") }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6">No scanner candidates yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="card highlight">
+  <h2>Next Move Panel</h2>
+  <ul>
+    <li>Stay research-only until there are enough real closed sells and shadow outcomes.</li>
+    <li>Next backend module: adaptive capital allocator v1, then unused capital optimizer.</li>
+    <li>Do not connect auto-rotation until rotation win rate and edge are proven.</li>
+    <li>Use the Snapshot page when asking for help so the current module state is included.</li>
+  </ul>
+</section>
+{% endblock %}

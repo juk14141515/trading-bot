@@ -1,7 +1,7 @@
 
 {% extends "base.html" %}
 {% block content %}
-<section class="hero pro-hero app-hero">
+<section class="hero pro-hero">
   <div>
     <div class="eyebrow">Research Mode · No Live Orders</div>
     <h1>Ponder Invest AI</h1>
@@ -36,15 +36,13 @@
 {% set top_shadow = dashboard_data.get("top_shadow", {}) %}
 
 <section class="grid">
-  <div class="card metric metric-card hover-card"><h3>Bot State</h3><div class="big" data-live-field="bot_state">{{ bot.get("trading_state", "unknown") }}</div><p data-live-field="why_not_trading">{{ bot.get("why_not_trading", "Waiting for bot status.") }}</p></div>
-  <div class="card metric metric-card hover-card"><h3>Portfolio</h3><div class="big">$<span data-live-field="portfolio_value">{{ capital.get("portfolio_value", capital.get("equity", "unknown")) }}</span></div><p><span data-live-field="capital_used_pct">{{ capital.get("capital_used_pct", "unknown") }}</span>% deployed</p></div>
-  <div class="card metric metric-card hover-card"><h3>Capital Usage</h3><div class="big metric-warning">{{ capital.get("capital_used_pct", "unknown") }}%</div><div class="capital-track"><div class="capital-fill" style="width: {{ capital.get("capital_used_pct", 0) }}%"></div></div><p>{{ capital.get("capital_mode", capital.get("capital_efficiency", "unknown")) }}</p></div>
-  <div class="card metric metric-card hover-card"><h3>Top Scanner</h3><div class="big" data-live-field="top_scanner">{{ top_scanner.get("symbol", "none") }}</div><p>Score: <span data-live-field="top_scanner_score">{{ top_scanner.get("final_score", "unknown") }}</span></p></div>
-  <div class="card metric metric-card hover-card"><h3>Market Regime</h3><div class="big">{{ read.get("regime", "—") }}</div><p>Score: {{ read.get("regime_score", "—") }}</p></div>
-  <div class="card metric metric-card hover-card"><h3>News Impact</h3><div class="big">{{ read.get("news_impact", "—") }}</div><p>Higher = more defensive</p></div>
-  <div class="card metric metric-card hover-card"><h3>Top Rotation</h3><div class="big small-big">{{ read.get("top_rotation", {}).get("move", "—") }}</div><p>{{ read.get("top_rotation", {}).get("action", "") }}</p></div>
-  <div class="card metric metric-card hover-card"><h3>Alerts</h3><div class="big">{{ alerts_sum.get("total", 0) }}</div><p>{{ alerts_sum.get("critical", 0) }} critical · {{ alerts_sum.get("warning", 0) }} warnings</p></div>
-  <div class="card metric metric-card hover-card"><h3>Learning Status</h3><div class="big metric-warning">{{ read.get("pending_evaluations", "unknown") }}</div><p>Pending evaluations before optimization.</p></div>
+  <div class="card metric"><h3>Bot State</h3><div class="big" data-live-field="bot_state">{{ bot.get("trading_state", "unknown") }}</div><p data-live-field="why_not_trading">{{ bot.get("why_not_trading", "Waiting for bot status.") }}</p></div>
+  <div class="card metric"><h3>Portfolio</h3><div class="big">$<span data-live-field="portfolio_value">{{ capital.get("portfolio_value", capital.get("equity", "unknown")) }}</span></div><p><span data-live-field="capital_used_pct">{{ capital.get("capital_used_pct", "unknown") }}</span>% deployed</p></div>
+  <div class="card metric"><h3>Top Scanner</h3><div class="big" data-live-field="top_scanner">{{ top_scanner.get("symbol", "none") }}</div><p>Score: <span data-live-field="top_scanner_score">{{ top_scanner.get("final_score", "unknown") }}</span></p></div>
+  <div class="card metric"><h3>Market Regime</h3><div class="big">{{ read.get("regime", "—") }}</div><p>Score: {{ read.get("regime_score", "—") }}</p></div>
+  <div class="card metric"><h3>News Impact</h3><div class="big">{{ read.get("news_impact", "—") }}</div><p>Higher = more defensive</p></div>
+  <div class="card metric"><h3>Top Rotation</h3><div class="big small-big">{{ read.get("top_rotation", {}).get("move", "—") }}</div><p>{{ read.get("top_rotation", {}).get("action", "") }}</p></div>
+  <div class="card metric"><h3>Alerts</h3><div class="big">{{ alerts_sum.get("total", 0) }}</div><p>{{ alerts_sum.get("critical", 0) }} critical · {{ alerts_sum.get("warning", 0) }} warnings</p></div>
 </section>
 
 <section class="card module-health-strip">
