@@ -216,10 +216,42 @@
   }
 
   function visibleChartPoints(canvas, points) {
+    if (canvas.__ponderView === 'recent') return points.slice(-Math.min(50, points.length));
+    if (canvas.__ponderView === 'today') {
+      const latest = points.map(p => new Date(p.label || p.date || '')).filter(d => !Number.isNaN(d.getTime())).pop();
+      if (latest) {
+        const day = latest.toDateString();
+        const today = points.filter(p => {
+          const d = new Date(p.label || p.date || '');
+          return !Number.isNaN(d.getTime()) && d.toDateString() === day;
+        });
+        if (today.length >= 2) return today;
+      }
+    }
     if (!canvas.__ponderZoom || points.length < 3) return points;
     const start = Math.max(0, canvas.__ponderZoom.start);
     const end = Math.min(points.length, canvas.__ponderZoom.end);
     return points.slice(start, Math.max(start + 2, end));
+  }
+
+  function latestPoint(points) {
+    return points && points.length ? points[points.length - 1] : {};
+  }
+
+  function updateChartInfo(canvas) {
+    const info = canvas.closest('.chart-card')?.querySelector('.chart-info-strip');
+    if (!info) return;
+    const view = canvas.__ponderVisiblePoints || canvas.__ponderRawPoints || [];
+    const latest = latestPoint(canvas.__ponderRawPoints || []);
+    const mode = canvas.closest('.is-chart-full') ? 'Expanded' : (canvas.__ponderView === 'recent' ? 'Recent' : canvas.__ponderView === 'today' ? 'Today' : 'All');
+    info.innerHTML = `
+      <span>Portfolio <strong>${numberLabel(latest.portfolio, '$')}</strong></span>
+      <span>Open P/L <strong>${numberLabel(latest.openPl, '$')}</strong></span>
+      <span>Capital used <strong>${numberLabel(latest.capitalUsed)}%</strong></span>
+      <span>Last update <strong>${latest.label || latest.date || 'unknown'}</strong></span>
+      <span>Points <strong>${view.length}</strong></span>
+      <span>View <strong>${mode}</strong></span>
+    `;
   }
 
   function applyChartZoom(canvas) {
@@ -227,6 +259,52 @@
     canvas.__ponderVisiblePoints = visibleChartPoints(canvas, canvas.__ponderRawPoints);
     canvas.__ponderChartJs.data = chartData(canvas.__ponderVisiblePoints);
     canvas.__ponderChartJs.update('none');
+    updateChartInfo(canvas);
+  }
+
+  function setChartView(canvas, view) {
+    canvas.__ponderView = view === 'all' ? null : view;
+    canvas.__ponderZoom = null;
+    applyChartZoom(canvas);
+    const card = canvas.closest('.chart-card');
+    card?.querySelectorAll('[data-chart-view]').forEach(button => {
+      const active = (button.dataset.chartView === 'all' && !canvas.__ponderView) || button.dataset.chartView === canvas.__ponderView;
+      button.classList.toggle('is-active', active);
+    });
+  }
+
+  function pointHasTodaySupport(points) {
+    const valid = points.map(p => new Date(p.label || p.date || '')).filter(d => !Number.isNaN(d.getTime()));
+    if (valid.length < 2) return false;
+    const day = valid[valid.length - 1].toDateString();
+    return valid.filter(d => d.toDateString() === day).length >= 2;
+  }
+
+  function ensureChartControls(canvas) {
+    const card = canvas.closest('.chart-card');
+    const head = card?.querySelector('.card-head');
+    if (!card || !head || card.querySelector('.chart-controls')) return;
+    const controls = document.createElement('div');
+    controls.className = 'chart-controls';
+    const buttons = [
+      ['all', 'All'],
+      ['recent', 'Recent'],
+      ...(pointHasTodaySupport(canvas.__ponderRawPoints || []) ? [['today', 'Today']] : []),
+      ['reset', 'Reset View']
+    ];
+    buttons.forEach(([view, label]) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.chartView = view;
+      button.textContent = label;
+      if (view === 'all') button.classList.add('is-active');
+      button.addEventListener('click', () => setChartView(canvas, view === 'reset' ? 'all' : view));
+      controls.appendChild(button);
+    });
+    head.appendChild(controls);
+    const info = document.createElement('div');
+    info.className = 'chart-info-strip';
+    card.insertBefore(info, canvas.parentElement || canvas);
   }
 
   function bindChartJsZoom(canvas) {
@@ -242,12 +320,13 @@
       const span = zoom.end - zoom.start;
       const minSpan = Math.min(6, points.length);
       const nextSpan = event.deltaY < 0
-        ? Math.max(minSpan, Math.round(span * 0.82))
-        : Math.min(points.length, Math.round(span * 1.18));
+        ? Math.max(minSpan, Math.round(span * 0.92))
+        : Math.min(points.length, Math.round(span * 1.08));
       const center = zoom.start + span * ratio;
       let start = Math.round(center - nextSpan * ratio);
       start = Math.max(0, Math.min(points.length - nextSpan, start));
       canvas.__ponderZoom = { start, end: start + nextSpan };
+      canvas.__ponderView = null;
       applyChartZoom(canvas);
     }, { passive: false });
     canvas.addEventListener('dblclick', () => {
@@ -262,9 +341,11 @@
     canvas.__ponderRawPoints = points;
     const visiblePoints = visibleChartPoints(canvas, points);
     canvas.__ponderVisiblePoints = visiblePoints;
+    ensureChartControls(canvas);
     if (canvas.__ponderChartJs) {
       canvas.__ponderChartJs.data = chartData(visiblePoints);
       canvas.__ponderChartJs.update('none');
+      updateChartInfo(canvas);
       return true;
     }
     const grid = 'rgba(148,163,184,.14)';
@@ -368,12 +449,13 @@
       }
     });
     bindChartJsZoom(canvas);
+    updateChartInfo(canvas);
     frame.__ponderChartCanvas = canvas;
     return true;
   }
 
   function drawChart(canvas, hoverIndex = null, hoverSeries = null) {
-    const points = normalizePoints(JSON.parse(canvas.dataset.points || '[]'));
+    const points = normalizePoints(parseJsonAttribute(canvas, 'points'));
     if (renderChartJs(canvas, points)) return;
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
@@ -566,7 +648,8 @@
       if (el.__ponderTv || !window.LightweightCharts) return;
       el.__ponderTv = true;
       const shell = el.closest('.tv-chart-shell');
-      const fallback = tvFallbackData(parseJsonAttribute(el, 'points'));
+      const rawPoints = normalizePoints(parseJsonAttribute(el, 'points'));
+      const fallback = tvFallbackData(rawPoints);
       if (fallback.length < 2) {
         if (shell) shell.classList.remove('has-data');
         return;
@@ -601,6 +684,8 @@
       series.setData(fallback);
       el.__ponderTvChart = chart;
       el.__ponderTvSeries = series;
+      el.__ponderTvData = fallback;
+      el.__ponderTvRawPoints = rawPoints;
       if (shell) {
         shell.classList.add('has-data');
         if (!shell.querySelector('.tv-chart-label')) {
@@ -609,8 +694,49 @@
           label.textContent = 'Using portfolio history (no live market feed)';
           shell.appendChild(label);
         }
+        const card = el.closest('.chart-card');
+        if (card && !card.querySelector('.chart-info-strip')) {
+          const latest = latestPoint(rawPoints);
+          const info = document.createElement('div');
+          info.className = 'chart-info-strip';
+          info.innerHTML = `
+            <span>Portfolio <strong>${numberLabel(latest.portfolio, '$')}</strong></span>
+            <span>Open P/L <strong>${numberLabel(latest.openPl, '$')}</strong></span>
+            <span>Capital used <strong>${numberLabel(latest.capitalUsed)}%</strong></span>
+            <span>Last update <strong>${latest.label || latest.date || 'unknown'}</strong></span>
+            <span>Points <strong>${fallback.length}</strong></span>
+            <span>View <strong>All</strong></span>
+          `;
+          card.insertBefore(info, shell);
+        }
       }
       chart.timeScale().fitContent();
+    });
+  }
+
+  function refreshPanelCharts(panel) {
+    panel.querySelectorAll('canvas').forEach(canvas => {
+      if (canvas.__ponderChartJs) {
+        canvas.__ponderChartJs.resize();
+        canvas.__ponderChartJs.update('none');
+        updateChartInfo(canvas);
+      }
+      if (canvas.__sparkChart) {
+        canvas.__sparkChart.resize();
+        canvas.__sparkChart.update('none');
+      }
+    });
+    panel.querySelectorAll('[data-tv-chart]').forEach(el => {
+      if (el.__ponderTvChart && el.parentElement) {
+        const width = Math.max(320, el.parentElement.clientWidth);
+        const height = Math.max(160, el.parentElement.clientHeight);
+        el.__ponderTvChart.resize(width, height);
+        el.__ponderTvChart.applyOptions?.({
+          handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
+          handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false }
+        });
+        el.__ponderTvChart.timeScale?.().fitContent?.();
+      }
     });
   }
 
@@ -627,17 +753,9 @@
         panel.querySelectorAll('.chart-frame').forEach(frame => frame.classList.toggle('chart-expanded', open));
         button.innerHTML = open ? '<i data-lucide="minimize-2"></i><span>Collapse</span>' : '<i data-lucide="maximize-2"></i><span>Expand</span>';
         if (window.lucide) lucide.createIcons({ attrs: { width: 16, height: 16, strokeWidth: 2 } });
-        setTimeout(() => {
-          panel.querySelectorAll('canvas').forEach(canvas => {
-            if (canvas.__ponderChartJs) canvas.__ponderChartJs.resize();
-            if (canvas.__sparkChart) canvas.__sparkChart.resize();
-          });
-          panel.querySelectorAll('[data-tv-chart]').forEach(el => {
-            if (el.__ponderTvChart && el.parentElement) {
-              el.__ponderTvChart.resize(el.parentElement.clientWidth, el.parentElement.clientHeight);
-            }
-          });
-        }, 240);
+        refreshPanelCharts(panel);
+        setTimeout(() => refreshPanelCharts(panel), 280);
+        setTimeout(() => refreshPanelCharts(panel), 520);
       });
       const head = panel.querySelector('.card-head');
       if (head) head.appendChild(button);
@@ -647,12 +765,19 @@
 
   function resizeExistingCharts() {
     document.querySelectorAll('canvas').forEach(canvas => {
-      if (canvas.__ponderChartJs) canvas.__ponderChartJs.resize();
-      if (canvas.__sparkChart) canvas.__sparkChart.resize();
+      if (canvas.__ponderChartJs) {
+        canvas.__ponderChartJs.resize();
+        canvas.__ponderChartJs.update('none');
+        updateChartInfo(canvas);
+      }
+      if (canvas.__sparkChart) {
+        canvas.__sparkChart.resize();
+        canvas.__sparkChart.update('none');
+      }
     });
     document.querySelectorAll('[data-tv-chart]').forEach(el => {
       if (el.__ponderTvChart && el.parentElement) {
-        el.__ponderTvChart.resize(el.parentElement.clientWidth, el.parentElement.clientHeight);
+        el.__ponderTvChart.resize(Math.max(320, el.parentElement.clientWidth), Math.max(160, el.parentElement.clientHeight));
       }
     });
   }

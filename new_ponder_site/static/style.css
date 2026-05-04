@@ -900,6 +900,38 @@ summary{
   border-color:rgba(148,163,184,.30);
   box-shadow:0 26px 76px rgba(0,0,0,.40),0 0 0 1px rgba(239,68,68,.08);
 }
+.chart-controls{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-left:auto;
+}
+.chart-controls button{
+  margin:0;
+  padding:7px 10px;
+  font-size:12px;
+}
+.chart-info-strip{
+  display:none;
+  flex-wrap:wrap;
+  gap:8px;
+  padding:10px 12px;
+  border:1px solid rgba(148,163,184,.20);
+  border-radius:14px;
+  background:rgba(2,6,23,.42);
+  color:#cbd5e1;
+  font-size:12px;
+}
+.chart-info-strip span{
+  border-right:1px solid rgba(148,163,184,.18);
+  padding-right:8px;
+}
+.chart-info-strip span:last-child{
+  border-right:0;
+}
+.is-chart-full .chart-info-strip{
+  display:flex;
+}
 .chart-frame{
   position:relative;
   height:320px;
