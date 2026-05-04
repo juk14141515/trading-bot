@@ -122,6 +122,17 @@
     return tip;
   }
 
+  function ensureChartFrame(canvas) {
+    if (canvas.parentElement && canvas.parentElement.classList.contains('chart-frame')) {
+      return canvas.parentElement;
+    }
+    const frame = document.createElement('div');
+    frame.className = 'chart-frame';
+    canvas.parentNode.insertBefore(frame, canvas);
+    frame.appendChild(canvas);
+    return frame;
+  }
+
   function chartData(points) {
     const labels = points.map((p, i) => p.label || p.date || `Point ${i + 1}`);
     return {
@@ -164,6 +175,7 @@
 
   function renderChartJs(canvas, points) {
     if (!window.Chart) return false;
+    const frame = ensureChartFrame(canvas);
     if (canvas.__ponderChartJs) {
       canvas.__ponderChartJs.data = chartData(points);
       canvas.__ponderChartJs.update('none');
@@ -176,6 +188,7 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        resizeDelay: 200,
         animation: { duration: 650, easing: 'easeOutQuart' },
         interaction: { intersect: false, mode: 'index' },
         plugins: {
@@ -214,6 +227,7 @@
         }
       }
     });
+    frame.__ponderChartCanvas = canvas;
     return true;
   }
 
@@ -397,6 +411,7 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          resizeDelay: 200,
           animation: { duration: 500 },
           plugins: { legend: { display: false }, tooltip: { enabled: false } },
           scales: { x: { display: false }, y: { display: false } }
@@ -417,6 +432,7 @@
         timeScale: { borderColor: 'rgba(148,163,184,.18)' },
         crosshair: { mode: 1 }
       });
+      el.__ponderTvChart = chart;
       chart.timeScale().fitContent();
     });
   }
@@ -431,13 +447,36 @@
       button.innerHTML = '<i data-lucide="maximize-2"></i><span>Expand</span>';
       button.addEventListener('click', () => {
         const open = panel.classList.toggle(panel.dataset.expandable === 'chart' ? 'is-chart-full' : 'is-expanded-panel');
+        panel.querySelectorAll('.chart-frame').forEach(frame => frame.classList.toggle('chart-expanded', open));
         button.innerHTML = open ? '<i data-lucide="minimize-2"></i><span>Collapse</span>' : '<i data-lucide="maximize-2"></i><span>Expand</span>';
         if (window.lucide) lucide.createIcons({ attrs: { width: 16, height: 16, strokeWidth: 2 } });
-        setTimeout(() => { drawCharts(); drawSparklines(); }, 220);
+        setTimeout(() => {
+          panel.querySelectorAll('canvas').forEach(canvas => {
+            if (canvas.__ponderChartJs) canvas.__ponderChartJs.resize();
+            if (canvas.__sparkChart) canvas.__sparkChart.resize();
+          });
+          panel.querySelectorAll('[data-tv-chart]').forEach(el => {
+            if (el.__ponderTvChart && el.parentElement) {
+              el.__ponderTvChart.resize(el.parentElement.clientWidth, el.parentElement.clientHeight);
+            }
+          });
+        }, 240);
       });
       const head = panel.querySelector('.card-head');
       if (head) head.appendChild(button);
       else panel.insertBefore(button, panel.firstChild);
+    });
+  }
+
+  function resizeExistingCharts() {
+    document.querySelectorAll('canvas').forEach(canvas => {
+      if (canvas.__ponderChartJs) canvas.__ponderChartJs.resize();
+      if (canvas.__sparkChart) canvas.__sparkChart.resize();
+    });
+    document.querySelectorAll('[data-tv-chart]').forEach(el => {
+      if (el.__ponderTvChart && el.parentElement) {
+        el.__ponderTvChart.resize(el.parentElement.clientWidth, el.parentElement.clientHeight);
+      }
     });
   }
 
@@ -454,6 +493,6 @@
   drawSparklines();
   window.addEventListener('resize', () => {
     clearTimeout(window.__ponderChartTimer);
-    window.__ponderChartTimer = setTimeout(() => { drawCharts(); drawSparklines(); }, 150);
+    window.__ponderChartTimer = setTimeout(resizeExistingCharts, 200);
   });
 })();
