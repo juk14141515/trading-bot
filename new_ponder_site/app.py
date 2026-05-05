@@ -393,6 +393,105 @@ def build_shadow_rejection_rows(shadow_execution):
 
     return sorted(rows, key=sort_key, reverse=True)
 
+def low_confidence_value(value, sample_label=""):
+    if value in (None, "") and not sample_label:
+        return True
+    number = as_float(value)
+    if number is not None:
+        return number < 0.6
+    label = f"{value} {sample_label}".lower()
+    return any(word in label for word in ("low", "insufficient", "collecting", "not ready", "small"))
+
+def truthy_research_flag(value):
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "y", "on", "high"}
+    return False
+
+def build_shadow_live_actions(comparison):
+    if not isinstance(comparison, dict) or not comparison:
+        return [{
+            "title": "Collect more data",
+            "detail": "Shadow vs live comparison data is not available yet.",
+            "status": "warn",
+        }]
+
+    summary = comparison.get("summary", {}) if isinstance(comparison.get("summary"), dict) else {}
+    diagnostics = comparison.get("diagnostics", {}) if isinstance(comparison.get("diagnostics"), dict) else {}
+    data_quality = comparison.get("data_quality", {}) if isinstance(comparison.get("data_quality"), dict) else {}
+    actions = []
+
+    confidence = first_value(summary, ("confidence", "confidence_score", "confidence_label"), data_quality.get("confidence"))
+    sample_label = first_value(summary, ("sample_label", "sample_size_label"), data_quality.get("sample_label", ""))
+    if low_confidence_value(confidence, sample_label):
+        actions.append({
+            "title": "Collect more data",
+            "detail": "Confidence is still low, so this is not an optimization signal.",
+            "status": "warn",
+        })
+
+    freshness_text = " ".join(str(data_quality.get(key, "")) for key in ("freshness", "freshness_status", "status", "warning")).lower()
+    if "stale" in freshness_text or "outdated" in freshness_text:
+        actions.append({
+            "title": "Data may be outdated",
+            "detail": "Refresh the research feeds before trusting the comparison.",
+            "status": "warn",
+        })
+
+    missed_winners = as_float(summary.get("missed_winners_count"))
+    if missed_winners and missed_winners > 0:
+        actions.append({
+            "title": "Review missed setups",
+            "detail": f"{int(missed_winners)} missed winners need inspection before threshold changes.",
+            "status": "risk",
+        })
+
+    bad_live = as_float(summary.get("bad_live_trade_count"))
+    if bad_live and bad_live > 0:
+        actions.append({
+            "title": "Review weak live setups",
+            "detail": f"{int(bad_live)} bad live trades were flagged for research review.",
+            "status": "risk",
+        })
+
+    if truthy_research_flag(diagnostics.get("possible_over_filtering")):
+        actions.append({
+            "title": "Bot may be too strict",
+            "detail": "Over-filtering was flagged. Review rejected winners, not live logic.",
+            "status": "warn",
+        })
+
+    if truthy_research_flag(diagnostics.get("possible_under_filtering")):
+        actions.append({
+            "title": "Bot may be too loose",
+            "detail": "Under-filtering was flagged. Review weak accepted setups first.",
+            "status": "warn",
+        })
+
+    if not actions:
+        actions.append({
+            "title": "Let data collect",
+            "detail": "No high-priority comparison action is available yet.",
+            "status": "neutral",
+        })
+    return actions[:6]
+
+def build_shadow_live_health_rows(feeds):
+    rows = build_data_quality(feeds)
+    for row in rows:
+        if row.get("status") == "present":
+            row["pill"] = "good"
+        elif row.get("status") in {"stale", "warning"}:
+            row["pill"] = "warn"
+        elif row.get("status") == "error":
+            row["pill"] = "risk"
+        else:
+            row["pill"] = "neutral"
+    return rows
+
 def load_capital_history():
     capital = load_json("capital_intelligence_latest.json")
     history = capital.get("history") or []
@@ -653,6 +752,9 @@ def history():
 @app.route("/research")
 def research():
     shadow_execution = load_json("shadow_execution_latest.json")
+    shadow_live_comparison = load_json("shadow_live_comparison_latest.json")
+    setup_outcomes = load_json("setup_outcomes_latest.json")
+    shadow_strategy_research = load_json("shadow_strategy_research_latest.json")
     data = {
         "ai": load_json("ai_summary_latest.json"),
         "alerts": load_json("notifications_latest.json"),
@@ -667,9 +769,17 @@ def research():
         "strategy_backtest": load_json("current_strategy_backtest_latest.json"),
         "forward_simulations": load_json("forward_setup_simulations_latest.json"),
         "setup_performance": load_json("setup_performance_latest.json"),
-        "setup_outcomes": load_json("setup_outcomes_latest.json"),
-        "shadow_strategy_research": load_json("shadow_strategy_research_latest.json"),
+        "setup_outcomes": setup_outcomes,
+        "shadow_strategy_research": shadow_strategy_research,
         "shadow_execution": shadow_execution,
+        "shadow_live_comparison": shadow_live_comparison,
+        "shadow_live_actions": build_shadow_live_actions(shadow_live_comparison),
+        "research_feed_health": build_shadow_live_health_rows({
+            "shadow_live_comparison": shadow_live_comparison,
+            "shadow_execution": shadow_execution,
+            "setup_outcomes": setup_outcomes,
+            "strategy_research": shadow_strategy_research,
+        }),
         "shadow_execution_setups": build_shadow_setup_rows(shadow_execution),
         "shadow_execution_rejections": build_shadow_rejection_rows(shadow_execution),
     }
@@ -715,6 +825,10 @@ def api_positions():
 @app.route("/api/shadow-execution")
 def api_shadow_execution():
     return safe_json_response(load_json("shadow_execution_latest.json"))
+
+@app.route("/api/shadow-live-comparison")
+def api_shadow_live_comparison():
+    return safe_json_response(load_json("shadow_live_comparison_latest.json"))
 
 @app.route("/api/snapshot")
 def api_snapshot():

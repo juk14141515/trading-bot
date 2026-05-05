@@ -1,0 +1,38 @@
+<section class="research-decision-panel recommendation-panel command-mode adhd-mode compact-mode">
+  <div class="card-head">
+    <div>
+      <div class="eyebrow">Why / What To Do</div>
+      <h2>Research Decision Panel</h2>
+      <p class="muted">Research-only guidance from existing comparison and learning feeds.</p>
+    </div>
+    <span class="status-pill pill-neutral">No live automation changes</span>
+  </div>
+
+  <div class="decision-grid">
+    {% for action in shadow_live_actions %}
+      {% set status = action.get("status", "neutral") %}
+      <div class="decision-card decision-{{ status }}">
+        <span class="status-pill {{ 'pill-risk' if status == 'risk' else ('pill-warn' if status == 'warn' else ('pill-good' if status == 'good' else 'pill-neutral')) }}">
+          {{ status }}
+        </span>
+        <h3>{{ action.get("title", "Collect more data") }}</h3>
+        <p>{{ action.get("detail", "Not enough evidence yet.") }}</p>
+      </div>
+    {% else %}
+      <div class="decision-card decision-warn">
+        <span class="status-pill pill-warn">warn</span>
+        <h3>Collect more data</h3>
+        <p>Not enough evidence yet.</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="focus-checklist adhd-mode">
+    <h3>Focus Checklist</h3>
+    <label><input type="checkbox"> Check freshness</label>
+    <label><input type="checkbox"> Review missed winners</label>
+    <label><input type="checkbox"> Review bad trades</label>
+    <label><input type="checkbox"> Do not change live logic</label>
+    <label><input type="checkbox"> Let data collect</label>
+  </div>
+</section>

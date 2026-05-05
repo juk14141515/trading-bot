@@ -1,6 +1,23 @@
 (function () {
   const root = document.documentElement;
-  const defaults = { theme: 'black', colorblind: true, motion: 'calm', density: 'normal' };
+  const defaults = {
+    theme: 'black',
+    colorblind: true,
+    motion: 'calm',
+    density: 'normal',
+    defaultLayout: 'command',
+    adhdMode: false,
+    compactDensity: false,
+    largeText: false,
+    highContrast: false,
+    reduceMotion: false,
+    showRecommendations: true,
+    showLowConfidence: true,
+    showRawJson: true,
+    autoRefresh: false,
+    showDataFreshness: true,
+    showModuleHealth: true
+  };
 
   function readSettings() {
     try {
@@ -16,6 +33,16 @@
     root.dataset.colorblind = next.colorblind ? 'true' : 'false';
     root.dataset.motion = next.motion;
     root.dataset.density = next.density;
+    root.dataset.largeText = next.largeText ? 'true' : 'false';
+    root.dataset.highContrast = next.highContrast ? 'true' : 'false';
+    root.dataset.reduceMotion = next.reduceMotion ? 'true' : 'false';
+    root.dataset.compactDensity = next.compactDensity ? 'true' : 'false';
+    root.dataset.showRecommendations = next.showRecommendations ? 'true' : 'false';
+    root.dataset.showLowConfidence = next.showLowConfidence ? 'true' : 'false';
+    root.dataset.showRawJson = next.showRawJson ? 'true' : 'false';
+    root.dataset.showDataFreshness = next.showDataFreshness ? 'true' : 'false';
+    root.dataset.showModuleHealth = next.showModuleHealth ? 'true' : 'false';
+    if (next.reduceMotion) root.dataset.motion = 'none';
     updateSettingButtons(next);
   }
 
@@ -27,7 +54,7 @@
     });
     const status = document.getElementById('settingsStatus');
     if (status) {
-      status.textContent = `Active: ${settings.theme} theme, colorblind markers ${settings.colorblind ? 'on' : 'off'}, ${settings.motion} motion, ${settings.density} density.`;
+      status.textContent = `Active: ${settings.theme} theme, ${settings.defaultLayout} research layout, ${settings.motion} motion, ${settings.density} density.`;
     }
   }
 
@@ -45,6 +72,35 @@
   };
 
   applySettings(readSettings());
+
+  function applyResearchLayout(layout) {
+    const settings = window.ponderSettings.get();
+    const fallback = settings.adhdMode ? 'adhd' : (settings.defaultLayout || 'command');
+    const next = layout || localStorage.getItem('ponderResearchLayout') || fallback;
+    document.body.dataset.researchLayout = next;
+    document.querySelectorAll('[data-research-layout]').forEach(button => {
+      button.classList.toggle('is-active', button.dataset.researchLayout === next);
+      if (!button.__ponderLayoutBound) {
+        button.__ponderLayoutBound = true;
+        button.addEventListener('click', () => {
+          localStorage.setItem('ponderResearchLayout', button.dataset.researchLayout);
+          applyResearchLayout(button.dataset.researchLayout);
+        });
+      }
+    });
+  }
+
+  window.ponderResearchLayout = {
+    set: (layout) => {
+      localStorage.setItem('ponderResearchLayout', layout);
+      applyResearchLayout(layout);
+    },
+    get: () => document.body.dataset.researchLayout || 'command',
+    reset: () => {
+      localStorage.removeItem('ponderResearchLayout');
+      applyResearchLayout('');
+    }
+  };
 
   window.copyPonderSnapshot = async function () {
     try {
@@ -782,6 +838,7 @@
     });
   }
 
+  applyResearchLayout('');
   refreshDashboard();
   setInterval(refreshDashboard, 15000);
   document.documentElement.classList.add('fade-in-ready');

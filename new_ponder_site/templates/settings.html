@@ -25,7 +25,53 @@
     <h2>ADHD / Focus</h2>
     <button data-setting="density:focus" onclick="ponderSettings.set({density:'focus'})">Focus Mode</button>
     <button data-setting="density:normal" onclick="ponderSettings.set({density:'normal'})">Normal Mode</button>
+    <button data-setting="adhdMode:true" onclick="ponderSettings.set({adhdMode:true}); ponderResearchLayout.reset()">ADHD Default On</button>
+    <button data-setting="adhdMode:false" onclick="ponderSettings.set({adhdMode:false}); ponderResearchLayout.reset()">ADHD Default Off</button>
     <p class="muted">Focus mode tightens spacing and keeps the page calmer.</p>
+  </div>
+
+  <div class="card">
+    <h2>Research Layout</h2>
+    <button data-setting="defaultLayout:command" onclick="ponderSettings.set({defaultLayout:'command'}); ponderResearchLayout.reset()">Command</button>
+    <button data-setting="defaultLayout:deep" onclick="ponderSettings.set({defaultLayout:'deep'}); ponderResearchLayout.reset()">Deep Dive</button>
+    <button data-setting="defaultLayout:adhd" onclick="ponderSettings.set({defaultLayout:'adhd'}); ponderResearchLayout.reset()">ADHD</button>
+    <button data-setting="defaultLayout:graphs" onclick="ponderSettings.set({defaultLayout:'graphs'}); ponderResearchLayout.reset()">Graphs</button>
+    <button data-setting="defaultLayout:compact" onclick="ponderSettings.set({defaultLayout:'compact'}); ponderResearchLayout.reset()">Compact</button>
+    <button data-setting="defaultLayout:raw" onclick="ponderSettings.set({defaultLayout:'raw'}); ponderResearchLayout.reset()">Raw</button>
+    <p class="muted">This controls the default /research decision interface in this browser only.</p>
+  </div>
+
+  <div class="card">
+    <h2>Display</h2>
+    <button data-setting="compactDensity:true" onclick="ponderSettings.set({compactDensity:true})">Compact Density</button>
+    <button data-setting="compactDensity:false" onclick="ponderSettings.set({compactDensity:false})">Comfort Density</button>
+    <button data-setting="largeText:true" onclick="ponderSettings.set({largeText:true})">Large Text</button>
+    <button data-setting="largeText:false" onclick="ponderSettings.set({largeText:false})">Standard Text</button>
+    <button data-setting="highContrast:true" onclick="ponderSettings.set({highContrast:true})">High Contrast On</button>
+    <button data-setting="highContrast:false" onclick="ponderSettings.set({highContrast:false})">High Contrast Off</button>
+    <button data-setting="reduceMotion:true" onclick="ponderSettings.set({reduceMotion:true})">Reduce Motion</button>
+    <button data-setting="reduceMotion:false" onclick="ponderSettings.set({reduceMotion:false})">Normal Motion</button>
+  </div>
+
+  <div class="card">
+    <h2>Research Visibility</h2>
+    <button data-setting="showRecommendations:true" onclick="ponderSettings.set({showRecommendations:true})">Recommendations On</button>
+    <button data-setting="showRecommendations:false" onclick="ponderSettings.set({showRecommendations:false})">Recommendations Off</button>
+    <button data-setting="showLowConfidence:true" onclick="ponderSettings.set({showLowConfidence:true})">Low Confidence On</button>
+    <button data-setting="showLowConfidence:false" onclick="ponderSettings.set({showLowConfidence:false})">Low Confidence Off</button>
+    <button data-setting="showRawJson:true" onclick="ponderSettings.set({showRawJson:true})">Raw JSON On</button>
+    <button data-setting="showRawJson:false" onclick="ponderSettings.set({showRawJson:false})">Raw JSON Off</button>
+  </div>
+
+  <div class="card">
+    <h2>Freshness / Health</h2>
+    <button data-setting="autoRefresh:true" onclick="ponderSettings.set({autoRefresh:true})">Auto-refresh Toggle On</button>
+    <button data-setting="autoRefresh:false" onclick="ponderSettings.set({autoRefresh:false})">Auto-refresh Toggle Off</button>
+    <button data-setting="showDataFreshness:true" onclick="ponderSettings.set({showDataFreshness:true})">Freshness On</button>
+    <button data-setting="showDataFreshness:false" onclick="ponderSettings.set({showDataFreshness:false})">Freshness Off</button>
+    <button data-setting="showModuleHealth:true" onclick="ponderSettings.set({showModuleHealth:true})">Module Health On</button>
+    <button data-setting="showModuleHealth:false" onclick="ponderSettings.set({showModuleHealth:false})">Module Health Off</button>
+    <p class="muted">Auto-refresh is a dashboard preference only. It does not change trading behavior.</p>
   </div>
 
   <div class="card">

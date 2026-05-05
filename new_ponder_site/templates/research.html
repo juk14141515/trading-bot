@@ -15,6 +15,9 @@
 {% set setup_outcomes = data.get("setup_outcomes", {}) %}
 {% set shadow_strategy_research = data.get("shadow_strategy_research", {}) %}
 {% set shadow_execution = data.get("shadow_execution", {}) %}
+{% set shadow_live_comparison = data.get("shadow_live_comparison", {}) %}
+{% set shadow_live_actions = data.get("shadow_live_actions", []) %}
+{% set research_feed_health = data.get("research_feed_health", []) %}
 {% set shadow_execution_setups = data.get("shadow_execution_setups", []) %}
 {% set shadow_execution_rejections = data.get("shadow_execution_rejections", []) %}
 {% set setup_summary = setup_performance.get("summary", {}) %}
@@ -45,7 +48,10 @@
   <span>{{ setup_count }} setups</span>
 </section>
 
-<section class="research-app-grid">
+{% include "partials/research_layout_switcher.html" %}
+{% include "partials/research_decision_panel.html" %}
+
+<section class="research-app-grid command-mode adhd-mode compact-mode">
   <div class="research-panel readiness-panel">
     <div class="card-head">
       <div>
@@ -75,7 +81,7 @@
   </div>
 </section>
 
-<section class="research-panel">
+<section class="research-panel command-mode compact-mode deep-mode">
   <div class="card-head">
     <div>
       <div class="eyebrow">Opportunity Board</div>
@@ -105,7 +111,7 @@
   {% endif %}
 </section>
 
-<section class="research-panel">
+<section class="research-panel command-mode adhd-mode compact-mode graphs-mode">
   <div class="card-head">
     <div>
       <div class="eyebrow">System Feeds</div>
@@ -123,7 +129,9 @@
   </div>
 </section>
 
-<div class="tabs">
+{% include "partials/shadow_live_comparison.html" %}
+
+<div class="tabs deep-mode raw-mode">
   <button onclick="showTab('ai')">AI Summary</button>
   <button onclick="showTab('alerts')">Alerts</button>
   <button onclick="showTab('market')">Market</button>
