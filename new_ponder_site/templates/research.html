@@ -12,6 +12,11 @@
 {% set strategy_backtest = data.get("strategy_backtest", {}) %}
 {% set forward_simulations = data.get("forward_simulations", {}) %}
 {% set setup_performance = data.get("setup_performance", {}) %}
+{% set setup_outcomes = data.get("setup_outcomes", {}) %}
+{% set shadow_strategy_research = data.get("shadow_strategy_research", {}) %}
+{% set shadow_execution = data.get("shadow_execution", {}) %}
+{% set shadow_execution_setups = data.get("shadow_execution_setups", []) %}
+{% set shadow_execution_rejections = data.get("shadow_execution_rejections", []) %}
 {% set setup_summary = setup_performance.get("summary", {}) %}
 {% set scanner_candidates = market.get("scanner_top", []) %}
 {% set evaluated_count = setup_summary.get("evaluated", 0) %}
@@ -329,6 +334,168 @@
   {% else %}
     <p>No setup performance data yet.</p>
   {% endif %}
+
+  <section class="shadow-engine">
+    {% set shadow_summary = shadow_execution.get("summary", {}) %}
+    {% set shadow_policy = shadow_execution.get("policy", {}) or {} %}
+    {% set shadow_trades = shadow_execution.get("top_shadow_trades", []) or [] %}
+    <div class="card-head">
+      <div>
+        <div class="eyebrow">Read-only strategy simulation</div>
+        <h3>Shadow Execution Engine</h3>
+        <p class="muted">Read-only strategy simulation (no live trading)</p>
+      </div>
+      <span class="status-pill pill-neutral">SHADOW MODE</span>
+    </div>
+
+    {% if shadow_execution %}
+      <div class="grid">
+        <div class="card mini"><h3>Simulated Trades</h3><div class="big">{{ shadow_summary.get("simulated_trades", shadow_summary.get("total_trades", shadow_summary.get("count", 0))) }}</div></div>
+        <div class="card mini"><h3>Win Rate</h3><div class="big metric-positive">{{ shadow_summary.get("win_rate", "not ready") }}</div></div>
+        <div class="card mini"><h3>Loss Rate</h3><div class="big metric-negative">{{ shadow_summary.get("loss_rate", "not ready") }}</div></div>
+        <div class="card mini"><h3>Avg 1D Return</h3><div class="big">{{ shadow_summary.get("avg_1d_return", shadow_summary.get("avg_1d_return_pct", "not ready")) }}</div></div>
+        <div class="card mini"><h3>Avg 5D Return</h3><div class="big">{{ shadow_summary.get("avg_5d_return", shadow_summary.get("avg_5d_return_pct", "not ready")) }}</div></div>
+      </div>
+
+      <h3>Strategy Policy</h3>
+      <table>
+        <thead>
+          <tr><th>Setup Type</th><th>Action</th><th>Threshold</th><th>Edge Score</th><th>Reason</th></tr>
+        </thead>
+        <tbody>
+          {% if shadow_policy is mapping %}
+            {% for setup_type, policy in shadow_policy.items() %}
+              {% if policy is mapping %}
+                {% set action = policy.get("action", policy.get("priority", policy.get("status", "watch"))) %}
+                {% set threshold = policy.get("threshold", policy.get("min_score", "n/a")) %}
+                {% set edge_score = policy.get("edge_score", policy.get("score", "n/a")) %}
+                {% set reason = policy.get("reason", policy.get("explanation", "No reason reported.")) %}
+              {% else %}
+                {% set action = policy %}
+                {% set threshold = "n/a" %}
+                {% set edge_score = "n/a" %}
+                {% set reason = "No reason reported." %}
+              {% endif %}
+              {% set action_lower = action|string|lower %}
+              <tr>
+                <td><strong>{{ setup_type }}</strong></td>
+                <td><span class="status-pill {{ 'pill-good' if 'priority' in action_lower else ('pill-risk' if 'deprioritized' in action_lower else 'pill-warn') }}">{{ action }}</span></td>
+                <td>{{ threshold }}</td>
+                <td>{{ edge_score }}</td>
+                <td>{{ reason }}</td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            {% for policy in shadow_policy %}
+              {% if policy is mapping %}
+                {% set setup_type = policy.get("setup_type", policy.get("setup", "unknown")) %}
+                {% set action = policy.get("action", policy.get("priority", policy.get("status", "watch"))) %}
+                {% set threshold = policy.get("threshold", policy.get("min_score", "n/a")) %}
+                {% set edge_score = policy.get("edge_score", policy.get("score", "n/a")) %}
+                {% set reason = policy.get("reason", policy.get("explanation", "No reason reported.")) %}
+              {% else %}
+                {% set setup_type = "unknown" %}
+                {% set action = policy %}
+                {% set threshold = "n/a" %}
+                {% set edge_score = "n/a" %}
+                {% set reason = "No reason reported." %}
+              {% endif %}
+              {% set action_lower = action|string|lower %}
+              <tr>
+                <td><strong>{{ setup_type }}</strong></td>
+                <td><span class="status-pill {{ 'pill-good' if 'priority' in action_lower else ('pill-risk' if 'deprioritized' in action_lower else 'pill-warn') }}">{{ action }}</span></td>
+                <td>{{ threshold }}</td>
+                <td>{{ edge_score }}</td>
+                <td>{{ reason }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="5">No strategy policy data yet.</td></tr>
+            {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
+
+      <h3>Best Performing Setups</h3>
+      <table>
+        <thead>
+          <tr><th>Setup</th><th>Count</th><th>Win Rate</th><th>Loss Rate</th><th>Avg 5D Return</th><th>Avg Score</th></tr>
+        </thead>
+        <tbody>
+          {% for setup in shadow_execution_setups %}
+            <tr>
+              <td><strong>{{ setup.get("setup", "unknown") }}</strong></td>
+              <td>{{ setup.get("count", 0) }}</td>
+              <td>{{ setup.get("win_rate", "not ready") }}</td>
+              <td>{{ setup.get("loss_rate", "not ready") }}</td>
+              <td>{{ setup.get("avg_5d", "not ready") }}</td>
+              <td>{{ setup.get("avg_score", "not ready") }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="6">No setup ranking data yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <h3>Top Shadow Trades</h3>
+      <table>
+        <thead>
+          <tr><th>Symbol</th><th>Setup Type</th><th>Score</th><th>Threshold</th><th>Outcome</th><th>Decision Reason</th><th>Why</th></tr>
+        </thead>
+        <tbody>
+          {% for trade in shadow_trades[:15] %}
+            {% if trade is mapping %}
+              {% set symbol = trade.get("symbol", "unknown") %}
+              {% set setup_type = trade.get("setup_type", trade.get("setup", "unknown")) %}
+              {% set score = trade.get("score", trade.get("edge_score", "n/a")) %}
+              {% set threshold = trade.get("threshold", trade.get("min_score", "n/a")) %}
+              {% set outcome = trade.get("outcome", trade.get("result", "pending")) %}
+              {% set decision_reason = trade.get("decision_reason", trade.get("reason", "No decision reason reported.")) %}
+              {% set why = trade.get("why", trade.get("explanation", trade.get("summary", "No explanation available yet."))) %}
+            {% else %}
+              {% set symbol = "unknown" %}
+              {% set setup_type = "unknown" %}
+              {% set score = "n/a" %}
+              {% set threshold = "n/a" %}
+              {% set outcome = "pending" %}
+              {% set decision_reason = "No decision reason reported." %}
+              {% set why = trade %}
+            {% endif %}
+            <tr>
+              <td><strong>{{ symbol }}</strong></td>
+              <td>{{ setup_type }}</td>
+              <td>{{ score }}</td>
+              <td>{{ threshold }}</td>
+              <td>{{ outcome }}</td>
+              <td>{{ decision_reason }}</td>
+              <td>{{ why }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="7">No top shadow trades yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <h3>Rejection Insights</h3>
+      <div class="research-health-grid">
+        {% for item in shadow_execution_rejections[:8] %}
+          <div class="health-pill health-missing">
+            <strong>{{ item.get("reason", "unknown") }}</strong>
+            <span>{{ item.get("count", 0) }} skipped</span>
+          </div>
+        {% else %}
+          <div class="empty-state">No rejection counts reported yet.</div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        Shadow execution data is not available yet. Expected static/research/shadow_execution_latest.json.
+      </div>
+    {% endif %}
+
+    <details><summary>Raw Shadow Execution</summary><pre>{{ shadow_execution | tojson(indent=2) }}</pre></details>
+    <details><summary>Raw Shadow Strategy Research</summary><pre>{{ shadow_strategy_research | tojson(indent=2) }}</pre></details>
+    <details><summary>Raw Setup Outcomes</summary><pre>{{ setup_outcomes | tojson(indent=2) }}</pre></details>
+  </section>
 
   <details><summary>Raw Strategy Backtest</summary><pre>{{ strategy_backtest | tojson(indent=2) }}</pre></details>
   <details><summary>Raw Forward Simulations</summary><pre>{{ forward_simulations | tojson(indent=2) }}</pre></details>

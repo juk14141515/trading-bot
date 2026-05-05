@@ -1302,6 +1302,11 @@ summary{
   color:#fca5a5;
   background:rgba(239,68,68,.12);
 }
+.shadow-engine{
+  margin-top:28px;
+  padding-top:18px;
+  border-top:1px solid rgba(148,163,184,.18);
+}
 :root[data-theme="black"] body,
 :root[data-theme="slate"] body,
 :root[data-theme="contrast"] body{

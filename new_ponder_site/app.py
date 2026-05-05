@@ -338,6 +338,61 @@ def build_data_quality(feeds):
         })
     return rows
 
+def first_value(data, keys, default=None):
+    if not isinstance(data, dict):
+        return default
+    for key in keys:
+        value = data.get(key)
+        if value not in (None, ""):
+            return value
+    return default
+
+def build_shadow_setup_rows(shadow_execution):
+    summary = shadow_execution.get("summary", {}) if isinstance(shadow_execution, dict) else {}
+    by_setup = summary.get("by_setup", {}) if isinstance(summary, dict) else {}
+    rows = []
+    if not isinstance(by_setup, dict):
+        return rows
+    for setup_name, setup in by_setup.items():
+        if not isinstance(setup, dict):
+            continue
+        avg_5d = first_value(setup, ("avg_5d", "avg_5d_return", "avg_5d_return_pct", "avg_5d_pct"), 0)
+        avg_score = first_value(setup, ("avg_score", "average_score", "score"), "")
+        rows.append({
+            "setup": setup_name,
+            "count": first_value(setup, ("count", "total", "trades", "samples"), 0),
+            "win_rate": first_value(setup, ("win_rate", "wins_pct"), "not ready"),
+            "loss_rate": first_value(setup, ("loss_rate", "losses_pct"), "not ready"),
+            "avg_5d": avg_5d,
+            "avg_score": avg_score,
+        })
+
+    def sort_key(row):
+        number = as_float(row.get("avg_5d"))
+        return number if number is not None else -999999
+
+    return sorted(rows, key=sort_key, reverse=True)
+
+def build_shadow_rejection_rows(shadow_execution):
+    rejected = shadow_execution.get("rejected_counts", {}) if isinstance(shadow_execution, dict) else {}
+    rows = []
+    if isinstance(rejected, dict):
+        for reason, count in rejected.items():
+            rows.append({"reason": reason, "count": count})
+    elif isinstance(rejected, list):
+        for item in rejected:
+            if isinstance(item, dict):
+                rows.append({
+                    "reason": first_value(item, ("reason", "label", "name"), "unknown"),
+                    "count": first_value(item, ("count", "total"), 0),
+                })
+
+    def sort_key(row):
+        number = as_float(row.get("count"))
+        return number if number is not None else 0
+
+    return sorted(rows, key=sort_key, reverse=True)
+
 def load_capital_history():
     capital = load_json("capital_intelligence_latest.json")
     history = capital.get("history") or []
@@ -597,6 +652,7 @@ def history():
 
 @app.route("/research")
 def research():
+    shadow_execution = load_json("shadow_execution_latest.json")
     data = {
         "ai": load_json("ai_summary_latest.json"),
         "alerts": load_json("notifications_latest.json"),
@@ -611,6 +667,11 @@ def research():
         "strategy_backtest": load_json("current_strategy_backtest_latest.json"),
         "forward_simulations": load_json("forward_setup_simulations_latest.json"),
         "setup_performance": load_json("setup_performance_latest.json"),
+        "setup_outcomes": load_json("setup_outcomes_latest.json"),
+        "shadow_strategy_research": load_json("shadow_strategy_research_latest.json"),
+        "shadow_execution": shadow_execution,
+        "shadow_execution_setups": build_shadow_setup_rows(shadow_execution),
+        "shadow_execution_rejections": build_shadow_rejection_rows(shadow_execution),
     }
     return render_template("research.html", data=data)
 
@@ -650,6 +711,10 @@ def api_profit_ops():
 @app.route("/api/positions")
 def api_positions():
     return safe_json_response(build_live_positions_snapshot())
+
+@app.route("/api/shadow-execution")
+def api_shadow_execution():
+    return safe_json_response(load_json("shadow_execution_latest.json"))
 
 @app.route("/api/snapshot")
 def api_snapshot():
