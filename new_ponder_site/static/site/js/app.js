@@ -102,6 +102,28 @@
     }
   };
 
+  function initSidebarToggle() {
+    const button = document.querySelector('[data-sidebar-toggle]');
+    if (!button) return;
+    const collapsed = localStorage.getItem('ponderSidebarCollapsed') === 'true';
+    document.body.classList.toggle('sidebar-collapsed', collapsed);
+    updateSidebarButton(button, collapsed);
+    button.addEventListener('click', () => {
+      const next = !document.body.classList.contains('sidebar-collapsed');
+      document.body.classList.toggle('sidebar-collapsed', next);
+      localStorage.setItem('ponderSidebarCollapsed', next ? 'true' : 'false');
+      updateSidebarButton(button, next);
+      setTimeout(resizeExistingCharts, 220);
+    });
+  }
+
+  function updateSidebarButton(button, collapsed) {
+    button.innerHTML = collapsed
+      ? '<i data-lucide="panel-left-open"></i><span>Menu</span>'
+      : '<i data-lucide="panel-left-close"></i><span>Hide</span>';
+    if (window.lucide) lucide.createIcons({ attrs: { width: 16, height: 16, strokeWidth: 2 } });
+  }
+
   window.copyPonderSnapshot = async function () {
     try {
       const r = await fetch('/api/snapshot', { cache: 'no-store' });
@@ -839,6 +861,7 @@
   }
 
   applyResearchLayout('');
+  initSidebarToggle();
   refreshDashboard();
   setInterval(refreshDashboard, 15000);
   document.documentElement.classList.add('fade-in-ready');

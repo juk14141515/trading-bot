@@ -25,6 +25,9 @@
     <a class="{% if request.path == '/debug-snapshot' %}active{% endif %}" href="/debug-snapshot"><i data-lucide="clipboard-list"></i>Snapshot</a>
     <a href="/logout"><i data-lucide="log-out"></i>Logout</a>
   </aside>
+  <button class="sidebar-toggle" type="button" data-sidebar-toggle aria-label="Toggle sidebar">
+    <i data-lucide="panel-left-close"></i><span>Hide</span>
+  </button>
 
   <main class="main">
     {% block content %}{% endblock %}

@@ -1,6 +1,9 @@
 {% set comparison = shadow_live_comparison if shadow_live_comparison is mapping else {} %}
 {% set comparison_summary = comparison.get("summary", {}) if comparison.get("summary", {}) is mapping else {} %}
-{% set diagnostics = comparison.get("diagnostics", {}) if comparison.get("diagnostics", {}) is mapping else {} %}
+{% set diagnostics = comparison.get("filter_diagnostics", comparison.get("diagnostics", {})) %}
+{% if diagnostics is not mapping %}
+  {% set diagnostics = {} %}
+{% endif %}
 {% set source_breakdown = comparison.get("source_breakdown", {}) %}
 {% set data_quality = comparison.get("data_quality", {}) %}
 {% set context = comparison.get("context", {}) %}
@@ -69,12 +72,14 @@
       {% if best_missed is mapping %}
         {% for setup, row in best_missed.items() %}
           {% set count = row.get("count", row.get("total", 0)) if row is mapping else row %}
-          <div class="graph-row"><span>{{ setup }}</span><div><b style="width:{{ count|int * 8 }}%"></b></div><em>{{ count }}</em></div>
+          {% set bar_width = count|int * 8 %}
+          <div class="graph-row"><span>{{ setup }}</span><div><b style="width:{{ 100 if bar_width > 100 else bar_width }}%"></b></div><em>{{ count }}</em></div>
         {% else %}<p class="muted">No missed setup rankings yet.</p>{% endfor %}
       {% else %}
         {% for row in best_missed %}
           {% set count = row.get("count", row.get("total", 0)) if row is mapping else 0 %}
-          <div class="graph-row"><span>{{ row.get("setup", row.get("setup_type", "unknown")) if row is mapping else "unknown" }}</span><div><b style="width:{{ count|int * 8 }}%"></b></div><em>{{ count }}</em></div>
+          {% set bar_width = count|int * 8 %}
+          <div class="graph-row"><span>{{ row.get("setup", row.get("setup_type", "unknown")) if row is mapping else "unknown" }}</span><div><b style="width:{{ 100 if bar_width > 100 else bar_width }}%"></b></div><em>{{ count }}</em></div>
         {% else %}<p class="muted">No missed setup rankings yet.</p>{% endfor %}
       {% endif %}
     </div>
@@ -83,12 +88,14 @@
       {% if worst_live is mapping %}
         {% for setup, row in worst_live.items() %}
           {% set count = row.get("count", row.get("total", 0)) if row is mapping else row %}
-          <div class="graph-row risk"><span>{{ setup }}</span><div><b style="width:{{ count|int * 8 }}%"></b></div><em>{{ count }}</em></div>
+          {% set bar_width = count|int * 8 %}
+          <div class="graph-row risk"><span>{{ setup }}</span><div><b style="width:{{ 100 if bar_width > 100 else bar_width }}%"></b></div><em>{{ count }}</em></div>
         {% else %}<p class="muted">No weak live setup rankings yet.</p>{% endfor %}
       {% else %}
         {% for row in worst_live %}
           {% set count = row.get("count", row.get("total", 0)) if row is mapping else 0 %}
-          <div class="graph-row risk"><span>{{ row.get("setup", row.get("setup_type", "unknown")) if row is mapping else "unknown" }}</span><div><b style="width:{{ count|int * 8 }}%"></b></div><em>{{ count }}</em></div>
+          {% set bar_width = count|int * 8 %}
+          <div class="graph-row risk"><span>{{ row.get("setup", row.get("setup_type", "unknown")) if row is mapping else "unknown" }}</span><div><b style="width:{{ 100 if bar_width > 100 else bar_width }}%"></b></div><em>{{ count }}</em></div>
         {% else %}<p class="muted">No weak live setup rankings yet.</p>{% endfor %}
       {% endif %}
     </div>

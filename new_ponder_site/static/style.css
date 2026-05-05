@@ -31,10 +31,21 @@ body{
   position:fixed;
   top:0;left:0;bottom:0;
   width:250px;
+  max-height:100vh;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
   background:linear-gradient(180deg,#050507,#080b12 46%,#050507);
   border-right:1px solid var(--border);
-  padding:22px;
+  padding:22px 22px 92px;
   z-index:20;
+  transition:transform .18s ease;
+}
+.side::-webkit-scrollbar{width:8px}
+.side::-webkit-scrollbar-thumb{
+  background:rgba(148,163,184,.26);
+  border-radius:999px;
 }
 .brand{font-size:26px;font-weight:950}
 .brand span{color:var(--accent)}
@@ -130,6 +141,31 @@ body{
   margin-left:250px;
   padding:34px;
   max-width:1640px;
+  transition:margin-left .18s ease;
+}
+.sidebar-toggle{
+  position:fixed;
+  top:14px;
+  left:264px;
+  z-index:45;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:9px 11px;
+  margin:0;
+  border-color:rgba(148,163,184,.3);
+  background:rgba(8,11,18,.92);
+  box-shadow:0 14px 34px rgba(0,0,0,.32);
+}
+.sidebar-toggle svg{color:var(--accent)}
+body.sidebar-collapsed .side{
+  transform:translateX(-260px);
+}
+body.sidebar-collapsed .main{
+  margin-left:0;
+}
+body.sidebar-collapsed .sidebar-toggle{
+  left:14px;
 }
 h1{font-size:42px;margin:0 0 8px}
 h2{margin-top:0}
@@ -184,6 +220,7 @@ pre{
 @media(max-width:850px){
   .side{position:static;width:auto}
   .main{margin-left:0;padding:20px}
+  .sidebar-toggle{display:none}
 }
 
 

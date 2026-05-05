@@ -420,7 +420,11 @@ def build_shadow_live_actions(comparison):
         }]
 
     summary = comparison.get("summary", {}) if isinstance(comparison.get("summary"), dict) else {}
-    diagnostics = comparison.get("diagnostics", {}) if isinstance(comparison.get("diagnostics"), dict) else {}
+    diagnostics = comparison.get("filter_diagnostics", {})
+    if not isinstance(diagnostics, dict):
+        diagnostics = comparison.get("diagnostics", {})
+    if not isinstance(diagnostics, dict):
+        diagnostics = {}
     data_quality = comparison.get("data_quality", {}) if isinstance(comparison.get("data_quality"), dict) else {}
     actions = []
 
