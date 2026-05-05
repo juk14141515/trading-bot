@@ -94,6 +94,37 @@ def load_json(name):
 def load_root_json(name):
     return load_json(ROOT / name)
 
+def make_json_safe(value):
+    """Recursively make dashboard payloads JSON-safe for Flask/Gunicorn.
+
+    Flask may sort JSON keys internally. A nested dict with keys like None can
+    crash with TypeError when Python compares None and str. This function
+    converts all dictionary keys to strings and normalizes odd values.
+    """
+    if isinstance(value, dict):
+        safe = {}
+        for key, item in value.items():
+            if key is None:
+                safe_key = "unknown"
+            else:
+                safe_key = str(key)
+            safe[safe_key] = make_json_safe(item)
+        return safe
+    if isinstance(value, (list, tuple, set)):
+        return [make_json_safe(item) for item in value]
+    if isinstance(value, (datetime, Path)):
+        return str(value)
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    return str(value)
+
+def safe_json_response(payload):
+    data = make_json_safe(payload)
+    return app.response_class(
+        response=json.dumps(data, sort_keys=False, default=str),
+        mimetype="application/json",
+    )
+
 def compact(value, default="unknown"):
     if value in (None, "", [], {}):
         return default
@@ -507,9 +538,9 @@ def build_snapshot():
 @app.before_request
 def require_login():
     allowed = (
-        request.endpoint in {"login", "static"}
+        request.endpoint in {"login", "static", "api_positions"}
         or request.path.startswith("/static/")
-        or request.path == "/health"
+        or request.path in {"/health", "/api/positions"}
     )
     if allowed:
         return None
@@ -610,19 +641,19 @@ def health():
 @app.route("/api/dashboard-data")
 @app.route("/api/dashboard")
 def api_dashboard_data():
-    return jsonify(build_dashboard_data())
+    return safe_json_response(build_dashboard_data())
 
 @app.route("/api/profit-ops")
 def api_profit_ops():
-    return jsonify(build_profit_ops_data())
+    return safe_json_response(build_profit_ops_data())
 
 @app.route("/api/positions")
 def api_positions():
-    return jsonify(build_live_positions_snapshot())
+    return safe_json_response(build_live_positions_snapshot())
 
 @app.route("/api/snapshot")
 def api_snapshot():
-    return jsonify(build_snapshot())
+    return safe_json_response(build_snapshot())
 
 @app.route("/debug-snapshot")
 def debug_snapshot():
