@@ -88,7 +88,7 @@ def read_json(path: Path, default: Any) -> Tuple[Any, Optional[str]]:
     if not path.exists():
         return default, f"missing: {path.name}"
     try:
-        return json.loads(path.read_text())
+        return json.loads(path.read_text()), None
     except Exception as exc:
         return default, f"error reading {path.name}: {type(exc).__name__}: {exc}"
 
