@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List
 
 from shadow_setup_logger import log_shadow_setups_from_candidates
+from near_miss_tracker import log_near_misses_from_candidates
 
 ROOT = Path(__file__).resolve().parent
 TOP_CANDIDATES = ROOT / "top_10_candidates_v2.json"
@@ -98,9 +99,15 @@ def market_regime() -> str:
 def main() -> Dict[str, Any]:
     raw = read_json(TOP_CANDIDATES, [])
     candidates = extract_candidates(raw)
+    regime = market_regime()
     logged = log_shadow_setups_from_candidates(
         candidates,
-        market_regime=market_regime(),
+        market_regime=regime,
+        source="daytime_top_candidates_shadow",
+    )
+    near_miss_result = log_near_misses_from_candidates(
+        candidates,
+        market_regime=regime,
         source="daytime_top_candidates_shadow",
     )
     result = {
@@ -110,6 +117,9 @@ def main() -> Dict[str, Any]:
         "source": str(TOP_CANDIDATES),
         "candidates_seen": len(candidates),
         "setups_logged": logged,
+        "near_misses_logged": near_miss_result.get("near_misses_logged", 0),
+        "near_miss_total": near_miss_result.get("near_miss_total", 0),
+        "near_miss_json": near_miss_result.get("near_miss_json", ""),
         "note": "Read-only collector. No live trading logic touched.",
     }
     print(json.dumps(result, indent=2, sort_keys=True))
