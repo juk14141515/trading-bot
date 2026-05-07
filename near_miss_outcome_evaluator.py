@@ -6,6 +6,8 @@ or bot.py behavior.
 
 v1.1 adds outcome maturity gates so too-new/future rows are marked pending
 instead of being counted as failed near-misses.
+v1.2 adds threshold pressure intelligence: safe recommendation-only diagnostics
+for small threshold changes using mature rows only.
 """
 
 from __future__ import annotations
@@ -38,7 +40,9 @@ WINDOWS = {
 }
 
 THRESHOLDS = [70, 72, 75, 78, 80]
+BASELINE_THRESHOLD = 80
 WINNER_THRESHOLD = 3.0
+BAD_SIGNAL_THRESHOLD = -1.0
 MIN_EVALUATED_FOR_MEDIUM = 30
 MIN_EVALUATED_FOR_HIGH = 100
 
@@ -254,6 +258,22 @@ def mature_rows(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return [r for r in rows if r.get("max_mature_future_return") not in (None, "")]
 
 
+def row_return(row: Dict[str, Any]) -> float:
+    return safe_float(row.get("max_mature_future_return"), 0.0)
+
+
+def row_is_bad_signal(row: Dict[str, Any]) -> bool:
+    return row_return(row) <= BAD_SIGNAL_THRESHOLD
+
+
+def confidence_from_sample(sample_size: int) -> str:
+    if sample_size >= MIN_EVALUATED_FOR_HIGH:
+        return "HIGH"
+    if sample_size >= MIN_EVALUATED_FOR_MEDIUM:
+        return "MEDIUM"
+    return "LOW"
+
+
 def build_summary(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
     mature = mature_rows(rows)
     pending = [r for r in rows if r not in mature]
@@ -271,7 +291,7 @@ def build_summary(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
         }
 
     winners = [r for r in mature if r["became_winner"]]
-    avg_return = sum(safe_float(r["max_mature_future_return"]) for r in mature) / max(len(mature), 1)
+    avg_return = sum(row_return(r) for r in mature) / max(len(mature), 1)
 
     reason_counts = defaultdict(int)
     for r in winners:
@@ -279,13 +299,6 @@ def build_summary(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
 
     strongest_reason = max(reason_counts.items(), key=lambda x: x[1])[0] if reason_counts else "none"
     sample_size = len(mature)
-
-    if sample_size >= MIN_EVALUATED_FOR_HIGH:
-        confidence = "HIGH"
-    elif sample_size >= MIN_EVALUATED_FOR_MEDIUM:
-        confidence = "MEDIUM"
-    else:
-        confidence = "LOW"
 
     pressure = "moderate" if winners else "low"
     if winners and (len(winners) / max(sample_size, 1)) >= 0.2:
@@ -299,53 +312,135 @@ def build_summary(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
         "avg_future_return": round(avg_return, 2),
         "strongest_rejection_reason": strongest_reason,
         "threshold_pressure": pressure,
+        "confidence": confidence_from_sample(sample_size),
+    }
+
+
+def threshold_stats(rows: List[Dict[str, Any]], threshold: int) -> Dict[str, Any]:
+    kept = [r for r in rows if safe_float(r["score"]) >= threshold]
+    rejected = [r for r in rows if safe_float(r["score"]) < threshold]
+    winners_kept = [r for r in kept if r["became_winner"]]
+    bad_kept = [r for r in kept if row_is_bad_signal(r)]
+    missed_winners = [r for r in rejected if r["became_winner"]]
+    returns = [row_return(r) for r in kept]
+
+    return {
+        "threshold": threshold,
+        "opportunities_kept": len(kept),
+        "opportunities_rejected": len(rejected),
+        "winner_count": len(winners_kept),
+        "bad_signal_count": len(bad_kept),
+        "missed_winners": len(missed_winners),
+        "winner_rate": round((len(winners_kept) / max(len(kept), 1)) * 100, 2),
+        "bad_signal_rate": round((len(bad_kept) / max(len(kept), 1)) * 100, 2),
+        "avg_return": round(sum(returns) / max(len(returns), 1), 2),
+        "mature_only": True,
+        "recommendation_only": True,
+    }
+
+
+def threshold_delta_analysis(diagnostics: Dict[str, Dict[str, Any]], baseline: int = BASELINE_THRESHOLD) -> Dict[str, Any]:
+    baseline_stats = diagnostics.get(str(baseline), {})
+    out: Dict[str, Any] = {}
+
+    for threshold in THRESHOLDS:
+        stats = diagnostics.get(str(threshold), {})
+        delta = baseline - threshold
+        extra_opportunities = int(stats.get("opportunities_kept", 0)) - int(baseline_stats.get("opportunities_kept", 0))
+        expected_extra_winners = int(stats.get("winner_count", 0)) - int(baseline_stats.get("winner_count", 0))
+        expected_extra_bad_signals = int(stats.get("bad_signal_count", 0)) - int(baseline_stats.get("bad_signal_count", 0))
+        avg_return_delta = round(safe_float(stats.get("avg_return")) - safe_float(baseline_stats.get("avg_return")), 2)
+
+        if extra_opportunities <= 0:
+            verdict = "same_or_stricter_than_baseline"
+        elif expected_extra_winners > expected_extra_bad_signals and avg_return_delta >= -0.5:
+            verdict = "promising_research_only"
+        elif expected_extra_bad_signals > expected_extra_winners:
+            verdict = "risk_increases_faster_than_edge"
+        else:
+            verdict = "inconclusive"
+
+        out[str(threshold)] = {
+            "threshold_delta_from_baseline": delta,
+            "extra_opportunities_vs_baseline": extra_opportunities,
+            "expected_extra_winners": expected_extra_winners,
+            "expected_extra_bad_signals": expected_extra_bad_signals,
+            "avg_return_delta_vs_baseline": avg_return_delta,
+            "verdict": verdict,
+        }
+
+    return out
+
+
+def recommendation_from_pressure(mature_count: int, deltas: Dict[str, Any]) -> Dict[str, Any]:
+    confidence = confidence_from_sample(mature_count)
+    if mature_count < MIN_EVALUATED_FOR_MEDIUM:
+        return {
+            "action": "collect_more_data",
+            "recommended_threshold": None,
+            "confidence": confidence,
+            "reason": "Mature near-miss sample size is below 30. Do not tune live thresholds yet.",
+            "automation_allowed": False,
+        }
+
+    promising = []
+    for threshold, row in deltas.items():
+        if row.get("verdict") == "promising_research_only" and int(threshold) < BASELINE_THRESHOLD:
+            promising.append((int(threshold), row))
+
+    if not promising:
+        return {
+            "action": "hold_thresholds",
+            "recommended_threshold": BASELINE_THRESHOLD,
+            "confidence": confidence,
+            "reason": "No mature threshold test currently improves winners without increasing risk.",
+            "automation_allowed": False,
+        }
+
+    # Prefer the least aggressive promising cut first.
+    selected_threshold, selected = sorted(promising, key=lambda item: item[0], reverse=True)[0]
+    return {
+        "action": "research_only_watch_lower_threshold",
+        "recommended_threshold": selected_threshold,
         "confidence": confidence,
+        "reason": "A slightly lower threshold produced better mature near-miss capture in research-only simulation.",
+        "details": selected,
+        "automation_allowed": False,
     }
 
 
 def build_threshold_pressure(rows: List[Dict[str, Any]], runtime_ms: int = 0) -> Dict[str, Any]:
-    diagnostics = {}
     mature = mature_rows(rows)
-
-    for threshold in THRESHOLDS:
-        kept = [r for r in mature if safe_float(r["score"]) >= threshold]
-        rejected = [r for r in mature if safe_float(r["score"]) < threshold]
-        missed_winners = [r for r in rejected if r["became_winner"]]
-
-        diagnostics[str(threshold)] = {
-            "opportunities_kept": len(kept),
-            "opportunities_rejected": len(rejected),
-            "winner_rate": round(
-                (len([r for r in kept if r["became_winner"]]) / max(len(kept), 1)) * 100,
-                2,
-            ),
-            "avg_return": round(
-                sum(safe_float(r["max_mature_future_return"]) for r in kept) / max(len(kept), 1),
-                2,
-            ),
-            "missed_winners": len(missed_winners),
-            "mature_only": True,
-            "recommendation_only": True,
-        }
+    diagnostics = {str(threshold): threshold_stats(mature, threshold) for threshold in THRESHOLDS}
+    deltas = threshold_delta_analysis(diagnostics, baseline=BASELINE_THRESHOLD)
+    recommendation = recommendation_from_pressure(len(mature), deltas)
 
     payload = {
         "status": "ok",
+        "version": "threshold_pressure_v2_mature_only",
         "updated_at": utc_now(),
         "runtime_ms": runtime_ms,
         "records": len(rows),
         "mature_records": len(mature),
         "pending_records": max(0, len(rows) - len(mature)),
+        "baseline_threshold": BASELINE_THRESHOLD,
+        "winner_threshold_pct": WINNER_THRESHOLD,
+        "bad_signal_threshold_pct": BAD_SIGNAL_THRESHOLD,
         "source": "near_miss_outcome_evaluator",
         "thresholds": diagnostics,
+        "threshold_delta_analysis": deltas,
+        "recommendation": recommendation,
         "notes": [
             "Threshold pressure uses mature rows only.",
             "Pending/future rows are excluded to avoid false negatives.",
             "This is recommendation-only and never changes live thresholds.",
+            "automation_allowed is always false for this module.",
         ],
         "safety": {
             "read_only": True,
             "orders_enabled": False,
             "automation_allowed": False,
+            "live_trading_changed": False,
         },
     }
 
@@ -364,9 +459,11 @@ def main() -> Dict[str, Any]:
     runtime_ms = int((time.time() - start) * 1000)
     summary = build_summary(evaluated)
     mature = mature_rows(evaluated)
+    threshold_payload = build_threshold_pressure(evaluated, runtime_ms=runtime_ms)
 
     payload = {
         "status": "ok",
+        "version": "near_miss_outcome_evaluator_v1.2",
         "updated_at": utc_now(),
         "runtime_ms": runtime_ms,
         "records": len(evaluated),
@@ -374,6 +471,11 @@ def main() -> Dict[str, Any]:
         "pending_records": max(0, len(evaluated) - len(mature)),
         "source": "near_miss_outcome_evaluator",
         "summary": summary,
+        "threshold_pressure_summary": {
+            "baseline_threshold": BASELINE_THRESHOLD,
+            "recommendation": threshold_payload.get("recommendation", {}),
+            "mature_records": threshold_payload.get("mature_records", 0),
+        },
         "top_winners": sorted(
             mature,
             key=lambda r: safe_float(r.get("max_mature_future_return")),
@@ -385,6 +487,7 @@ def main() -> Dict[str, Any]:
         "notes": [
             "Only mature outcome windows are used for winner_rate and threshold pressure.",
             "Too-new/future rows are marked pending instead of scored as failures.",
+            "Threshold pressure diagnostics are recommendation-only and never change live trading behavior.",
             "This file is research-only and never changes live trading behavior.",
         ],
         "safety": {
@@ -396,8 +499,6 @@ def main() -> Dict[str, Any]:
     }
 
     OUTCOME_JSON.write_text(json.dumps(payload, indent=2, sort_keys=True))
-    build_threshold_pressure(evaluated, runtime_ms=runtime_ms)
-
     print(json.dumps(payload, indent=2, sort_keys=True))
     return payload
 
