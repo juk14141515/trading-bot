@@ -31,7 +31,7 @@ import time
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, List, Optional
 
 ROOT = Path(__file__).resolve().parent
 RESEARCH_OUT = ROOT / "static" / "research"
@@ -70,6 +70,11 @@ JOBS: tuple[Job, ...] = (
     Job("shadow_live_comparison", "shadow_live_comparison_engine_v1.py", ("intraday", "after-close", "overnight", "full"), reason="Compare live trades vs shadow opportunities."),
     Job("shadow_capital_allocator", "shadow_capital_allocator_v2.py", ("intraday", "after-close", "overnight", "full"), reason="Refresh shadow-only capital allocation output."),
 
+    # New learning/evaluation modules. Confidence intentionally runs after the evaluators.
+    Job("near_miss_outcome_evaluator", "near_miss_outcome_evaluator.py", ("after-close", "overnight", "full"), timeout=LONG_TIMEOUT_SECONDS, reason="Evaluate matured near-miss candidates and threshold pressure."),
+    Job("exit_quality_evaluator", "exit_quality_evaluator.py", ("after-close", "overnight", "full"), timeout=LONG_TIMEOUT_SECONDS, reason="Evaluate completed exits against post-exit movement."),
+    Job("learning_confidence_engine", "learning_confidence_engine.py", ("after-close", "overnight", "full"), reason="Aggregate learning confidence after evaluator outputs refresh."),
+
     # Snapshot/summary layers. These are dashboard-only.
     Job("system_snapshot", "system_snapshot.py", ("intraday", "after-close", "overnight", "full"), reason="Refresh system health snapshot."),
     Job("ai_summary", "ai_summary_layer_v1.py", ("after-close", "overnight", "full"), reason="Refresh AI summary after research outputs update."),
@@ -92,10 +97,6 @@ def file_age_minutes(path: Path) -> Optional[float]:
         return round((time.time() - path.stat().st_mtime) / 60, 2)
     except Exception:
         return None
-
-
-def script_exists(script: str) -> bool:
-    return (ROOT / script).exists()
 
 
 def job_command(job: Job) -> List[str]:
@@ -203,11 +204,17 @@ def freshness_snapshot() -> Dict[str, Any]:
         "setup_outcomes": RESEARCH_OUT / "setup_outcomes_latest.json",
         "strategy_research": RESEARCH_OUT / "shadow_strategy_research_latest.json",
         "near_miss_tracker": RESEARCH_OUT / "near_miss_tracker_latest.json",
+        "near_miss_outcomes": RESEARCH_OUT / "near_miss_outcomes_latest.json",
+        "threshold_pressure": RESEARCH_OUT / "threshold_pressure_latest.json",
+        "exit_quality": RESEARCH_OUT / "exit_quality_latest.json",
+        "learning_confidence": RESEARCH_OUT / "learning_confidence_latest.json",
         "system_snapshot": RESEARCH_OUT / "system_snapshot_latest.json",
         "bot_status": ROOT / "bot_status.json",
         "top_candidates": ROOT / "top_10_candidates_v2.json",
         "shadow_setups_csv": ROOT / "research_data" / "shadow_setups.csv",
         "near_miss_csv": ROOT / "research_data" / "near_miss_signals.csv",
+        "near_miss_outcomes_csv": ROOT / "research_data" / "near_miss_outcomes.csv",
+        "exit_quality_csv": ROOT / "research_data" / "exit_quality_evaluations.csv",
     }
     return {
         name: {
