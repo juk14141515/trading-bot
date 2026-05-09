@@ -1,87 +1,355 @@
 {
-  "updated_at": "2026-05-03T22:38:50+00:00",
-  "version": "research_only_strategy_evaluator_v1",
-  "status": "evaluated",
-  "source": "trade_history.csv",
-  "summary": {
-    "status": "evaluated",
-    "sample_size": 1,
-    "wins": 0,
-    "losses": 1,
-    "win_rate": 0.0,
-    "net_pnl": -625.84,
-    "avg_return_pct": -4.2573,
-    "best_return_pct": -4.2573,
-    "worst_return_pct": -4.2573,
-    "by_symbol": [
+  "day_trade_threshold": 80,
+  "generated_at": "2026-05-08T17:55:01+00:00",
+  "learning_summary": {
+    "day_trade_80_plus_signals": 0,
+    "event_counts": {
+      "LEARNING_SHADOW_BUY_DECISION": 61,
+      "LEARNING_SHADOW_SELL": 7,
+      "LEARNING_SHADOW_SKIP_BUY": 177,
+      "SHADOW_CAPITAL_EFFICIENCY": 254,
+      "SHADOW_SELL_V2_SIGNAL": 580,
+      "SHADOW_SMALL_CAP_BUY_DECISION": 1329,
+      "TEST_EVENT": 1
+    },
+    "latest_events": [
       {
+        "event": "SHADOW_CAPITAL_EFFICIENCY",
+        "notes": "shadow_only=true | version=v2.2 | weakest=AMD | weakest_score=49.51 | best_candidate=RKLB",
+        "open_pl": -10.376882,
+        "reason": "Research signal: candidate is stronger than weakest current holding.",
+        "rotation_decision": "research_candidate_stronger",
+        "rotation_score": 22.99,
+        "score": 72.5,
+        "symbol": "RKLB",
+        "timestamp": "2026-05-08T17:48:55.183418"
+      },
+      {
+        "event": "SHADOW_SMALL_CAP_BUY_DECISION",
+        "notes": "shadow_only=true | version=v2.2 | sim_capital=500 | max_position=100 | max_positions=3 | trend=bullish | analyst=23.0 | news=7.0",
+        "open_pl": 0.0,
+        "reason": "Research signal: candidate fits small-capital learning threshold.",
+        "rotation_decision": "research_small_cap_candidate",
+        "rotation_score": 0.0,
+        "score": 72.5,
+        "symbol": "RKLB",
+        "timestamp": "2026-05-08T17:48:55.183456"
+      },
+      {
+        "event": "SHADOW_SMALL_CAP_BUY_DECISION",
+        "notes": "shadow_only=true | version=v2.2 | sim_capital=500 | max_position=100 | max_positions=3 | trend=bullish | analyst=39.0 | news=6.0",
+        "open_pl": 0.0,
+        "reason": "Research signal: candidate fits small-capital learning threshold.",
+        "rotation_decision": "research_small_cap_candidate",
+        "rotation_score": 0.0,
+        "score": 71.0,
+        "symbol": "DIS",
+        "timestamp": "2026-05-08T17:48:55.183487"
+      },
+      {
+        "event": "SHADOW_SMALL_CAP_BUY_DECISION",
+        "notes": "shadow_only=true | version=v2.2 | sim_capital=500 | max_position=100 | max_positions=3 | trend=bullish | analyst=78.0 | news=6.0",
+        "open_pl": 0.0,
+        "reason": "Research signal: candidate fits small-capital learning threshold.",
+        "rotation_decision": "research_small_cap_candidate",
+        "rotation_score": 0.0,
+        "score": 70.43,
+        "symbol": "GOOGL",
+        "timestamp": "2026-05-08T17:48:55.183524"
+      },
+      {
+        "event": "SHADOW_SMALL_CAP_BUY_DECISION",
+        "notes": "shadow_only=true | version=v2.2 | sim_capital=500 | max_position=100 | max_positions=3 | trend=bullish | analyst=23.0 | news=5.0",
+        "open_pl": 0.0,
+        "reason": "Research signal: candidate fits small-capital learning threshold.",
+        "rotation_decision": "research_small_cap_candidate",
+        "rotation_score": 0.0,
+        "score": 69.5,
+        "symbol": "TSLA",
+        "timestamp": "2026-05-08T17:48:55.183552"
+      },
+      {
+        "event": "SHADOW_SMALL_CAP_BUY_DECISION",
+        "notes": "shadow_only=true | version=v2.2 | sim_capital=500 | max_position=100 | max_positions=3 | trend=bullish | analyst=61.0 | news=5.0",
+        "open_pl": 0.0,
+        "reason": "Research signal: candidate fits small-capital learning threshold.",
+        "rotation_decision": "research_small_cap_candidate",
+        "rotation_score": 0.0,
+        "score": 69.5,
+        "symbol": "DDOG",
+        "timestamp": "2026-05-08T17:48:55.183578"
+      },
+      {
+        "event": "SHADOW_SMALL_CAP_BUY_DECISION",
+        "notes": "shadow_only=true | version=v2.2 | sim_capital=500 | max_position=100 | max_positions=3 | trend=bullish | analyst=39.0 | news=5.0",
+        "open_pl": 0.0,
+        "reason": "Research signal: candidate fits small-capital learning threshold.",
+        "rotation_decision": "research_small_cap_candidate",
+        "rotation_score": 0.0,
+        "score": 69.3,
+        "symbol": "ROKU",
+        "timestamp": "2026-05-08T17:48:55.183604"
+      },
+      {
+        "event": "SHADOW_SMALL_CAP_BUY_DECISION",
+        "notes": "shadow_only=true | version=v2.2 | sim_capital=500 | max_position=100 | max_positions=3 | trend=bullish | analyst=32.0 | news=6.0",
+        "open_pl": 0.0,
+        "reason": "Research signal: candidate fits small-capital learning threshold.",
+        "rotation_decision": "research_small_cap_candidate",
+        "rotation_score": 0.0,
+        "score": 69.0,
+        "symbol": "AFRM",
+        "timestamp": "2026-05-08T17:48:55.183631"
+      },
+      {
+        "event": "SHADOW_SMALL_CAP_BUY_DECISION",
+        "notes": "shadow_only=true | version=v2.2 | sim_capital=500 | max_position=100 | max_positions=3 | trend=bullish | analyst=47.0 | news=4.0",
+        "open_pl": 0.0,
+        "reason": "Research signal: candidate fits small-capital learning threshold.",
+        "rotation_decision": "research_small_cap_candidate",
+        "rotation_score": 0.0,
+        "score": 68.0,
+        "symbol": "CRWD",
+        "timestamp": "2026-05-08T17:48:55.183671"
+      },
+      {
+        "event": "SHADOW_SMALL_CAP_BUY_DECISION",
+        "notes": "shadow_only=true | version=v2.2 | sim_capital=500 | max_position=100 | max_positions=3 | trend=bullish | analyst=60.0 | news=4.0",
+        "open_pl": 0.0,
+        "reason": "Research signal: candidate fits small-capital learning threshold.",
+        "rotation_decision": "research_small_cap_candidate",
+        "rotation_score": 0.0,
+        "score": 68.0,
+        "symbol": "PANW",
+        "timestamp": "2026-05-08T17:48:55.183697"
+      },
+      {
+        "event": "LEARNING_SHADOW_SELL",
+        "notes": "",
+        "open_pl": -12.561264633808126,
+        "reason": "rotation into RKLB",
+        "rotation_decision": "",
+        "rotation_score": 0.0,
+        "score": 0.0,
+        "symbol": "AMD",
+        "timestamp": "2026-05-08T17:48:55.623665"
+      },
+      {
+        "event": "SHADOW_SELL_V2_SIGNAL",
+        "notes": "shadow_only=true | version=v2.2 | pl_pct=8.555 | entry=269.32 | current=292.36",
+        "open_pl": 23.04,
+        "reason": "Research signal: position is working.",
+        "rotation_decision": "research_hold_winner",
+        "rotation_score": 0.0,
+        "score": 84.22,
+        "symbol": "AAPL",
+        "timestamp": "2026-05-08T17:54:39.357448"
+      },
+      {
+        "event": "SHADOW_SELL_V2_SIGNAL",
+        "notes": "shadow_only=true | version=v2.2 | pl_pct=2.862 | entry=209.104585 | current=215.09",
+        "open_pl": 431.084696,
+        "reason": "Research signal: no exit pressure.",
+        "rotation_decision": "research_hold_neutral",
+        "rotation_score": 0.0,
+        "score": 61.45,
         "symbol": "NVDA",
-        "sample_size": 1,
-        "win_rate": 0.0,
-        "net_pnl": -625.84,
-        "avg_return_pct": -4.2573
+        "timestamp": "2026-05-08T17:54:39.357595"
+      },
+      {
+        "event": "SHADOW_CAPITAL_EFFICIENCY",
+        "notes": "shadow_only=true | version=v2.2 | weakest=NVDA | weakest_score=61.45 | best_candidate=AMD",
+        "open_pl": 431.084696,
+        "reason": "Research signal: candidate is stronger than weakest current holding.",
+        "rotation_decision": "research_candidate_stronger",
+        "rotation_score": 12.55,
+        "score": 74.0,
+        "symbol": "AMD",
+        "timestamp": "2026-05-08T17:54:39.357691"
+      },
+      {
+        "event": "SHADOW_SMALL_CAP_BUY_DECISION",
+        "notes": "shadow_only=true | version=v2.2 | sim_capital=500 | max_position=100 | max_positions=3 | trend=bullish | analyst=59.0 | news=8.0",
+        "open_pl": 0.0,
+        "reason": "Research signal: candidate fits small-capital learning threshold.",
+        "rotation_decision": "research_small_cap_candidate",
+        "rotation_score": 0.0,
+        "score": 74.0,
+        "symbol": "AMD",
+        "timestamp": "2026-05-08T17:54:39.357732"
+      },
+      {
+        "event": "SHADOW_SMALL_CAP_BUY_DECISION",
+        "notes": "shadow_only=true | version=v2.2 | sim_capital=500 | max_position=100 | max_positions=3 | trend=bullish | analyst=23.0 | news=7.0",
+        "open_pl": 0.0,
+        "reason": "Research signal: candidate fits small-capital learning threshold.",
+        "rotation_decision": "research_small_cap_candidate",
+        "rotation_score": 0.0,
+        "score": 72.5,
+        "symbol": "RKLB",
+        "timestamp": "2026-05-08T17:54:39.357765"
+      },
+      {
+        "event": "SHADOW_SMALL_CAP_BUY_DECISION",
+        "notes": "shadow_only=true | version=v2.2 | sim_capital=500 | max_position=100 | max_positions=3 | trend=bullish | analyst=39.0 | news=6.0",
+        "open_pl": 0.0,
+        "reason": "Research signal: candidate fits small-capital learning threshold.",
+        "rotation_decision": "research_small_cap_candidate",
+        "rotation_score": 0.0,
+        "score": 71.0,
+        "symbol": "DIS",
+        "timestamp": "2026-05-08T17:54:39.357794"
+      },
+      {
+        "event": "SHADOW_SMALL_CAP_BUY_DECISION",
+        "notes": "shadow_only=true | version=v2.2 | sim_capital=500 | max_position=100 | max_positions=3 | trend=bullish | analyst=78.0 | news=6.0",
+        "open_pl": 0.0,
+        "reason": "Research signal: candidate fits small-capital learning threshold.",
+        "rotation_decision": "research_small_cap_candidate",
+        "rotation_score": 0.0,
+        "score": 70.5,
+        "symbol": "GOOGL",
+        "timestamp": "2026-05-08T17:54:39.357821"
+      },
+      {
+        "event": "SHADOW_SMALL_CAP_BUY_DECISION",
+        "notes": "shadow_only=true | version=v2.2 | sim_capital=500 | max_position=100 | max_positions=3 | trend=bullish | analyst=23.0 | news=5.0",
+        "open_pl": 0.0,
+        "reason": "Research signal: candidate fits small-capital learning threshold.",
+        "rotation_decision": "research_small_cap_candidate",
+        "rotation_score": 0.0,
+        "score": 69.5,
+        "symbol": "TSLA",
+        "timestamp": "2026-05-08T17:54:39.357849"
+      },
+      {
+        "event": "SHADOW_SMALL_CAP_BUY_DECISION",
+        "notes": "shadow_only=true | version=v2.2 | sim_capital=500 | max_position=100 | max_positions=3 | trend=bullish | analyst=61.0 | news=5.0",
+        "open_pl": 0.0,
+        "reason": "Research signal: candidate fits small-capital learning threshold.",
+        "rotation_decision": "research_small_cap_candidate",
+        "rotation_score": 0.0,
+        "score": 69.5,
+        "symbol": "DDOG",
+        "timestamp": "2026-05-08T17:54:39.357876"
+      },
+      {
+        "event": "SHADOW_SMALL_CAP_BUY_DECISION",
+        "notes": "shadow_only=true | version=v2.2 | sim_capital=500 | max_position=100 | max_positions=3 | trend=bullish | analyst=39.0 | news=5.0",
+        "open_pl": 0.0,
+        "reason": "Research signal: candidate fits small-capital learning threshold.",
+        "rotation_decision": "research_small_cap_candidate",
+        "rotation_score": 0.0,
+        "score": 69.28,
+        "symbol": "ROKU",
+        "timestamp": "2026-05-08T17:54:39.357902"
+      },
+      {
+        "event": "SHADOW_SMALL_CAP_BUY_DECISION",
+        "notes": "shadow_only=true | version=v2.2 | sim_capital=500 | max_position=100 | max_positions=3 | trend=bullish | analyst=32.0 | news=6.0",
+        "open_pl": 0.0,
+        "reason": "Research signal: candidate fits small-capital learning threshold.",
+        "rotation_decision": "research_small_cap_candidate",
+        "rotation_score": 0.0,
+        "score": 69.0,
+        "symbol": "AFRM",
+        "timestamp": "2026-05-08T17:54:39.357929"
+      },
+      {
+        "event": "SHADOW_SMALL_CAP_BUY_DECISION",
+        "notes": "shadow_only=true | version=v2.2 | sim_capital=500 | max_position=100 | max_positions=3 | trend=bullish | analyst=47.0 | news=4.0",
+        "open_pl": 0.0,
+        "reason": "Research signal: candidate fits small-capital learning threshold.",
+        "rotation_decision": "research_small_cap_candidate",
+        "rotation_score": 0.0,
+        "score": 68.0,
+        "symbol": "CRWD",
+        "timestamp": "2026-05-08T17:54:39.357955"
+      },
+      {
+        "event": "SHADOW_SMALL_CAP_BUY_DECISION",
+        "notes": "shadow_only=true | version=v2.2 | sim_capital=500 | max_position=100 | max_positions=3 | trend=bullish | analyst=60.0 | news=4.0",
+        "open_pl": 0.0,
+        "reason": "Research signal: candidate fits small-capital learning threshold.",
+        "rotation_decision": "research_small_cap_candidate",
+        "rotation_score": 0.0,
+        "score": 68.0,
+        "symbol": "PANW",
+        "timestamp": "2026-05-08T17:54:39.357995"
+      },
+      {
+        "event": "LEARNING_SHADOW_SKIP_BUY",
+        "notes": "",
+        "open_pl": 0.0,
+        "reason": "skip buy",
+        "rotation_decision": "",
+        "rotation_score": 0.0,
+        "score": 74.0,
+        "symbol": "AMD",
+        "timestamp": "2026-05-08T17:54:39.358547"
       }
-    ]
+    ],
+    "paper_68_plus_decisions": 61,
+    "paper_70_plus_decisions": 59,
+    "skip_events": 177,
+    "small_cap_68_plus_signals": 1329,
+    "top_symbols": [
+      [
+        "U",
+        291
+      ],
+      [
+        "DIS",
+        274
+      ],
+      [
+        "ROKU",
+        257
+      ],
+      [
+        "AMD",
+        256
+      ],
+      [
+        "AAPL",
+        254
+      ],
+      [
+        "CRWD",
+        245
+      ],
+      [
+        "ORCL",
+        150
+      ],
+      [
+        "NVDA",
+        120
+      ],
+      [
+        "DDOG",
+        116
+      ],
+      [
+        "PANW",
+        116
+      ]
+    ],
+    "total_events": 2409
   },
-  "setups": [
-    {
-      "setup": "current_bot",
-      "status": "evaluated",
-      "sample_size": 1,
-      "win_rate": 0.0,
-      "avg_return_pct": -4.2573,
-      "outcome": "real closed trade memory",
-      "reason": "Derived only from closed trade_history.csv rows with PnL."
-    },
-    {
-      "setup": "breakout",
-      "status": "insufficient_data",
-      "sample_size": 0,
-      "win_rate": null,
-      "avg_return_pct": null,
-      "outcome": "insufficient data",
-      "reason": "No closed trade rows with PnL were available."
-    },
-    {
-      "setup": "pullback",
-      "status": "insufficient_data",
-      "sample_size": 0,
-      "win_rate": null,
-      "avg_return_pct": null,
-      "outcome": "insufficient data",
-      "reason": "No closed trade rows with PnL were available."
-    },
-    {
-      "setup": "momentum",
-      "status": "insufficient_data",
-      "sample_size": 0,
-      "win_rate": null,
-      "avg_return_pct": null,
-      "outcome": "insufficient data",
-      "reason": "No closed trade rows with PnL were available."
-    },
-    {
-      "setup": "oversold",
-      "status": "insufficient_data",
-      "sample_size": 0,
-      "win_rate": null,
-      "avg_return_pct": null,
-      "outcome": "insufficient data",
-      "reason": "No closed trade rows with PnL were available."
-    },
-    {
-      "setup": "rotation",
-      "status": "insufficient_data",
-      "sample_size": 0,
-      "win_rate": null,
-      "avg_return_pct": null,
-      "outcome": "insufficient data",
-      "reason": "No closed trade rows with PnL were available."
-    }
-  ],
-  "limitations": [
-    "No live orders are placed by this module.",
-    "No fake strategy edge is generated when real outcomes are missing.",
-    "Historical setup comparison requires enough logged closed trades or separately generated forward simulation outcomes."
-  ]
+  "mode": "bot_logic_output_backtest_placeholder",
+  "note": "This summarizes bot output data until enough outcomes exist for true score-based backtesting.",
+  "paper_threshold": 68,
+  "small_cap_threshold": 68,
+  "status": "collecting_real_bot_outputs",
+  "trade_history": {
+    "avg_loss": -236.64,
+    "avg_win": 565.12,
+    "buys": 6,
+    "closed_with_pnl": 7,
+    "sells": 7,
+    "total_pnl": 748.78,
+    "total_rows": 13,
+    "win_rate": 42.86
+  }
 }

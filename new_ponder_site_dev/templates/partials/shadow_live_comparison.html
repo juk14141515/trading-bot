@@ -1,0 +1,202 @@
+{% set comparison = shadow_live_comparison if shadow_live_comparison is mapping else {} %}
+{% set comparison_summary = comparison.get("summary", {}) if comparison.get("summary", {}) is mapping else {} %}
+{% set diagnostics = comparison.get("filter_diagnostics", comparison.get("diagnostics", {})) %}
+{% if diagnostics is not mapping %}
+  {% set diagnostics = {} %}
+{% endif %}
+{% set source_breakdown = comparison.get("source_breakdown", {}) %}
+{% set data_quality = comparison.get("data_quality", {}) %}
+{% set context = comparison.get("context", {}) %}
+{% set missed_winners = comparison.get("missed_winners", []) or [] %}
+{% set bad_live_trades = comparison.get("bad_live_trades", []) or [] %}
+{% set best_missed = comparison.get("best_missed_setup_types", []) or {} %}
+{% set worst_live = comparison.get("worst_live_setup_types", []) or {} %}
+
+<section class="research-panel comparison-shell command-mode deep-mode graphs-mode compact-mode">
+  <div class="card-head">
+    <div>
+      <div class="eyebrow">Shadow vs Live</div>
+      <h2>Comparison Engine</h2>
+      <p class="muted">Decision interface for missed winners, weak live trades, and filtering diagnostics. Research-only.</p>
+    </div>
+    <span class="status-pill pill-neutral">DATA COLLECTION PHASE</span>
+  </div>
+
+  {% if comparison %}
+    <div class="comparison-kpis">
+      <div><span>Live Trades</span><strong>{{ comparison_summary.get("live_trades_count", 0) }}</strong></div>
+      <div><span>Shadow Opportunities</span><strong>{{ comparison_summary.get("shadow_opportunities_count", 0) }}</strong></div>
+      <div><span>Evaluated Shadow</span><strong>{{ comparison_summary.get("evaluated_shadow_opportunities_count", 0) }}</strong></div>
+      <div><span>Matched Symbol-Day</span><strong>{{ comparison_summary.get("matched_symbol_day_count", 0) }}</strong></div>
+      <div><span>Missed Winners</span><strong class="{{ 'metric-negative' if comparison_summary.get('missed_winners_count', 0) else 'metric-neutral' }}">{{ comparison_summary.get("missed_winners_count", 0) }}</strong></div>
+      <div><span>Bad Live Trades</span><strong class="{{ 'metric-negative' if comparison_summary.get('bad_live_trade_count', 0) else 'metric-neutral' }}">{{ comparison_summary.get("bad_live_trade_count", 0) }}</strong></div>
+      <div><span>Opportunity Cost</span><strong>{{ comparison_summary.get("opportunity_cost_estimate_pct", "not ready") }}</strong></div>
+      <div><span>Confidence</span><strong>{{ comparison_summary.get("confidence", "collecting") }}</strong></div>
+      <div><span>Sample Label</span><strong class="small-big">{{ comparison_summary.get("sample_label", "not ready") }}</strong></div>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      Shadow vs live comparison data is not available yet. Expected static/research/shadow_live_comparison_latest.json.
+    </div>
+  {% endif %}
+
+  <div class="comparison-insights command-mode compact-mode">
+    <div class="insight-card">
+      <h3>Filtering Diagnostics</h3>
+      <ul class="reason-list compact-reasons">
+        <li><span class="status-pill {{ 'pill-warn' if diagnostics.get('possible_over_filtering') else 'pill-neutral' }}">Over-filtering</span>{{ diagnostics.get("possible_over_filtering", "not reported") }}</li>
+        <li><span class="status-pill {{ 'pill-warn' if diagnostics.get('possible_under_filtering') else 'pill-neutral' }}">Under-filtering</span>{{ diagnostics.get("possible_under_filtering", "not reported") }}</li>
+        <li><span class="status-pill pill-neutral">Notes</span>{{ diagnostics.get("notes", "No diagnostics reported yet.") }}</li>
+      </ul>
+    </div>
+
+    <div class="insight-card freshness-module">
+      <h3>Freshness + Health</h3>
+      <div class="freshness-grid">
+        {% for feed in research_feed_health %}
+          <div class="health-pill health-{{ feed.get("status", "missing") }}">
+            <strong>{{ feed.get("name", "unknown") }}</strong>
+            <span>{{ feed.get("warning", "not reported") }}</span>
+            <small>{{ feed.get("updated_at", "unknown") }}</small>
+          </div>
+        {% else %}
+          <div class="empty-state">No module health data yet.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="comparison-graphs graphs-mode">
+    <div class="graph-card">
+      <h3>Missed Winners by Setup</h3>
+      {% if best_missed is mapping %}
+        {% for setup, row in best_missed.items() %}
+          {% set count = row.get("count", row.get("total", 0)) if row is mapping else row %}
+          {% set bar_width = count|int * 8 %}
+          <div class="graph-row"><span>{{ setup }}</span><div><b style="width:{{ 100 if bar_width > 100 else bar_width }}%"></b></div><em>{{ count }}</em></div>
+        {% else %}<p class="muted">No missed setup rankings yet.</p>{% endfor %}
+      {% else %}
+        {% for row in best_missed %}
+          {% set count = row.get("count", row.get("total", 0)) if row is mapping else 0 %}
+          {% set bar_width = count|int * 8 %}
+          <div class="graph-row"><span>{{ row.get("setup", row.get("setup_type", "unknown")) if row is mapping else "unknown" }}</span><div><b style="width:{{ 100 if bar_width > 100 else bar_width }}%"></b></div><em>{{ count }}</em></div>
+        {% else %}<p class="muted">No missed setup rankings yet.</p>{% endfor %}
+      {% endif %}
+    </div>
+    <div class="graph-card">
+      <h3>Bad Trades by Setup</h3>
+      {% if worst_live is mapping %}
+        {% for setup, row in worst_live.items() %}
+          {% set count = row.get("count", row.get("total", 0)) if row is mapping else row %}
+          {% set bar_width = count|int * 8 %}
+          <div class="graph-row risk"><span>{{ setup }}</span><div><b style="width:{{ 100 if bar_width > 100 else bar_width }}%"></b></div><em>{{ count }}</em></div>
+        {% else %}<p class="muted">No weak live setup rankings yet.</p>{% endfor %}
+      {% else %}
+        {% for row in worst_live %}
+          {% set count = row.get("count", row.get("total", 0)) if row is mapping else 0 %}
+          {% set bar_width = count|int * 8 %}
+          <div class="graph-row risk"><span>{{ row.get("setup", row.get("setup_type", "unknown")) if row is mapping else "unknown" }}</span><div><b style="width:{{ 100 if bar_width > 100 else bar_width }}%"></b></div><em>{{ count }}</em></div>
+        {% else %}<p class="muted">No weak live setup rankings yet.</p>{% endfor %}
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="deep-dive deep-mode">
+    <h3>Missed Winners</h3>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Symbol</th><th>Setup</th><th>Score</th><th>Return</th><th>Source</th><th>Why It Matters</th></tr></thead>
+        <tbody>
+          {% for row in missed_winners[:25] %}
+            {% if row is mapping %}
+              <tr>
+                <td><strong>{{ row.get("symbol", "unknown") }}</strong></td>
+                <td>{{ row.get("setup_type", row.get("setup", "unknown")) }}</td>
+                <td>{{ row.get("score", row.get("edge_score", "n/a")) }}</td>
+                <td>{{ row.get("return_pct", row.get("forward_return_pct", row.get("avg_5d_return", "n/a"))) }}</td>
+                <td>{{ row.get("source", row.get("origin", "unknown")) }}</td>
+                <td>{{ row.get("why", row.get("reason", row.get("summary", "No explanation yet."))) }}</td>
+              </tr>
+            {% endif %}
+          {% else %}
+            <tr><td colspan="6">No missed winners reported yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Bad Live Trades</h3>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Symbol</th><th>Setup</th><th>Live Result</th><th>Shadow Signal</th><th>Reason</th><th>Research Note</th></tr></thead>
+        <tbody>
+          {% for row in bad_live_trades[:25] %}
+            {% if row is mapping %}
+              <tr>
+                <td><strong>{{ row.get("symbol", "unknown") }}</strong></td>
+                <td>{{ row.get("setup_type", row.get("setup", "unknown")) }}</td>
+                <td>{{ row.get("return_pct", row.get("pnl_pct", row.get("outcome", "n/a"))) }}</td>
+                <td>{{ row.get("shadow_signal", row.get("shadow_decision", "not reported")) }}</td>
+                <td>{{ row.get("reason", row.get("decision_reason", "No reason reported.")) }}</td>
+                <td>{{ row.get("why", row.get("summary", "Review after more samples.")) }}</td>
+              </tr>
+            {% endif %}
+          {% else %}
+            <tr><td colspan="6">No bad live trades reported yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Setup Rankings</h3>
+    <div class="comparison-two-col">
+      <div>
+        <h4>Best Missed Setup Types</h4>
+        <table>
+          <thead><tr><th>Setup</th><th>Count</th><th>Avg Return</th><th>Confidence</th></tr></thead>
+          <tbody>
+            {% if best_missed is mapping %}
+              {% for setup, row in best_missed.items() %}
+                <tr><td><strong>{{ setup }}</strong></td><td>{{ row.get("count", row.get("total", row)) if row is mapping else row }}</td><td>{{ row.get("avg_5d_return", row.get("avg_return_pct", "n/a")) if row is mapping else "n/a" }}</td><td>{{ row.get("confidence", "collecting") if row is mapping else "collecting" }}</td></tr>
+              {% else %}<tr><td colspan="4">No ranking data.</td></tr>{% endfor %}
+            {% else %}
+              {% for row in best_missed %}
+                <tr><td><strong>{{ row.get("setup_type", row.get("setup", "unknown")) }}</strong></td><td>{{ row.get("count", row.get("total", 0)) }}</td><td>{{ row.get("avg_5d_return", row.get("avg_return_pct", "n/a")) }}</td><td>{{ row.get("confidence", "collecting") }}</td></tr>
+              {% else %}<tr><td colspan="4">No ranking data.</td></tr>{% endfor %}
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <h4>Worst Live Setup Types</h4>
+        <table>
+          <thead><tr><th>Setup</th><th>Count</th><th>Avg Return</th><th>Confidence</th></tr></thead>
+          <tbody>
+            {% if worst_live is mapping %}
+              {% for setup, row in worst_live.items() %}
+                <tr><td><strong>{{ setup }}</strong></td><td>{{ row.get("count", row.get("total", row)) if row is mapping else row }}</td><td>{{ row.get("avg_5d_return", row.get("avg_return_pct", "n/a")) if row is mapping else "n/a" }}</td><td>{{ row.get("confidence", "collecting") if row is mapping else "collecting" }}</td></tr>
+              {% else %}<tr><td colspan="4">No ranking data.</td></tr>{% endfor %}
+            {% else %}
+              {% for row in worst_live %}
+                <tr><td><strong>{{ row.get("setup_type", row.get("setup", "unknown")) }}</strong></td><td>{{ row.get("count", row.get("total", 0)) }}</td><td>{{ row.get("avg_5d_return", row.get("avg_return_pct", "n/a")) }}</td><td>{{ row.get("confidence", "collecting") }}</td></tr>
+              {% else %}<tr><td colspan="4">No ranking data.</td></tr>{% endfor %}
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="deep-mode graphs-mode">
+    <h3>Source Breakdown / Context</h3>
+    <div class="comparison-two-col">
+      <details open><summary>Source Breakdown</summary><pre>{{ source_breakdown | tojson(indent=2) }}</pre></details>
+      <details open><summary>Data Quality + Context</summary><pre>{{ {"data_quality": data_quality, "context": context} | tojson(indent=2) }}</pre></details>
+    </div>
+  </div>
+</section>
+
+<section class="research-panel raw-json raw-mode">
+  <h2>Raw Shadow vs Live Comparison</h2>
+  <details open><summary>Raw JSON</summary><pre>{{ comparison | tojson(indent=2) }}</pre></details>
+</section>

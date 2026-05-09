@@ -39,6 +39,10 @@ def utc_now() -> str:
 
 def safe_float(x, default=0.0) -> float:
     try:
+        if hasattr(x, "iloc"):
+            if len(x) == 0:
+                return default
+            x = x.iloc[0]
         return float(x)
     except Exception:
         return default
@@ -76,9 +80,14 @@ def market_regime_from_close(close) -> str:
         return "unknown"
     sma20 = close.rolling(20).mean()
     sma50 = close.rolling(50).mean()
-    if close.iloc[-1] > sma20.iloc[-1] > sma50.iloc[-1]:
+
+    latest = safe_float(close.iloc[-1])
+    s20 = safe_float(sma20.iloc[-1])
+    s50 = safe_float(sma50.iloc[-1])
+
+    if latest > s20 > s50:
         return "bullish"
-    if close.iloc[-1] < sma20.iloc[-1] < sma50.iloc[-1]:
+    if latest < s20 < s50:
         return "bearish"
     return "neutral"
 
@@ -133,28 +142,37 @@ def detect_setups(symbol: str, setup_type: str, data, source: str) -> List[Dict[
         price = safe_float(close.iloc[i])
         if price <= 0:
             continue
-        trend_bull = close.iloc[i] > sma20.iloc[i] > sma50.iloc[i]
-        pullback = trend_bull and -4 <= ret5.iloc[i] <= -1 and close.iloc[i] >= sma50.iloc[i]
-        breakout = trend_bull and close.iloc[i] >= close.iloc[i - 20:i].max() and volume.iloc[i] >= vol20.iloc[i] * 1.1
-        gap_move = abs(ret1.iloc[i]) >= 3
-        momentum = ret5.iloc[i] >= 4 and volume.iloc[i] >= vol20.iloc[i] * 1.2
+        c = safe_float(close.iloc[i])
+        s20 = safe_float(sma20.iloc[i])
+        s50 = safe_float(sma50.iloc[i])
+        v = safe_float(volume.iloc[i])
+        v20 = safe_float(vol20.iloc[i])
+        r1 = safe_float(ret1.iloc[i])
+        r5 = safe_float(ret5.iloc[i])
+        prior_20_high = safe_float(close.iloc[i - 20:i].max())
+
+        trend_bull = c > s20 > s50
+        pullback = trend_bull and -4 <= r5 <= -1 and c >= s50
+        breakout = trend_bull and c >= prior_20_high and v >= v20 * 1.1
+        gap_move = abs(r1) >= 3
+        momentum = r5 >= 4 and v >= v20 * 1.2
 
         if setup_type == "etf_trend" and trend_bull:
-            rows.append(row_for(data, i, symbol, setup_type, 70 + min(20, ret5.iloc[i]), "ETF bullish 20/50 trend", source))
+            rows.append(row_for(data, i, symbol, setup_type, 70 + min(20, r5), "ETF bullish 20/50 trend", source))
         elif setup_type == "crypto_momentum" and momentum:
-            rows.append(row_for(data, i, symbol, setup_type, 72 + min(20, ret5.iloc[i]), "Crypto 5-day momentum with volume", source))
+            rows.append(row_for(data, i, symbol, setup_type, 72 + min(20, r5), "Crypto 5-day momentum with volume", source))
         elif setup_type == "day_trade_momentum" and momentum:
-            rows.append(row_for(data, i, symbol, setup_type, 75 + min(20, ret5.iloc[i]), "Fast momentum proxy", source))
+            rows.append(row_for(data, i, symbol, setup_type, 75 + min(20, r5), "Fast momentum proxy", source))
         elif setup_type == "small_cap_breakout" and breakout:
-            rows.append(row_for(data, i, symbol, setup_type, 70 + min(20, ret5.iloc[i]), "Breakout with volume expansion", source))
+            rows.append(row_for(data, i, symbol, setup_type, 70 + min(20, r5), "Breakout with volume expansion", source))
         elif setup_type == "large_cap_pullback" and pullback:
-            rows.append(row_for(data, i, symbol, setup_type, 68 + min(12, abs(ret5.iloc[i])), "Large-cap pullback in bullish trend", source))
+            rows.append(row_for(data, i, symbol, setup_type, 68 + min(12, abs(r5)), "Large-cap pullback in bullish trend", source))
         elif setup_type == "gap_up_gap_down" and gap_move:
-            rows.append(row_for(data, i, symbol, setup_type, 65 + min(25, abs(ret1.iloc[i])), "Large 1-day gap/move proxy", source))
-        elif setup_type == "earnings_reaction" and gap_move and volume.iloc[i] >= vol20.iloc[i] * 1.3:
-            rows.append(row_for(data, i, symbol, setup_type, 70 + min(20, abs(ret1.iloc[i])), "Earnings/news reaction proxy: gap plus volume", source))
+            rows.append(row_for(data, i, symbol, setup_type, 65 + min(25, abs(r1)), "Large 1-day gap/move proxy", source))
+        elif setup_type == "earnings_reaction" and gap_move and v >= v20 * 1.3:
+            rows.append(row_for(data, i, symbol, setup_type, 70 + min(20, abs(r1)), "Earnings/news reaction proxy: gap plus volume", source))
         elif setup_type == "ipo_recent" and i < 180 and momentum:
-            rows.append(row_for(data, i, symbol, setup_type, 70 + min(20, ret5.iloc[i]), "Recent IPO momentum proxy", source))
+            rows.append(row_for(data, i, symbol, setup_type, 70 + min(20, r5), "Recent IPO momentum proxy", source))
     return rows
 
 
